@@ -1,0 +1,17 @@
+{
+  "user_fields": 
+  {
+    "mailshot_external_subscriberid": 
+    {
+      "key": "mailshot_external_subscriberid",
+      "type": "text",
+      "title": "MAILSHOT - External SubscriberID"
+    },    
+    "mailshot_customer_type": 
+    {
+      "key": "mailshot_customer_type",
+      "type": "dropdown",
+      "title": "MAILSHOT - Customer Type"
+    }
+  }
+}

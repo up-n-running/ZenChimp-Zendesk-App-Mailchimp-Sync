@@ -1,0 +1,7 @@
+<p><b>{{status}} - {{statusText}}</b><br />
+{{responseText}}<br />
+<br />
+Please report a bug at the link below.</p>
+  <div class="user_page_control">
+    <button class="btn back_to_start">Go Back</button>
+  </div>

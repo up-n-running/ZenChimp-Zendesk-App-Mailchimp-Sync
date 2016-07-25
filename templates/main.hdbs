@@ -1,0 +1,51 @@
+<div class="user_page">
+	<div class="user_page_content">
+		<div class="btn-group" data-toggle="buttons-radio" style="text-align: center">
+		    <span>
+				{{#if buttons.exclude.show}}<button class="btn exclude{{buttons.exclude.classNameInsert}}">Exclude</button>{{/if}}
+				{{#if buttons.organization.show}}<button class="btn organization{{buttons.organization.classNameInsert}}">{{#if user.organization.name}}Harper Collins{{/if}}{{#unless user.organization.name}}Organisation{{/unless}}</button>{{/if}}
+				{{#if buttons.standard.show}}<button class="btn standard{{buttons.standard.classNameInsert}}">Standard</button>{{/if}}
+			</span>
+		</div>
+		{{#if display_params.customer_type_not_set}}
+			<div class="information-text">
+				<p class="warning">{{user.name}} is not configured for Mailshots<br/>How should his/her emails be branded?</p>
+			</div>
+		{{/if}}
+		{{#if display_params.customer_type_exclude}}
+			<div class="information-text">
+				<p class="inactive">{{user.name}} is excluded from Mailshots</p>
+			</div>
+		{{/if}}
+		{{#if display_params.customer_type_included}}
+			<table>
+			<tr>
+				<td>ID:</td>
+				<td class="mc-data">{{user.id}}</td>
+			</tr>
+			<tr>
+				<td>Ext&nbsp;Subscriber&nbsp;Id:</td>
+				<td class="mc-data">{{user.external_subscriber_id}}</td>
+			</tr>
+			<tr>
+				<td>Email:</td>
+				<td class="mc-data">{{user.email}}</td>
+			</tr>
+			<tr>
+				<td>Name:</td>
+				<td class="mc-data">{{user.name}}</td>
+			</tr>
+			{{#if user.organization.name}}
+			<tr>
+				<td>Organization:</td>
+				<td class="mc-data">{{#each tags}}{{user.organization.name}}{{/each}}</td>
+			</tr>
+			{{/if}}
+			<tr>
+			<td>Customer Type:</td>
+			<td class="mc-data">{{user.customer_type}}</td>
+			</tr>
+			</table>
+		{{/if}}
+  </div>
+</div>

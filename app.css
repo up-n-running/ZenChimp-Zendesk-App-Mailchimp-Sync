@@ -1,0 +1,43 @@
+footer 
+{
+  font-size: 10px;
+  padding-top: 20px;
+}
+
+#content td {
+	font-size: 12px;
+	padding-top: 2px;
+}
+
+td.mc-data
+{
+	color: gray;
+	padding-left: 5px;
+}
+
+.user_page_content .btn
+{
+	text-align: center;
+}
+
+.user_page_content .warning
+{
+	color: red;
+	font-weight: bold;
+}
+
+.user_page_content .inactive
+{
+	color: gray;
+	font-weight: bold;
+}
+
+.user_page_content .information-text
+{
+	text-align: center;
+}
+
+div.btn-group
+{
+	padding-bottom: 10px;
+}

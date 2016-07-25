@@ -1,0 +1,31 @@
+<div class="user_page">
+  <div class="user_page_content">
+	<table>
+	<tr>
+	  <td>Requester:</td>
+	  <td class="mc-data">{{ticket_requester}}</td>
+	</tr>
+	<tr>
+	  <td>Customer:</td>
+	  <td class="mc-data">{{name}}</td>
+	</tr>
+	{{#if tags}}
+	<tr>
+	<td>Tags:</td>
+	<td class="mc-data">{{#each tags}}{{this}}{{/each}}</td>
+	</tr>
+	{{/if}}
+	<tr>
+	<td>Added:</td>
+	<td class="mc-data">{{created_at}}</td>
+	</tr>
+	<tr>
+	<td>Last signed in:</td>
+	<td class="mc-data">{{last_login_at}}</td>
+	</tr>
+	</table>
+  </div>
+  <div class="user_page_control">
+    <button class="btn back_to_start">{{t "btn_go_back"}}!</button>
+  </div>
+</div>
