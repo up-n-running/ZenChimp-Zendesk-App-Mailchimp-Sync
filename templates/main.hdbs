@@ -1,5 +1,5 @@
 <div class="user_page">
-	<div class="user_page_content">
+	<div class="page_content">
 		<div class="btn-group" data-toggle="buttons-radio" style="text-align: center">
 		    <span>
 				{{#if buttons.exclude.show}}<button class="btn exclude{{buttons.exclude.classNameInsert}}">Exclude</button>{{/if}}

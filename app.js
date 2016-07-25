@@ -22,6 +22,9 @@ console.log("Loading app.js");
       USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_USE_DEFAULT: "mailshot_use_default_values",
       USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_USE_ORGANIZATION: "mailshot_use_organisation_values",
 
+      MAILSHOT_FIELD_NAMES_CUSTOMER_TYPE: "CUSTOMER",
+      MAILSHOT_FIELD_CUSTOMER_TYPE_DEFAULT_VALUE: "SMEs",
+
       TEMPLATE_NAME_MAIN: "main",
 
       DATE_PATTERN : /^\d{4}-\d{2}-\d{2}$/
@@ -46,13 +49,14 @@ console.log("Loading app.js");
       'getMailChimpAllListMembers.fail'	: 'switchToErrorMessage',    
 
 		//v3 api requests
-      'createMailChimpListMember.done'	: 'retrievedMailchimpSubscriber',
-      'createMailChimpListMember.fail'	: 'switchToErrorMessage',   
+      'createOrUpadateMailChimpListMember.done'	: 'createOrUpadateMailChimpListMember_Done',
+      'createOrUpadateMailChimpListMember.fail'	: 'createOrUpadateMailChimpListMember_OnFail',   
 
       //buttons
       'click .exclude' 				: 'excludeButtonOnClick',
       'click .organization' 		: 'organizationButtonOnClick',
       'click .standard' 			: 'standardButtonOnClick',
+      'click .error_override_mailchimp' : 'createOrUpadateMailChimpListMember_Override_OnClick',
 
       //main screen events
       'user.mailshot_customer_type.changed' : 'userScreenCustomerTypeFieldChanged'
@@ -179,30 +183,33 @@ console.log("Loading app.js");
 			return jsonCall;
 		}
 */
-		createMailChimpListMember: function( zendesk_sync_user )
+		createOrUpadateMailChimpListMember: function( mailchimpSyncUser, allowUpdateBool )
 		{
-			if( zendesk_sync_user == null || zendesk_sync_user.external_subscriber_id != null )
+
+			if( mailchimpSyncUser == null || ( !allowUpdateBool && mailchimpSyncUser.id != null ) )
 			{
-				return console.warn( "ERROR CONDITION: createMailChimpListMember called with either null user or user with external_subscriber_id already set" );
+				return console.warn( "ERROR CONDITION: createOrUpadateMailChimpListMember called with either null user or user with mailchimpSyncUser.id already set in create mode" );
 			}
 			var dataJSON = 				
 			{
-					"email_address": zendesk_sync_user.email,
+					"email_address": mailchimpSyncUser.email_address,
 					"email_type": "html",
-					//status
+					"status": mailchimpSyncUser.status,
 					"status_if_new": "subscribed",
 					"merge_fields":
 					{
-					    "FNAME": "Customer",
-					    "LNAME": "surname"
+					    "FNAME": mailchimpSyncUser.forename,
+					    "LNAME": mailchimpSyncUser.surname
+					    //this.resources.MAILSHOT_FIELD_NAMES_CUSTOMER_TYPE: mailchimpSyncUser.customer_type
   					},
-  					"vip": ( zendesk_sync_user.customer_type == this.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_USE_ORGANIZATION ),
+  					"vip": ( mailchimpSyncUser.customer_type == this.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_USE_ORGANIZATION )
 			};
+			dataJSON.merge_fields[ this.resources.MAILSHOT_FIELD_NAMES_CUSTOMER_TYPE ] = mailchimpSyncUser.customer_type
 
 			var jsonCall =
 			{
 				url: helpers.fmt( "https://%@.api.mailchimp.com/3.0/lists/%@/members/", this.mailchimp_datacentre_prefix, this.mailchimp_list_id ),
-				type: 'POST',
+				type: allowUpdateBool ? 'PATCH' : 'POST',
 				dataType: 'json',
 				contentType: 'application/json; charset=UTF-8',
 				headers: 
@@ -224,7 +231,7 @@ console.log("Loading app.js");
 */
 	},
 
-    // --- initialization functions
+    // --- INITIALISATION FUCNTIONS
     init: function() 
     {
     	console.log( "Starting init");
@@ -249,6 +256,9 @@ console.log("Loading app.js");
 //CHECK HERE IF USER WAS UPDATED ELSEWHERE!
 			this.getUserFromFrameworkInUserSidebarLocation();
 		}
+
+		//delcare other instance variables
+		this.mailshot_sync_user = null;
 
 		//this.ajax( 'getMailChimpAllListMembers' );
     },
@@ -319,8 +329,8 @@ console.log("Loading app.js");
 			}
 			else
 			{
-	this.switchToMainTemplate();
-	//			this.ajax( 'getMailChimpListMember', this.zendesk_sync_user.external_subscriber_id );
+				this.switchToMainTemplate();
+				//			this.ajax( 'getMailChimpListMember', this.zendesk_sync_user.external_subscriber_id );
 			}
 		}
 		else console.warn( "userDataInitialized called but this.zendesk_sync_user = null - this should never happen!");
@@ -377,9 +387,8 @@ console.log ("INSERT CODE HERE TO ADD REMOVE USER FROM MAILCHIMP VIA MAILCHIMP A
 			//if ORGANIZATION or STANDARD  were selected AND it was previously set to EXCLUDE or NOT SET
 			if( oldType == this.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_EXCLUDE || oldType == this.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_NOT_SET )
 			{
-				this.ajax( "createMailChimpListMember", this.zendesk_sync_user );
-console.log ("INSERT CODE HERE TO ADD USER TO MAILCHIMP VIA MAILCHIMP API - if id is not set then update if email match and add if not");
-//then probably remove the line of code below
+				this.syncNewUserToMailchimp( this.zendesk_sync_user );
+				//then probably remove the line of code below
 				//reload the app with new updated user object
 				//this.switchToMainTemplate();
 			}
@@ -417,6 +426,65 @@ console.log ("INSERT CODE HERE TO ADD UPDATE USER IN MAILCHIMP VIA MAILCHIMP API
 		else console.warn( "gotOrSetUserFromDataAPI called but this.zendesk_sync_user != null or userObjectFromDataAPI = null - this should never happen!");
 	},*/
 
+
+	//MAILCHIMP SYNCING WRAPPER FUNCTIONS
+	syncNewUserToMailchimp: function( zendeskUser ) 
+    {
+    	console.log( "syncNewUserToMailchimp called with zendesk user =");
+		console.dir( zendeskUser );
+
+		var newMailChimpUserToSave = this.createNewMailchimpSyncUserObject( zendeskUser );
+
+    	console.log( "created mailchimp user object to save =");
+		console.dir( newMailChimpUserToSave );
+
+    	this.ajax( "createOrUpadateMailChimpListMember", newMailChimpUserToSave, false );
+    },
+
+	syncExistingUserToMailchimp: function( mailchimpUser ) 
+    {
+    	console.log( "syncExistingUserToMailchimp called with mailchimp user =");
+		console.dir( mailchimpUser );
+
+    	this.ajax( "createOrUpadateMailChimpListMember", mailchimpUser, true );
+    },
+
+	createOrUpadateMailChimpListMember_OnFail: function( errorResponse ) 
+	{
+		console.log( "started createOrUpadateMailChimpListMember_OnFail with the following object:" );
+		console.dir( errorResponse ); console.log( "" );
+		var responseTextJSON = JSON.parse( errorResponse.responseText )
+		
+		//check to see if we were in create only mode but the users email address was already found.
+		if( errorResponse.status == 400 && responseTextJSON.title == "Member Exists" )
+		{
+			this.switchToErrorMessage( errorResponse, this.zendesk_sync_user.email + " already exists in mailchimp.<br /><br/>Do you want to override his/her details?", "Override", "error_override_mailchimp" );
+		}
+
+		this.switchToErrorMessage( errorResponse );
+	},
+
+	createOrUpadateMailChimpListMember_Override_OnClick: function() 
+	{
+		console.log( "started createOrUpadateMailChimpListMember_Override_OnClick" );
+
+		var newMailChimpUserToSave = this.createNewMailchimpSyncUserObject( this.zendesk_sync_user );
+
+    	console.log( "created mailchimp user object to save =");
+		console.dir( newMailChimpUserToSave );
+		
+		this.syncExistingUserToMailchimp( newMailChimpUserToSave );
+	},
+
+	createOrUpadateMailChimpListMember_Done: function( returnedMailchimpUser ) 
+	{
+		console.log( "started createOrUpadateMailChimpListMember_Done with the following object:" );
+		console.dir( returnedMailchimpUser ); console.log( "" );
+		//if existing user is null or has null id then set id filed on zendesk user object
+
+		//save return object back to this.mailchimp_sync_user
+	},
+
     //UTIL FUNCTIONS
     cloneUserToSyncObject: function( origUser ) 
     {
@@ -442,6 +510,23 @@ console.log ("INSERT CODE HERE TO ADD UPDATE USER IN MAILCHIMP VIA MAILCHIMP API
 		};
     },
 
+    createNewMailchimpSyncUserObject: function( zendeskSyncUserObject )
+    {
+
+		return (zendeskSyncUserObject == null ) ? null :
+		{
+			id: zendeskSyncUserObject.external_subscriber_id,
+			zendesk_user_id: zendeskSyncUserObject.id,
+			email_address: zendeskSyncUserObject.email,
+			status: "subscribed",
+			forename: zendeskSyncUserObject.name,
+			surname: "SURNAME",
+			//organization: this.cloneUserToSyncOrganisationObject( zendeskSyncUserObject.organization ),
+			customer_type: ( zendeskSyncUserObject.customer_type == this.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_USE_ORGANIZATION ) ? "TEST_ONLY" : this.resources.MAILSHOT_FIELD_CUSTOMER_TYPE_DEFAULT_VALUE
+		};
+    },
+
+
     //MAIN SCREEN UTILITY FUNCTIONS
     hideFieldsIfInUserLocation: function() 
     {
@@ -455,7 +540,7 @@ console.log ("INSERT CODE HERE TO ADD UPDATE USER IN MAILCHIMP VIA MAILCHIMP API
     },
 
 
-	//APP FIELD ONCLICK FUNCTIONS
+	//EXCLUDE/ORGANISATION/STANDARD FIELD ONCLICK FUNCTIONS
 	excludeButtonOnClick: function()
 	{
 		console.log( "started excludeButtonOnClick" );
@@ -493,7 +578,6 @@ console.log ("INSERT CODE HERE TO ADD UPDATE USER IN MAILCHIMP VIA MAILCHIMP API
 			console.dir( updatedUserToSave );
 			this.ajax( 'updateZendeskUser', updatedUserToSave );
 		}
-
 	},
 
 	standardButtonOnClick: function()
@@ -513,7 +597,7 @@ console.log ("INSERT CODE HERE TO ADD UPDATE USER IN MAILCHIMP VIA MAILCHIMP API
 			console.dir( updatedUserToSave );
 			this.ajax( 'updateZendeskUser', updatedUserToSave );
 		}
-
+		console.log( "ended standardButtonOnClick" );
 	},
 
 
@@ -528,6 +612,7 @@ console.log ("INSERT CODE HERE TO ADD UPDATE USER IN MAILCHIMP VIA MAILCHIMP API
 		var newCustomerTypeSelected = this.user().customField( this.resources.USER_FIELD_NAME_CUSTOMER_TYPE );
 		this.changeCustomerType( oldCustomerType, newCustomerTypeSelected );
     },
+
 
     //SWITCH TO HTML TEMPLATE FUNCTIONS
 	switchToMainTemplate: function() 
@@ -577,9 +662,26 @@ console.log ("INSERT CODE HERE TO ADD UPDATE USER IN MAILCHIMP VIA MAILCHIMP API
 	    this.switchTo( 'sync_user_details', requester_data );
 	},
 */
-	switchToErrorMessage: function( errorResponse ) {
+	switchToErrorMessage: function( errorResponse, overrideMessage, additionalButtonText, additionalButtonHandle ) 
+	{
 		console.log( "started switchToErrorMessage with the folloring object:" );
 		console.dir( errorResponse ); console.log( "" );
+		console.log( "additionalButtonHandle:" );
+		console.dir( additionalButtonHandle ); console.log( "" );
+		
+		if( typeof( overrideMessage ) != "undefined" )
+		{ 
+			errorResponse[ 'overrideMessage' ] = overrideMessage
+		}
+		if( typeof( additionalButtonText ) != "undefined" )
+		{ 
+			errorResponse[ 'additionalButtonText' ] = additionalButtonText
+		}
+		if( typeof( additionalButtonHandle ) != "undefined" )
+		{ 
+			errorResponse[ 'additionalButtonHandle' ] = additionalButtonHandle
+		}
+		
 		this.switchTo( 'show_error', errorResponse );
 	}
 

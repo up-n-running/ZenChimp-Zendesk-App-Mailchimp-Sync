@@ -15,24 +15,24 @@ td.mc-data
 	padding-left: 5px;
 }
 
-.user_page_content .btn
+.page_content .btn
 {
 	text-align: center;
 }
 
-.user_page_content .warning
+.page_content .warning
 {
 	color: red;
 	font-weight: bold;
 }
 
-.user_page_content .inactive
+.page_content .inactive
 {
 	color: gray;
 	font-weight: bold;
 }
 
-.user_page_content .information-text
+.page_content .information-text
 {
 	text-align: center;
 }

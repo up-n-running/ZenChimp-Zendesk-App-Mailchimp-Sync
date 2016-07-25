@@ -1,7 +1,22 @@
-<p><b>{{status}} - {{statusText}}</b><br />
-{{responseText}}<br />
-<br />
-Please report a bug at the link below.</p>
-  <div class="user_page_control">
-    <button class="btn back_to_start">Go Back</button>
-  </div>
+<div class="error_page">
+	<div class="page_content">
+{{#if overrideMessage}}
+		<div class="information-text">
+			<p class="warning">{{{overrideMessage}}}</p>
+		</div>
+{{/if}}
+{{#unless overrideMessage}}
+		<p><b>{{status}} - {{statusText}}</b><br />
+		{{responseText}}<br />
+		<br />
+		Please report a bug at the link below.</p>
+{{/unless}}
+
+		<div class="page_control">
+			<button class="btn back_to_start">Go Back</button>
+{{#if additionalButtonHandle}}
+			<button class="btn {{additionalButtonHandle}}">{{#if additionalButtonText}}{{additionalButtonText}}{{/if}}{{#unless additionalButtonText}}OK{{/unless}}</button>
+{{/if}}
+		</div>
+    </div>
+</div>
