@@ -31,6 +31,20 @@
       "required": true,
       "secure": false,
       "default": "78ecb74923"
+    },
+    {
+      "name": "mailchimp_merge_field_forename",
+      "type": "text",
+      "required": true,
+      "secure": false,
+      "default": "FNAME"
+    },
+    {
+      "name": "mailchimp_merge_field_surname",
+      "type": "text",
+      "required": true,
+      "secure": false,
+      "default": "LNAME"
     }
   ]
 }

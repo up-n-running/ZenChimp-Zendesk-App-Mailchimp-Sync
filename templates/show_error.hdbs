@@ -1,19 +1,24 @@
 <div class="error_page">
 	<div class="page_content">
+
 {{#if overrideMessage}}
-		<div class="information-text">
-			<p class="warning">{{{overrideMessage}}}</p>
-		</div>
+<div class="alert alert-warning">
+	{{{overrideMessage}}}
+</div>
 {{/if}}
+
 {{#unless overrideMessage}}
-		<p><b>{{status}} - {{statusText}}</b><br />
-		{{responseText}}<br />
-		<br />
-		Please report a bug at the link below.</p>
+<div class="alert alert-danger">
+	<strong>{{errorResponse.status}} - {{errorResponse.statusText}}</strong> Indicates a dangerous or potentially negative action.<br />
+	<br />
+	{{errorResponse.responseText}}<br />
+	<br />
+	Please report a bug at the link below.
+</div>
 {{/unless}}
 
 		<div class="page_control">
-			<button class="btn back_to_start">Go Back</button>
+			<button class="btn error_go_back">Go Back</button>
 {{#if additionalButtonHandle}}
 			<button class="btn {{additionalButtonHandle}}">{{#if additionalButtonText}}{{additionalButtonText}}{{/if}}{{#unless additionalButtonText}}OK{{/unless}}</button>
 {{/if}}

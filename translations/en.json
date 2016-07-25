@@ -5,7 +5,9 @@
     "parameters": {
       "mailchimp_api_key" : { "label": "Mailchimp API Key", "helpText": "Login to Mailchimp --> Account --> Extras --> API Key" },
       "mailchimp_datacentre_prefix" : { "label": "Mailchimp Datacentre Prefix", "helpText": "Login to Mailchimp --> look for the subdomain in the url after login: XXXX.admin.mailchimp.com" },
-      "mailchimp_list_id" : { "label": "Mailchimp List ID of List to sync to", "helpText": "Login to Mailchimp --> Lists --> Select List --> Settings --> List Name and Defaults --> List ID (Should look something like 78ecb74923)" }
+      "mailchimp_list_id" : { "label": "Mailchimp List ID of List to sync to", "helpText": "Login to Mailchimp --> Lists --> Select List --> Settings --> List Name and Defaults --> List ID (Should look something like 78ecb74923)" },
+      "mailchimp_merge_field_forename" : { "label": "Mailchimp Tag Name of First Name merge field", "helpText": "Login to Mailchimp --> Lists --> Select List --> Settings --> List Fields --> Find Tag for First Name Field" },
+      "mailchimp_merge_field_surname" : { "label": "Mailchimp Tag Name of Last Name name merge field", "helpText": "Login to Mailchimp --> Lists --> Select List --> Settings --> List Fields --> Find Tag for Last Name Field" }
     }
   },
   "loading": "Welcome to Mailchimp Mailshot Sync",
