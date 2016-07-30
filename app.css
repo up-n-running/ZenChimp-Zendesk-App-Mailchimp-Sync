@@ -15,6 +15,42 @@ td.mc-data
 	padding-left: 5px;
 }
 
+.page_content .temp td.header
+{
+	text-align: center;
+	font-size: 14px;
+	font-weight: bold;
+	background-color: lightgray;
+	width: 400px;
+}
+.page_content .temp td.zendesk
+{
+	color: green;
+	padding-left: 5px;
+	font-size: 10px;
+
+  /* Required for text-overflow to do anything */
+  white-space: nowrap;
+  overflow: hidden;	
+}
+
+.page_content .temp td
+{
+	width: 200px;
+}
+
+.page_content .temp td.mailchimp
+{
+	color: blue;
+	padding-left: 5px;
+	font-size: 10px;
+
+
+  /* Required for text-overflow to do anything */
+  white-space: nowrap;
+  overflow: hidden;
+}
+
 .page_content .btn
 {
 	text-align: center;

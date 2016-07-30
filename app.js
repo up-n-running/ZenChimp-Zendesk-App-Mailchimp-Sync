@@ -37,7 +37,6 @@ console.log("Loading app.js");
       'updateZendeskUser.fail'		: 'switchToErrorMessage',
       'getZendeskOrganizations.done': 'getZendeskOrganizations_Done',
       'getZendeskOrganizations.fail': 'switchToErrorMessage',
-      
 
       'getMailChimpAllListMembers.done'	: 'retrievedMailchimpAllListSubscribers',
       'getMailChimpAllListMembers.fail'	: 'switchToErrorMessage',    
@@ -789,7 +788,8 @@ console.log ("INSERT CODE HERE TO ADD UPDATE USER IN MAILCHIMP VIA MAILCHIMP API
 
 		var formData = 
 		{
-		  'user': this.zendesk_sync_user,
+		  'zendesk_user': this.zendesk_sync_user,
+		  'mailchimp_user': this.mailshot_sync_user,
 		  'buttons': 
 		  {
 		  	'exclude': { 'show': true, 'classNameInsert': ( this.zendesk_sync_user.customer_type == this.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_EXCLUDE ) ? " active" : "" },

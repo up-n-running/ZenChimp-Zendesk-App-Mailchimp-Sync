@@ -3,48 +3,59 @@
 		<div class="btn-group" data-toggle="buttons-radio" style="text-align: center">
 		    <span>
 				{{#if buttons.exclude.show}}<button class="btn exclude{{buttons.exclude.classNameInsert}}">Exclude</button>{{/if}}
-				{{#if buttons.organization.show}}<button class="btn organization{{buttons.organization.classNameInsert}}">{{#if user.organization.name}}Harper Collins{{/if}}{{#unless user.organization.name}}Organisation{{/unless}}</button>{{/if}}
+				{{#if buttons.organization.show}}<button class="btn organization{{buttons.organization.classNameInsert}}">{{#if zendesk_user.organization.name}}{{zendesk_user.organization.name}}{{/if}}{{#unless zendesk_user.organization.name}}Organisation{{/unless}}</button>{{/if}}
 				{{#if buttons.standard.show}}<button class="btn standard{{buttons.standard.classNameInsert}}">Standard</button>{{/if}}
 			</span>
 		</div>
 		{{#if display_params.customer_type_not_set}}
 			<div class="information-text">
-				<p class="warning">{{user.name}} is not configured for Mailshots<br/>How should his/her emails be branded?</p>
+				<p class="warning">{{zendesk_user.name}} is not configured for Mailshots<br/>How should his/her emails be branded?</p>
 			</div>
 		{{/if}}
 		{{#if display_params.customer_type_exclude}}
 			<div class="information-text">
-				<p class="inactive">{{user.name}} is excluded from Mailshots</p>
+				<p class="inactive">{{zendesk_user.name}} is excluded from Mailshots</p>
 			</div>
 		{{/if}}
 		{{#if display_params.customer_type_included}}
-			<table>
+			<table class="temp" border="1">
 			<tr>
-				<td>ID:</td>
-				<td class="mc-data">{{user.id}}</td>
+				<td colspan="2" class="header">ID</td>
 			</tr>
 			<tr>
-				<td>Ext&nbsp;Subscriber&nbsp;Id:</td>
-				<td class="mc-data">{{user.external_subscriber_id}}</td>
+				<td class="zendesk">{{zendesk_user.id}}</td>
+				<td class="mailchimp"></td>
 			</tr>
 			<tr>
-				<td>Email:</td>
-				<td class="mc-data">{{user.email}}</td>
+				<td colspan="2" class="header">Email Address</td>
 			</tr>
 			<tr>
-				<td>Name:</td>
-				<td class="mc-data">{{user.name}}</td>
+				<td class="zendesk">{{zendesk_user.email}}</td>
+				<td class="mailchimp">{{mailchimp_user.email_address}}</td>
 			</tr>
-			{{#if user.organization.name}}
 			<tr>
-				<td>Organization:</td>
-				<td class="mc-data">{{#each tags}}{{user.organization.name}}{{/each}}</td>
+				<td colspan="2" class="header">Name</td>
 			</tr>
-			{{/if}}
 			<tr>
-			<td>Customer Type:</td>
-			<td class="mc-data">{{user.customer_type}}</td>
+				<td class="zendesk">{{zendesk_user.name}}</td>
+				<td class="mailchimp">{{mailchimp_user.forename}}|{{mailchimp_user.surname}}</td>
 			</tr>
+			<tr>
+				<td colspan="2" class="header">Customer Type</td>
+			</tr>
+			<tr>
+				<td class="zendesk">{{zendesk_user.customer_type}}</td>
+				<td class="mailchimp">{{mailchimp_user.customer_type}}</td>
+			</tr>
+			{{#each mailchimp_user.organization_fields}}
+			<tr>
+				<td colspan="2" class="header">Org: {{this.field_def.mailshot_field}}</td>
+			</tr>
+			<tr>
+				<td class="zendesk" style="width: 200px; height: 20px; overflow: hidden; font-size: 6px" width="200">-</td>
+				<td class="mailchimp" style="width: 200px; height: 20px; overflow: hidden; font-size: 6px" width="200">{{this.value}}</td>
+			</tr>
+			{{/each}}
 			</table>
 		{{/if}}
   </div>
