@@ -593,7 +593,7 @@ console.log ("INSERT CODE HERE TO ADD UPDATE USER IN MAILCHIMP VIA MAILCHIMP API
 
 		console.log( "started retrievedMailchimpSubscriber with the following object:" );
 		console.dir( returnedMailchimpUser ); console.log( "" );
-
+                
 		this.mailshot_sync_user = 
 		{
 			email_address: returnedMailchimpUser.email_address,
@@ -777,7 +777,7 @@ console.log ("INSERT CODE HERE TO ADD UPDATE USER IN MAILCHIMP VIA MAILCHIMP API
 
 	switchToLoadingScreen: function( optionalMessage ) 
 	{
-		console.log( "started switchToLoadingScreen" );
+            console.log( "started switchToLoadingScreen" );
 	    this.switchTo( this.resources.TEMPLATE_NAME_LOADING, { optional_message: optionalMessage } );
 	},
 
