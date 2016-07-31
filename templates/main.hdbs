@@ -1,5 +1,4 @@
 <div class="user_page">
-	<div class="page_content">
 		<div class="btn-group" data-toggle="buttons-radio" style="text-align: center">
 		    <span>
 				{{#if buttons.exclude.show}}<button class="btn exclude{{buttons.exclude.classNameInsert}}">Exclude</button>{{/if}}
@@ -7,6 +6,7 @@
 				{{#if buttons.standard.show}}<button class="btn standard{{buttons.standard.classNameInsert}}">Standard</button>{{/if}}
 			</span>
 		</div>
+	<div class="page_content"{{#if monkey_URL}} style="background-image: url('{{monkey_URL}}');"{{/if}}>
 		{{#if display_params.customer_type_not_set}}
 			<div class="information-text">
 				<p class="warning">{{zendesk_user.name}} is not configured for Mailshots<br/>How should his/her emails be branded?</p>
@@ -18,45 +18,70 @@
 			</div>
 		{{/if}}
 		{{#if display_params.customer_type_included}}
-			<table class="temp" border="1">
-			<tr>
-				<td colspan="2" class="header">ID</td>
-			</tr>
-			<tr>
-				<td class="zendesk">{{zendesk_user.id}}</td>
-				<td class="mailchimp"></td>
-			</tr>
-			<tr>
-				<td colspan="2" class="header">Email Address</td>
-			</tr>
-			<tr>
-				<td class="zendesk">{{zendesk_user.email}}</td>
-				<td class="mailchimp">{{mailchimp_user.email_address}}</td>
-			</tr>
-			<tr>
-				<td colspan="2" class="header">Name</td>
-			</tr>
-			<tr>
-				<td class="zendesk">{{zendesk_user.name}}</td>
-				<td class="mailchimp">{{mailchimp_user.forename}}|{{mailchimp_user.surname}}</td>
-			</tr>
-			<tr>
-				<td colspan="2" class="header">Customer Type</td>
-			</tr>
-			<tr>
-				<td class="zendesk">{{zendesk_user.customer_type}}</td>
-				<td class="mailchimp">{{mailchimp_user.customer_type}}</td>
-			</tr>
-			{{#each mailchimp_user.organization_fields}}
-			<tr>
-				<td colspan="2" class="header">Org: {{this.field_def.mailshot_field}}</td>
-			</tr>
-			<tr>
-				<td class="zendesk" style="width: 200px; height: 20px; overflow: hidden; font-size: 6px" width="200">-</td>
-				<td class="mailchimp" style="width: 200px; height: 20px; overflow: hidden; font-size: 6px" width="200">{{this.value}}</td>
-			</tr>
-			{{/each}}
-			</table>
+                    {{#if display_params.user_in_sync}}
+			<div class="information-text">
+				<p class="inactive">{{zendesk_user.name}} is in sync</p>
+			</div>
+                    {{/if}}
+                    {{#unless display_params.user_in_sync}}
+			<div class="information-text">
+				<p class="warning">{{zendesk_user.name}} is in out of sync</p>
+			</div>
+                        <a class="btn btn-large sync_popup" data-toggle="modal" data-target="#sync_modal">Synchronize</a>
+                    {{/unless}}
 		{{/if}}
   </div>
+</div>
+
+
+
+
+
+
+
+
+<!-- modal_popup -->
+<div id="sync_modal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+        <h3 class="my_modal_label">Synchronize User</h3>
+    </div>
+    <div class="modal-body">
+        <div class="user_sync_page">
+            <div class="page_content">
+                <table>
+                <tr>
+                    <td class="blank">&nbsp;</td>
+                    <td class="zdheading">Zendesk User</td>
+                    <td class="mcheading">Mailchimp User</td>
+                </tr>
+                <tr>
+                    <td class="field_heading">Email Address</td>
+                    <td class="zd value">{{zendesk_user.email}}</td>
+                    <td class="mc value">{{mailchimp_user.email_address}}</td>
+                </tr>          
+                <tr>
+                    <td class="field_heading">Name</td>
+                    <td class="zd value">{{zendesk_user.name}}</td>
+                    <td class="mc value">{{mailchimp_user.forename}} {{mailchimp_user.surname}}</td>
+                </tr>
+                <tr>
+                    <td class="field_heading">Customer Type</td>
+                    <td class="zd value">{{zendesk_user.customer_type}}</td>
+                    <td class="mc value">{{mailchimp_user.customer_type}}</td>
+                </tr>
+                {{#each mailchimp_user.organization_fields}}
+                <tr>
+                    <td class="org field_heading">{{this.field_def.mailshot_field}}</td>
+                    <td class="zd value">-</td>
+                   <td class="mc value">{{this.value}}</td> 
+                </tr>
+                {{/each}}
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+    </div>
 </div>
