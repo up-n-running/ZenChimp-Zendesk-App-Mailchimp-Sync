@@ -270,6 +270,9 @@ console.log("Loading app.js");
     	console.log( "This =" );
         console.dir( this );
         
+        //get CommonJS Modules
+        this.zendeskObjectsModule = require('ZendeskObjects');
+        
         //Get Settings from manifest.js
         this.mailchimp_api_key = this.setting('mailchimp_api_key');
         this.mailchimp_datacentre_prefix = this.setting('mailchimp_datacentre_prefix');
@@ -322,69 +325,8 @@ console.log("Loading app.js");
         //kill mailshot sync user as we're starting again from scratch
         this.mailshot_sync_user = null;
     },
-
-    createZendeskUserObject: function(appObject, id, name, email, customer_type)
-    {
-        var zendeskUserToReturn = {
-            id: id,
-            name: name,
-            email: email,
-            customer_type: customer_type,
-            organization: null,
-            extra_user_fields: [],
-            clone: function()
-            {
-                return {    
-                    id: this.id,
-                    name: this.name,
-                    email: this.email,
-                    customer_type: this.customer_type,
-                    organization: ( this.organization === null) ? null : this.organization.clone(),
-                    extra_user_fields: ( this.extra_user_fields === null) ? null : this.extra_user_fields.slice(0)
-                };
-            },
-            isNotset: function() { return this.customer_type === appObject.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_NOT_SET },
-            isExcluded: function() { return this.customer_type === appObject.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_EXCLUDE },
-            isOrganization: function() { return this.customer_type === appObject.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_USE_ORGANIZATION },
-            isDefault: function() { return this.customer_type === appObject.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_USE_DEFAULT }
-        };
-        
-        for(var i = 0; i < appObject.user_field_mappings.length; i++) 
-        {
-            zendeskUserToReturn.extra_user_fields[ i ] = { field_def: this.user_field_mappings[ i ], value: null };
-        }        
-        
-        return zendeskUserToReturn;
-    },
     
-    createZendeskOrganizationObject: function( appObject, id, name, customer_type )
-    {
-        var zendeskOrgToReturn = {
-            id: id,
-            name: name,
-            customer_type: customer_type,
-            extra_org_fields: [],
-            clone: function()
-            {
-                return {    
-                    id: this.id,
-                    name: this.name,
-                    customer_type: this.customer_type,
-                    extra_org_fields: ( this.extra_org_fields === null) ? null : this.extra_org_fields.slice(0)
-                };
-            }   
-        };
-        
-        for(var i = 0; i < appObject.organization_field_mappings.length; i++) 
-        {
-            zendeskOrgToReturn.extra_org_fields[ i ] = { field_def: this.organization_field_mappings[ i ], value: null };
-        }        
-        
-        return zendeskOrgToReturn;
-    },
-
-
-    getUserFromFrameworkInUserSidebarLocation: function()
+        getUserFromFrameworkInUserSidebarLocation: function()
     {
         console.log( 'Starting getUserFromFrameworkInUserSidebarLocation' );
         console.log( 'this.user() object from framework = ' );
@@ -396,16 +338,23 @@ console.log("Loading app.js");
         console.log( 'this.user().organizations()[0] object from framework = ' );
         console.dir( this.user().organizations()[0] );
 
-        this.zendesk_user = this.createZendeskUserObject(
-                this,
-                this.user().id(),
-                this.user().name(),
-                this.user().email(),
-                this.user().customField( this.resources.USER_FIELD_NAME_CUSTOMER_TYPE ) 
+        this.zendesk_user = new this.zendeskObjectsModule.ZendeskUser( //this.createZendeskUserObject(
+            this,
+            this.user().id(),
+            this.user().name(),
+            this.user().email(),
+            this.user().customField( this.resources.USER_FIELD_NAME_CUSTOMER_TYPE ) 
         );
 //ADD FOR LOOP HERE TO GET EXTRA USER FIELDS AND EXTRA ORG FIELDS
-        this.zendesk_user.organization = ( typeof( this.user().organizations()[0] ) === 'undefined' ) ? null : this.createZendeskOrganizationObject( this, this.user().organizations()[0].id(), this.user().organizations()[0].name() ),
-         
+
+        //popupate org object if one is set on user record
+        if( typeof( this.user().organizations()[0] ) !== 'undefined' && this.user().organizations()[0] !== null )
+        {
+            console.log( "Found Organization Object" );
+            console.dir( this.user().organizations()[0] );
+            this.zendesk_user.organization = new this.zendeskObjectsModule.ZendeskOrganization( this, this.user().organizations()[0].id(), this.user().organizations()[0].name() );
+        }
+        
         console.log( "just got user from user screen, testing clone function" );
         console.dir( this.zendesk_user.clone() );
         
@@ -420,12 +369,21 @@ console.log("Loading app.js");
     {
         this.zendesk_user = this.createZendeskUserFromAPIReturnData( userObjectFromDataAPI );
 
+        console.log( "mid getZendeskUser_Done, this.zendesk_user = " );
+        console.dir( this.zendesk_user );
+       
         //now get organization object to go with it
-        this.switchToLoadingScreen( "Loading Organization" );
-        this.ajax( 'getZendeskOrganizations', this.zendesk_user.id, this.zendesk_user.organization.id );
-
-        //now we've got user go to main template
-        //this.switchToMainTemplate();
+        if( this.zendesk_user.organization !== null )
+        {
+            this.switchToLoadingScreen( "Loading Organization" );
+            this.ajax( 'getZendeskOrganizations', this.zendesk_user.id, this.zendesk_user.organization.id );
+        }
+        //otherwise we've finished getting the user object
+        else
+        {
+            console.log( "finished loading user, switching to form as not sure what else to do just yet" );
+            this.switchToMainTemplate();
+        }
     },
 
     updateZendeskUser_Done: function( userObjectFromDataAPI )
@@ -445,9 +403,9 @@ console.log("Loading app.js");
 
         var zendeskUserObjectToReturn = null;
 
-        if( userObjectFromDataAPI != null )
+        if( userObjectFromDataAPI !== null )
         {
-            zendeskUserObjectToReturn = this.createZendeskUserObject(
+            zendeskUserObjectToReturn = new this.zendeskObjectsModule.ZendeskUser( //this.createZendeskUserObject( this.createZendeskUserObject(
                 this, 
                 userObjectFromDataAPI.user.id,
                 userObjectFromDataAPI.user.name,
@@ -455,9 +413,16 @@ console.log("Loading app.js");
                 userObjectFromDataAPI.user.user_fields.mailshot_customer_type
             );
             
-            //ORG_ID: userObjectFromDataAPI.user.organization_id,
-            zendeskUserObjectToReturn.organization = ( userObjectFromDataAPI.user.organization_id === null ) ? null : this.createZendeskOrganizationObject( this, userObjectFromDataAPI.user.organization_id, null, null );
+            //set organization object to store id if there is one
+            if( typeof( userObjectFromDataAPI.user.organization_id ) !== 'undefined' && userObjectFromDataAPI.user.organization_id !== null )
+            {
+                console.log( "User has organization with id:" );
+                console.dir( userObjectFromDataAPI.user.organization_id );
+                zendeskUserObjectToReturn.organization = new this.zendeskObjectsModule.ZendeskOrganization( this, userObjectFromDataAPI.user.organization_id, null, null );
+            }
             
+            //populate extra_user_fields from returned user object
+//REPLACE WITH CALL TO INLINE OBJECT FUNCTION
             for(var i = 0; i < zendeskUserObjectToReturn.extra_user_fields.length; i++) 
             {
                 zendeskUserObjectToReturn.extra_user_fields[ i ].value = userObjectFromDataAPI.user.user_fields[ zendeskUserObjectToReturn.extra_user_fields[ i ].zendesk_field ];
@@ -491,11 +456,11 @@ console.log("Loading app.js");
 
         var organizationObjectToReturn = null;
 
-        if( organizationObjectFromDataAPI != null && typeof( organizationObjectFromDataAPI.organization ) !== "undefined" )
+        if( typeof( organizationObjectFromDataAPI ) !== "undefined" && organizationObjectFromDataAPI !== null && typeof( organizationObjectFromDataAPI.organization ) !== "undefined" )
         {
-            if( organizationObjectFromDataAPI.organization != null )
+            if( organizationObjectFromDataAPI.organization !== null )
             {
-                organizationObjectToReturn = this.createZendeskOrganizationObject(
+                organizationObjectToReturn = new this.zendeskObjectsModule.ZendeskOrganization(
                     this,
                     organizationObjectFromDataAPI.organization.id,
                     organizationObjectFromDataAPI.organization.name,
@@ -507,8 +472,6 @@ console.log("Loading app.js");
                 } 
             }
         }
-
-
         else console.warn( "createZendeskOrganizationFromAPIReturnData called but organizationObjectFromDataAPI = null or doesnt contain a organization property - this should never happen!");
 
         console.log( 'Finished createZendeskOrganizationFromAPIReturnData, organizationObjectToReturn = ' );
@@ -793,7 +756,7 @@ console.log ("INSERT CODE HERE TO ADD UPDATE USER IN MAILCHIMP VIA MAILCHIMP API
 	organizationButtonOnClick: function()
 	{
 		console.log( "started organizationButtonOnClick" );
-		if( this.currentLocation() == this.resources.APP_LOCATION_USER )
+		if( this.currentLocation() === this.resources.APP_LOCATION_USER )
 		{
 			console.dir(  this.user().customField( this.resources.USER_FIELD_NAME_CUSTOMER_TYPE, this.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_USE_ORGANIZATION ) );
 		    //this triggers userScreenCustomerTypeFieldChanged to be changed so no need to make any further calls
@@ -867,7 +830,7 @@ console.log ("INSERT CODE HERE TO ADD UPDATE USER IN MAILCHIMP VIA MAILCHIMP API
             'buttons': 
             {
                 'exclude': { 'show': true, 'classNameInsert': this.zendesk_user.isExcluded() ? " active" : "" },
-                'organization': { 'show': ( this.zendesk_user.organization != null ), 'classNameInsert': this.zendesk_user.isOrganization() ? " active" : "" },
+                'organization': { 'show': ( this.zendesk_user.organization !== null ), 'classNameInsert': this.zendesk_user.isOrganization() ? " active" : "" },
                 'standard': { 'show': true, 'classNameInsert': this.zendesk_user.isDefault() ? " active" : "" }
             },
             'display_params':
@@ -908,12 +871,3 @@ console.log ("INSERT CODE HERE TO ADD UPDATE USER IN MAILCHIMP VIA MAILCHIMP API
   };
 
 }());
-
-
-
-
-
-
-
-
-
