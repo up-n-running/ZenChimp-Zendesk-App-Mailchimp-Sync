@@ -55,26 +55,11 @@
                     <td class="zdheading">Zendesk User</td>
                     <td class="mcheading">Mailchimp User</td>
                 </tr>
+                {{#each sync_fields}}
                 <tr>
-                    <td class="field_heading">Email Address</td>
-                    <td class="zd value">{{zendesk_user.email}}</td>
-                    <td class="mc value">{{mailchimp_user.email_address}}</td>
-                </tr>          
-                <tr>
-                    <td class="field_heading">Name</td>
-                    <td class="zd value">{{zendesk_user.name}}</td>
-                    <td class="mc value">{{mailchimp_user.forename}} {{mailchimp_user.surname}}</td>
-                </tr>
-                <tr>
-                    <td class="field_heading">Customer Type</td>
-                    <td class="zd value">{{zendesk_user.customer_type}}</td>
-                    <td class="mc value">{{mailchimp_user.customer_type}}</td>
-                </tr>
-                {{#each mailchimp_user.organization_fields}}
-                <tr>
-                    <td class="org field_heading">{{this.field_def.mailshot_field}}</td>
-                    <td class="zd value">-</td>
-                   <td class="mc value">{{this.value}}</td> 
+                    <td class="field_heading{{#unless this.in_sync}}_out-of-sync{{/unless}}">{{this.label}}</td>
+                    <td class="zd{{#if this.mc_only}}_disabled{{/if}} value">{{this.zd_value}}</td>
+                    <td class="mc value">{{this.mc_value}}</td> 
                 </tr>
                 {{/each}}
                 </table>

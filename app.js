@@ -49,9 +49,9 @@ console.log("Loading app.js");
 
         //mailchimp v3 api requests
         'getMailChimpListMember.done'			: 'retrievedMailchimpSubscriber',
-        'getMailChimpListMember.fail'			: 'switchToErrorMessage',
+        'getMailChimpListMember.fail'			: 'get_or_createOrUpadateMailChimpListMember_OnFail',
         'createOrUpadateMailChimpListMember.done'	: 'createOrUpadateMailChimpListMember_Done',
-        'createOrUpadateMailChimpListMember.fail'	: 'createOrUpadateMailChimpListMember_OnFail',   
+        'createOrUpadateMailChimpListMember.fail'	: 'get_or_createOrUpadateMailChimpListMember_OnFail',   
 
         //buttons on main form
         'click .exclude'            : 'excludeButtonOnClick',
@@ -62,7 +62,8 @@ console.log("Loading app.js");
         //buttons on error form
         'click .error_go_back'            : 'resetAppAfterInitialization',
         'click .error_override_mailchimp' : 'createOrUpadateMailChimpListMember_Override_OnClick',
-
+        'click .error_create_new_mailchimp' : 'createOrUpadateMailChimpListMember_Add_New_OnClick',
+            
         //modal sync screen events  //show shown hide hidden
     //    'hidden #sync_modal'    : 'afterHidden',
 
@@ -115,7 +116,7 @@ console.log("Loading app.js");
     	{
             var userApiCallSettings = 
             {
-                url: ( typeof( organizationId ) != "undefined" && organizationId != null ) ? helpers.fmt('/api/v2/organizations/%@.json', organizationId) : helpers.fmt('/api/v2/users/%@/organizations.json', userId),
+                url: ( typeof( organizationId ) !== "undefined" && organizationId !== null ) ? helpers.fmt('/api/v2/organizations/%@.json', organizationId) : helpers.fmt('/api/v2/users/%@/organizations.json', userId),
                 type:'GET',
                 dataType: 'json'
             };
@@ -181,7 +182,7 @@ console.log("Loading app.js");
         createOrUpadateMailChimpListMember: function( mailchimpSyncUser, updateNotCreate )
         {
 
-            if( mailchimpSyncUser == null || mailchimpSyncUser.email_address == null )
+            if( mailchimpSyncUser === null || mailchimpSyncUser.email_address == null )
             {
                 return console.warn( "ERROR CONDITION: createOrUpadateMailChimpListMember called with either null user or user with no email address" );
             }
@@ -200,7 +201,7 @@ console.log("Loading app.js");
                 "merge_fields":
                 {  //these will be populated below
                 },
-                "vip": ( mailchimpSyncUser.customer_type == this.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_USE_ORGANIZATION )
+                "vip": ( mailchimpSyncUser.customer_type === this.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_USE_ORGANIZATION )
             };
 
             //mandatory merge fields
@@ -234,7 +235,7 @@ console.log("Loading app.js");
         deleteMailChimpListMember: function( mailchimpSyncUser )
         {
 
-            if( mailchimpSyncUser == null || mailchimpSyncUser.email_address == null )
+            if( mailchimpSyncUser === null || mailchimpSyncUser.email_address === null )
             {
                 return console.warn( "ERROR CONDITION: deleteMailChimpListMember called with either null user or user with no email address" );
             }
@@ -336,7 +337,7 @@ console.log("Loading app.js");
         console.dir( this.zendesk_user );
        
         //now populate the users obganization object through another API call but only if we need it (user type = organization )
-        if( this.zendesk_user.isOrganization() !== null && this.zendesk_user.belongsToOrganization() )
+        if( this.zendesk_user.isOrganization() && this.zendesk_user.belongsToOrganization() )
         {
             this.switchToLoadingScreen( "Loading Organization" );
             this.ajax( 'getZendeskOrganizations', this.zendesk_user.id, this.zendesk_user.organization_id );
@@ -358,7 +359,10 @@ console.log("Loading app.js");
 
         if( userObjectFromDataAPI !== null )
         {
-            zendeskUserObjectToReturn = new this.zendeskObjectsModule.ZendeskUser( //this.createZendeskUserObject( this.createZendeskUserObject(
+            //var zdr = new require( "ZendeskObjects" );
+            //zdr
+            //zendeskUserObjectToReturn = new zdr.ZendeskUser.call( this, //this.createZendeskUserObject( this.createZendeskUserObject(
+            zendeskUserObjectToReturn = new this.ZendeskObjects.ZendeskUser(
                 this, 
                 userObjectFromDataAPI.user.id,
                 userObjectFromDataAPI.user.name,
@@ -366,7 +370,8 @@ console.log("Loading app.js");
                 userObjectFromDataAPI.user.user_fields.mailshot_customer_type,
                 ( typeof( userObjectFromDataAPI.user.organization_id ) !== 'undefined' && userObjectFromDataAPI.user.organization_id !== null ) ? userObjectFromDataAPI.user.organization_id : null //being careful as sometimes users can be set to link through to more than one org depending on admin settings
             );
-
+        console.log( 'mid createZendeskUserFromAPIReturnData, just called constructor zendeskUserObjectToReturn = ' );
+        console.dir( zendeskUserObjectToReturn );
             //now set the optional extra user fields from returned API data
             zendeskUserObjectToReturn.populateExtraFieldsFromUserAPIData( userObjectFromDataAPI.user );
             
@@ -394,7 +399,8 @@ console.log("Loading app.js");
         var usersOrgObject = ( typeof( this.user().organizations()[0] ) !== 'undefined' && this.user().organizations()[0] !== null ) ? this.user().organizations()[0] : null;
         
         //initialize user object
-        this.zendesk_user = new this.zendeskObjectsModule.ZendeskUser( //this.createZendeskUserObject(
+        //this.zendesk_user = new this.zendeskObjectsModule.ZendeskUser( //this.createZendeskUserObject(
+        this.zendesk_user = new this.ZendeskObjects.ZendeskUser(
             this,
             this.user().id(),
             this.user().name(),
@@ -413,7 +419,7 @@ console.log("Loading app.js");
         {
             console.log( "Found Organization Object" );
             console.dir( usersOrgObject );
-            this.zendesk_user.orgObject = new this.zendeskObjectsModule.ZendeskOrganization( this, usersOrgObject.id(), usersOrgObject.name() );
+            this.zendesk_user.orgObject = new this.ZendeskObjects.ZendeskOrganization( this, usersOrgObject.id(), usersOrgObject.name() );
             this.zendesk_user.orgObject.populateExtraFieldsFromFrameworkOrgObject( usersOrgObject );
         }
         
@@ -428,18 +434,23 @@ console.log("Loading app.js");
     {
         var returnedUser = this.createZendeskUserFromAPIReturnData( userObjectFromDataAPI );
         returnedUser.orgObject = this.zendesk_user.orgObject;  //user object was updated but the org object wasn't so copy the proper org object from org API call on init for this basic one created by the above method
+        var oldCustomerType = this.zendesk_user.customer_type;
         this.zendesk_user = returnedUser;
         
+        console.log( "updateZendeskUser_Done = got user back from API data and reattached old organization from old user, this.zendesk_user = ");
+        console.dir( this.zendesk_user );
         //now populate the users obganization object through another API call but only if we need it (user type = organization )
-        if( this.zendesk_user.isOrganization() !== null && this.zendesk_user.belongsToOrganization() )
+        if( !this.zendesk_user.isOrganization() && this.zendesk_user.belongsToOrganization() && !this.zendesk_user.orgObjectIsPopulated())
         {
+            //changeCustomerType as yet because we still need to load organization object so register the change necessary on user object temporarily
+            this.zendesk_user.callChangeCustomerTypeAfterFullyLoadedWithOldType=oldCustomerType;
             this.switchToLoadingScreen( "Loading Organization" );
             this.ajax( 'getZendeskOrganizations', this.zendesk_user.id, this.zendesk_user.organization_id );
         }
         else
         {
-            //nothing left to do
-            this.switchToMainTemplate();
+            //nothing left to do - so register the new customer type in order to delete mailchimp member if necessary
+            this.changeCustomerType( oldCustomerType, this.zendesk_user.customer_type );
         }     
     },
 
@@ -450,9 +461,19 @@ console.log("Loading app.js");
         console.dir( organizationObjectFromDataAPI );
 
         this.zendesk_user.orgObject = this.createZendeskOrganizationFromAPIReturnData( organizationObjectFromDataAPI );
-
-        //we now have full populated user object complete with org object
-        this.fetchMailchimpObjectIfNecessary();
+        
+        //was this load as a result of pressing the "organization" button?
+        if( typeof( this.zendesk_user.callChangeCustomerTypeAfterFullyLoadedWithOldType ) !== "undefined" && this.zendesk_user.callChangeCustomerTypeAfterFullyLoadedWithOldType !== null )
+        {
+            var oldType = this.zendesk_user.callChangeCustomerTypeAfterFullyLoadedWithOldType;
+            this.zendesk_user.callChangeCustomerTypeAfterFullyLoadedWithOldType = null;
+            this.changeCustomerType( oldType, this.zendesk_user.customer_type );
+        }
+        else
+        {
+            //we now have full populated user object to save complete with org object and no more changes so continue to load form
+            this.fetchMailchimpObjectIfNecessary();
+        }
     },
 
 	createZendeskOrganizationFromAPIReturnData: function( organizationObjectFromDataAPI )
@@ -466,7 +487,7 @@ console.log("Loading app.js");
         {
             if( organizationObjectFromDataAPI.organization !== null )
             {
-                organizationObjectToReturn = new this.zendeskObjectsModule.ZendeskOrganization(
+                organizationObjectToReturn = new this.ZendeskObjects.ZendeskOrganization(
                     this,
                     organizationObjectFromDataAPI.organization.id,
                     organizationObjectFromDataAPI.organization.name,
@@ -485,7 +506,7 @@ console.log("Loading app.js");
     
     fetchMailchimpObjectIfNecessary: function()
     {
-        console.log( 'Starting finishedFetchingUserObject' );
+        console.log( 'Starting fetchMailchimpObjectIfNecessary' );
 
         //if it's included in the mailchimp sync and we dont already have the mailchimp user then get it
         if( this.zendesk_user.isIncluded() && this.mailshot_sync_user === null )
@@ -498,7 +519,7 @@ console.log("Loading app.js");
             this.switchToMainTemplate();
         }
 
-        console.log( 'Finished finishedFetchingUserObject' );
+        console.log( 'Finished fetchMailchimpObjectIfNecessary' );
     },
     
 /*
@@ -526,15 +547,14 @@ console.log("Loading app.js");
 		}
 		else console.warn( "userDataInitialized called but this.zendesk_user = null - this should never happen!");
 	},  
-*/
+
 	retrievedMailchimpAllListSubscribers: function( mailchimpSubscriberList ) 
 	{
-
 		console.log( "started retrievedMailchimpAllListSubscribers with the following object:" );
 		console.dir( mailchimpSubscriberList ); console.log( "" );
 		//this.switchToMainTemplate();
 	},	
-
+*/
 	changeCustomerType: function( oldType, newType ) 
 	{
 		console.log( "changeCustomerType called" );
@@ -546,17 +566,15 @@ console.log("Loading app.js");
 		//NOW TAKE APPROPRIATE ACTION DEPENDING ON OLD AND NEW VALUE
 
 		//if NOT SET or EXCLUDE were selected 
-		if( newType == this.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_NOT_SET || newType == this.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_EXCLUDE  )
+		if( newType === this.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_NOT_SET || newType === this.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_EXCLUDE  )
 		{
 			//if NOT SET or EXCLUDE were selected AND it was previously set to STANDARD or ORGANIZATION
-			if( oldType == this.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_USE_DEFAULT || oldType == this.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_USE_ORGANIZATION )
+			if( oldType === this.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_USE_DEFAULT || oldType === this.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_USE_ORGANIZATION )
 			{
 				this.deleteExistingUserFromMailchimp( this.mailshot_sync_user );
-				//reload the app with new updated user object
-				this.switchToLoadingScreen();
 			}
 			//if NOT SET or EXCLUDE were selected AND it was previously set to the other one
-			if( oldType != newType )
+			if( oldType !== newType )
 			{
 				//reload the app template with new updated user object - no need to call mailchimp API
 				this.switchToMainTemplate();
@@ -564,10 +582,10 @@ console.log("Loading app.js");
 		}
 
 		//if ORGANIZATION or STANDARD was selected
-		if( newType == this.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_USE_ORGANIZATION || newType == this.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_USE_DEFAULT  )
+		if( newType === this.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_USE_ORGANIZATION || newType === this.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_USE_DEFAULT  )
 		{
 			//if ORGANIZATION or STANDARD  were selected AND it was previously set to EXCLUDE or NOT SET
-			if( oldType == this.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_EXCLUDE || oldType == this.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_NOT_SET )
+			if( oldType === this.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_EXCLUDE || oldType === this.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_NOT_SET )
 			{
 				this.syncNewUserToMailchimp( this.zendesk_user );
 				//then probably remove the line of code below
@@ -591,22 +609,33 @@ console.log ("INSERT CODE HERE TO ADD UPDATE USER IN MAILCHIMP VIA MAILCHIMP API
 
 		console.log( "started retrievedMailchimpSubscriber with the following object:" );
 		console.dir( returnedMailchimpUser ); console.log( "" );
-                
+
 		this.mailshot_sync_user = 
 		{
 			email_address: returnedMailchimpUser.email_address,
 			status: "subscribed",
 			forename: returnedMailchimpUser.merge_fields[ this.mailchimp_merge_field_forename ],
 			surname: returnedMailchimpUser.merge_fields[ this.mailchimp_merge_field_surname  ],
-			//organization: this.cloneUserToSyncOrganisationObject( zendeskSyncUserObject.orgObject ),
-			customer_type: returnedMailchimpUser.merge_fields[ this.customer_type_field_mapping.merge_field ],
-			organization_fields: []
+			customer_type: returnedMailchimpUser.merge_fields[ this.customer_type_field_mapping.mailshot_field ],
+			extra_merge_fields: []
 		};
-		//fetch values for organisation fields
+        
+		var arrayIndex = 0;
+		for (var i=0; i < this.user_field_mappings.length; i++) 
+		{
+			this.mailshot_sync_user.extra_merge_fields[ arrayIndex ] = { field_def: this.user_field_mappings[ i ], value: returnedMailchimpUser.merge_fields[ this.user_field_mappings[ i ].mailshot_field ]};
+			arrayIndex++;
+		}
 		for(var i = 0; i < this.organization_field_mappings.length; i++) 
 		{
-			this.mailshot_sync_user.organization_fields[ i ] = { field_def: this.organization_field_mappings[ i ], value: returnedMailchimpUser.merge_fields[ this.organization_field_mappings[ i ].mailshot_field ] };
-		}
+            this.mailshot_sync_user.extra_merge_fields[ arrayIndex ] = { field_def: this.organization_field_mappings[ i ], value: returnedMailchimpUser.merge_fields[ this.organization_field_mappings[ i ].mailshot_field ] };
+            arrayIndex++;
+        }
+		for (i=0; i < this.mailshot_only_field_mappings.length; i++) 
+		{
+			this.mailshot_sync_user.extra_merge_fields[ arrayIndex ] = { field_def: this.mailshot_only_field_mappings[ i ], value: returnedMailchimpUser.merge_fields[ this.mailshot_only_field_mappings[ i ].mailshot_field ] };
+			arrayIndex++;
+		}        
 
 		console.log( "this.mailshot_sync_user has now been set to" );
 		console.dir( this.mailshot_sync_user ); console.log( "" );
@@ -621,21 +650,40 @@ console.log ("INSERT CODE HERE TO ADD UPDATE USER IN MAILCHIMP VIA MAILCHIMP API
 
 		var newMailChimpUserToSave = this.createNewMailchimpSyncUserObject( zendeskUser );
 
+		console.log( "created mailchimp user object to sync new =");
+		console.dir( newMailChimpUserToSave );
+
+		this.switchToLoadingScreen( "Adding Mailchimp Member" );
+		this.ajax( "createOrUpadateMailChimpListMember", newMailChimpUserToSave, false );
+	},
+   /* 
+	updateUserInMailchimp: function( mailchimpUser ) 
+	{
+		console.log( "updateUserInMailchimp called with mailchimp =");
+		console.dir( zendeskUser );
+
+		var newMailChimpUserToSave = this.createNewMailchimpSyncUserObject( zendeskUser );
+
 		console.log( "created mailchimp user object to save =");
 		console.dir( newMailChimpUserToSave );
 
 		this.switchToLoadingScreen( "Adding Mailchimp Member" );
 		this.ajax( "createOrUpadateMailChimpListMember", newMailChimpUserToSave, false );
 	},
-
-	syncExistingUserToMailchimp: function( mailchimpUser ) 
+*/
+	syncExistingUserToMailchimp: function( zendeskUser ) 
 	{
-		console.log( "syncExistingUserToMailchimp called with mailchimp user =");
-		console.dir( mailchimpUser );
+		console.log( "syncExistingUserToMailchimp called with zendesk user =");
+		console.dir( zendeskUser );
+
+		var newMailChimpUserToSave = this.createNewMailchimpSyncUserObject( zendeskUser );
+
+		console.log( "created mailchimp user object to sync existing =");
+		console.dir( newMailChimpUserToSave );
 
 		this.switchToLoadingScreen( "Updating Mailchimp Member" );
-    	this.ajax( "createOrUpadateMailChimpListMember", mailchimpUser, true );
-    },
+		this.ajax( "createOrUpadateMailChimpListMember", newMailChimpUserToSave, true );
+	},
 
 	deleteExistingUserFromMailchimp: function( mailchimpUser ) 
     {
@@ -646,7 +694,7 @@ console.log ("INSERT CODE HERE TO ADD UPDATE USER IN MAILCHIMP VIA MAILCHIMP API
     	this.ajax( "deleteMailChimpListMember", mailchimpUser );
     },
 
-	createOrUpadateMailChimpListMember_OnFail: function( errorResponse ) 
+	get_or_createOrUpadateMailChimpListMember_OnFail: function( errorResponse ) 
 	{
 		console.log( "started createOrUpadateMailChimpListMember_OnFail with the following object:" );
 		console.dir( errorResponse ); console.log( "" );
@@ -659,6 +707,10 @@ console.log ("INSERT CODE HERE TO ADD UPDATE USER IN MAILCHIMP VIA MAILCHIMP API
 			if( errorResponse.status === 400 && responseTextJSON.title === "Member Exists" )
 			{
 				return this.switchToErrorMessage( errorResponse, this.zendesk_user.email + " already exists in mailchimp.<br /><br/>Do you want to override his/her details?", "Override", "error_override_mailchimp" );
+			}
+			if( errorResponse.status === 404 && responseTextJSON.title === "Resource Not Found" )
+			{
+				return this.switchToErrorMessage( errorResponse, this.zendesk_user.email + " doesn't exist im mailchimp.<br /><br/>Do you want to create a new record for him/her?", "Create New", "error_create_new_mailchimp" );
 			}
 	    }catch(e)
 	    {
@@ -673,10 +725,22 @@ console.log ("INSERT CODE HERE TO ADD UPDATE USER IN MAILCHIMP VIA MAILCHIMP API
 
 		var newMailChimpUserToSave = this.createNewMailchimpSyncUserObject( this.zendesk_user );
 
-    	console.log( "created mailchimp user object to save =");
+    	console.log( "created mailchimp user object to override =");
 		console.dir( newMailChimpUserToSave );
 //newMailChimpUserToSave.id = 'd6acc35fdec6b59208c6e7e6440aeb84';
 		this.syncExistingUserToMailchimp( newMailChimpUserToSave );
+	},
+    
+    createOrUpadateMailChimpListMember_Add_New_OnClick: function() 
+	{
+		console.log( "started createOrUpadateMailChimpListMember_Add_New_OnClick" );
+
+		//var newMailChimpUserToSave = this.createNewMailchimpSyncUserObject( this.zendesk_user );
+
+    	//console.log( "created mailchimp user object to add new =");
+		//console.dir( newMailChimpUserToSave );
+//newMailChimpUserToSave.id = 'd6acc35fdec6b59208c6e7e6440aeb84';
+		this.syncNewUserToMailchimp( this.zendesk_user );
 	},
 
 	createOrUpadateMailChimpListMember_Done: function( returnedMailchimpUser ) 
@@ -693,13 +757,21 @@ console.log ("INSERT CODE HERE TO ADD UPDATE USER IN MAILCHIMP VIA MAILCHIMP API
 		console.log( "started createNewMailchimpSyncUserObject with the following zendesk user object:" );
 		console.dir( zendeskSyncUserObject ); console.log( "" );
 
-    	if(zendeskSyncUserObject == null )
+    	var useDefaultOrgValues = zendeskSyncUserObject.customer_type === this.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_USE_DEFAULT;        
+ 
+        //Sanity checks
+    	if(zendeskSyncUserObject === null )
     	{
+            console.warn("createNewMailchimpSyncUserObject called with null zendeskSyncUserObject");
+    		return null;
+    	}
+        if(!useDefaultOrgValues && zendeskSyncUserObject.orgObject === null )
+    	{
+            console.warn("createNewMailchimpSyncUserObject called with customer type " + zendeskSyncUserObject.customer_type + " and  null zendeskSyncUserObject.orgObject");
     		return null;
     	}
 
     	//base object without extra merge fields
-    	var useDefaultOrgValues = zendeskSyncUserObject.customer_type === this.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_USE_DEFAULT;
 		var mailchimpUserToReturn =
 		{
 			email_address: zendeskSyncUserObject.email,
@@ -707,7 +779,7 @@ console.log ("INSERT CODE HERE TO ADD UPDATE USER IN MAILCHIMP VIA MAILCHIMP API
 			forename: zendeskSyncUserObject.name,
 			surname: "SURNAME",
 			//organization: this.cloneUserToSyncOrganisationObject( zendeskSyncUserObject.orgObject ),
-			customer_type: useDefaultOrgValues ? this.resources.MAILSHOT_FIELD_CUSTOMER_TYPE_DEFAULT_VALUE : "TEST_ONLY",
+			customer_type: zendeskSyncUserObject.getMailchimpCustomerType(),
 			extra_merge_fields: [],
             clone: function()
             {
@@ -724,9 +796,14 @@ console.log ("INSERT CODE HERE TO ADD UPDATE USER IN MAILCHIMP VIA MAILCHIMP API
 
 		//extra merge fields for organisation fields
 		var arrayIndex = 0;
+		for (var i=0; i < zendeskSyncUserObject.extra_user_fields.length; i++) 
+		{
+			mailchimpUserToReturn.extra_merge_fields[ arrayIndex ] = { field_def: zendeskSyncUserObject.extra_user_fields[ i ].field_def, value: ( zendeskSyncUserObject.extra_user_fields[ i ].value === null ) ? "" : zendeskSyncUserObject.extra_user_fields[ i ].value };
+			arrayIndex++;
+		}
 		for (var i=0; i < this.organization_field_mappings.length; i++) 
 		{
-			mailchimpUserToReturn.extra_merge_fields[ arrayIndex ] = { field_def: this.organization_field_mappings[ i ], value: useDefaultOrgValues ? this.organization_field_mappings[ i ].default_value : "TEST_ONLY" };
+			mailchimpUserToReturn.extra_merge_fields[ arrayIndex ] = { field_def: this.organization_field_mappings[ i ], value: useDefaultOrgValues ? this.organization_field_mappings[ i ].default_value : zendeskSyncUserObject.orgObject.extra_org_fields[ i ].value };
 			arrayIndex++;
 		}
 		for (i=0; i < this.mailshot_only_field_mappings.length; i++) 
@@ -758,7 +835,7 @@ console.log ("INSERT CODE HERE TO ADD UPDATE USER IN MAILCHIMP VIA MAILCHIMP API
 	excludeButtonOnClick: function()
 	{
 		console.log( "started excludeButtonOnClick" );
-		if( this.currentLocation() == this.resources.APP_LOCATION_USER )
+		if( this.currentLocation() === this.resources.APP_LOCATION_USER )
 		{
 			console.dir(  this.user().customField( this.resources.USER_FIELD_NAME_CUSTOMER_TYPE, this.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_EXCLUDE ) );
 		    //thsi triggers userScreenCustomerTypeFieldChanged to be changed so no need to make any further calls
@@ -848,6 +925,7 @@ console.log ("INSERT CODE HERE TO ADD UPDATE USER IN MAILCHIMP VIA MAILCHIMP API
         {
             'zendesk_user': this.zendesk_user,
             'mailchimp_user': this.mailshot_sync_user,
+            'sync_fields': this.zendesk_user.getFieldSyncInfo( this.mailshot_sync_user ),
             'monkey_URL': this.zendesk_user.isNotset() ? null : ( this.zendesk_user.isExcluded() ? this.assetURL( "exclude_monkey.png" ) : this.assetURL( "outofsync_monkey.png" ) ),
             'buttons': 
             {
@@ -878,18 +956,215 @@ console.log ("INSERT CODE HERE TO ADD UPDATE USER IN MAILCHIMP VIA MAILCHIMP API
         console.dir( errorResponse ); console.log( "" );
         console.log( "additionalButtonHandle:" );
         console.dir( additionalButtonHandle ); console.log( "" );
+        console.log( "overrideMessage:" );
+        console.dir( overrideMessage ); console.log( "" );
+
+        //check for catchall error conditions
+	    try
+	    {
+	        //var responseTextJSON = JSON.parse( errorResponse.responseText );
+
+			if( errorResponse.status === 0 && typeof( overrideMessage ) === "undefined" || overrideMessage === null || overrideMessage === "error" )
+			{
+				overrideMessage = "Could not connect to API, Please check your internet connection";
+			}
+	    }catch(e)
+	    {
+	    	
+	    }
 
         var formData = 
         {
           'errorResponse'			: errorResponse,
-          'overrideMessage' 		: ( typeof( overrideMessage ) === "undefined" ) ? null:  overrideMessage,
+          'overrideMessage' 		: ( typeof( overrideMessage ) === "undefined" || overrideMessage === "error") ? null:  overrideMessage, /* sometimes just the string error is passed as the 2nd param!) */
           'additionalButtonText' 	: ( typeof( additionalButtonText ) === "undefined" ) ? null : additionalButtonText,
           'additionalButtonHandle' 	: ( typeof( additionalButtonHandle ) === "undefined" ) ? null : additionalButtonHandle
         };
 
         this.switchTo( 'show_error', formData );
-    }
+    },
+    
+    //OBJECT DEFS
+    ZendeskObjects:
+    {
+        ZendeskOrganization: function( app, id, name, customer_type )
+        {
+            this.app = app;
+            this.id = id;
+            this.name = name;
+            this.customer_type = customer_type;
+            this.extra_org_fields = [];
 
+            for(var i = 0; i < app.organization_field_mappings.length; i++) 
+            {
+                this.extra_org_fields[ i ] = { field_def: app.organization_field_mappings[ i ], value: null };
+            };
+            
+            this.populateExtraFieldsFromOrganizationAPIData = function( APIOrgData )
+            {
+                for(var i = 0; i < this.extra_org_fields.length; i++) 
+                {
+                    this.extra_org_fields[ i ].value = APIOrgData.organization_fields[ this.extra_org_fields[ i ].field_def.zendesk_field ];
+                }
+            };
+            
+            this.populateExtraFieldsFromFrameworkOrgObject = function( frameworkOrgObject )
+            {
+                for(var i = 0; i < this.extra_org_fields.length; i++) 
+                {
+                    this.extra_org_fields[ i ].value = frameworkOrgObject.customField( this.extra_org_fields[ i ].field_def.zendesk_field );
+                }
+            };
+            this.clone = function()
+            {
+                var clonedOrganization = new this.app.ZendeskObjects.ZendeskOrganization( this.app, this.id, this.name, this.customer_type );
+                console.log( "cloning Org, this.name = '" + this.name + "', new ZendeskOrganization = ");
+                console.dir( clonedOrganization );
+                for(var i = 0; i < this.extra_org_fields.length; i++) 
+                {
+                    clonedOrganization.extra_org_fields[ i ] = { field_def: this.extra_org_fields[ i ].field_def, value: this.extra_org_fields[ i ].value };
+                }
+                console.log( "finished cloning Org, clonedOrganization = ");
+                console.dir( clonedOrganization );
+                return clonedOrganization;
+            };
+
+        },
+        
+        ZendeskUser: function(app, id, name, email, customer_type, organization_id)
+        {
+            //console.log( "Started ZendeskUser constructor with id=" + id + ", name = " + name + ", email = " + email +  ", customer_type = " + customer_type + ", app = ...");
+            //console.dir( app );
+            this.app = app;
+            this.id = id;
+            this.name = name;
+            this.email = email;
+            this.customer_type = customer_type;
+            this.organization_id = ( typeof( organization_id ) === "undefined" ) ? null : organization_id; //this is underd to store the org id even though this info if available inside the attached org object.
+            this.orgObject = null;  //this will only be instantiated when needed, not now, even if there is an organization id
+            this.extra_user_fields = [];
+
+            for(var i = 0; i < app.user_field_mappings.length; i++) 
+            {
+                this.extra_user_fields[ i ] = { field_def: app.user_field_mappings[ i ], value: null };
+            }
+
+            this.populateExtraFieldsFromUserAPIData = function( APIUserData )
+            {
+                for(var i = 0; i < this.extra_user_fields.length; i++) 
+                {
+                    this.extra_user_fields[ i ].value = APIUserData.user_fields[ this.extra_user_fields[ i ].field_def.zendesk_field ];
+                }
+            };
+            this.populateExtraFieldsFromFrameworkUserObject = function( frameworkUserObject )
+            {
+                for(var i = 0; i < this.extra_user_fields.length; i++) 
+                {
+                    this.extra_user_fields[ i ].value = frameworkUserObject.customField( this.extra_user_fields[ i ].field_def.zendesk_field );
+                }
+            };
+            /**
+             * inline clone function for user object - deep clones by calling organization.clone too
+             * @returns {nm$_ZendeskUser.ZendeskUser.prototype.clone.clonedUser|ZendeskUser.prototype.clone.clonedUser|nm$_ZendeskUser.ZendeskUser}
+             */
+            this.clone = function()
+            {
+                console.log( "Started ZendeskUser.prototype.clone with this=");
+                console.dir( this );
+                console.log( "and this.orgObject = ");
+                console.dir( this.orgObject );
+                var clonedUser = new this.app.ZendeskObjects.ZendeskUser( this.app, this.id, this.name, this.email, this.customer_type, this.organization_id );
+                clonedUser.orgObject = ( this.orgObject === null) ? null : this.orgObject.clone();
+                for(var i = 0; i < this.extra_user_fields.length; i++) 
+                {
+                    clonedUser.extra_user_fields[ i ] = { field_def: this.extra_user_fields[ i ].field_def, value: this.extra_user_fields[ i ].value };
+                }
+                console.log( "Finished ZendeskUser.prototype.clone, returning:");
+                return clonedUser;
+            };
+
+            this.isNotset = function() { return this.customer_type === this.app.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_NOT_SET; };
+            this.isExcluded = function() { return this.customer_type === this.app.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_EXCLUDE; };
+            this.isIncluded = function() { return this.customer_type === this.app.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_USE_ORGANIZATION || this.customer_type === this.app.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_USE_DEFAULT; };
+            this.isOrganization = function() { return this.customer_type === this.app.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_USE_ORGANIZATION; };
+            this.isDefault = function() { return this.customer_type === this.app.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_USE_DEFAULT; };
+
+            this.belongsToOrganization = function() { return this.organization_id !== null; };
+            this.orgObjectIsPopulated = function() { return this.orgObject !== null; };
+            this.getMailchimpCustomerType = function() { return this.customer_type === this.app.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_USE_ORGANIZATION ? this.orgObject.customer_type : this.app.customer_type_field_mapping.default_value; };
+            
+            this.getFieldSyncInfo = function( mailChimpUser )
+            {
+                console.log( "starting getFieldSyncInfo with the following 2 user objects" );
+                console.dir( this ); console.log( "" );
+                console.dir( mailChimpUser ); console.log( "" ); 
+                if( mailChimpUser === null )
+                {
+                    return null;
+                }
+                
+                var sync_fields = [
+                    { label: "Email", mc_only: false, zd_value: this.email, mc_value: mailChimpUser.email_address, in_sync: ( this.email === mailChimpUser.email_address ) },
+                    { label: "Name", mc_only: false, zd_value: this.name, mc_value: mailChimpUser.forename + " " + mailChimpUser.surname, in_sync:true },
+                    { label: "Customer Type", mc_only:false, zd_value: this.getMailchimpCustomerType(), mc_value: mailChimpUser.customer_type, in_sync: ( this.getMailchimpCustomerType() === mailChimpUser.customer_type ) } 
+                ];
+                
+                var tempZdValue = null;
+                var tempMcValue = null;
+                var arrayIndex = 0;
+                for( var i = 0; i < this.extra_user_fields.length; i++ )
+                {
+                    tempZdValue = this.extra_user_fields[ i ].value;
+                    tempMcValue = mailChimpUser.extra_merge_fields[ arrayIndex ].value;
+                    tempZdValue = ( tempZdValue === null ) ? "" : tempZdValue; tempMcValue = ( tempMcValue === null ) ? "" : tempMcValue;
+                    sync_fields[ arrayIndex+3 ] = 
+                    {
+                        label: this.extra_user_fields[ i ].field_def.field_label,
+                        mc_only: false,
+                        zd_value: tempZdValue,
+                        mc_value: tempMcValue,
+                        in_sync: tempZdValue === tempMcValue
+                    };
+                    arrayIndex++;
+                }
+                console.log( "done user fields JSON:" );
+                console.dir( sync_fields ); console.log( "" );  
+                for( i = 0; i < this.app.organization_field_mappings.length; i++ )
+                {
+                    tempZdValue = this.isDefault() ? this.app.organization_field_mappings[ i ].default_value : ( this.isOrganization() ? this.orgObject.extra_org_fields[ i ].value : null );
+                    tempMcValue = mailChimpUser.extra_merge_fields[ arrayIndex ].value;
+                    tempZdValue = ( tempZdValue === null ) ? "" : tempZdValue; tempMcValue = ( tempMcValue === null ) ? "" : tempMcValue;
+                    sync_fields[ arrayIndex+3 ] = 
+                    {
+                        label: this.app.organization_field_mappings[ i ].field_label,
+                        mc_only: false,
+                        zd_value: tempZdValue,
+                        mc_value: tempMcValue,
+                        in_sync: tempZdValue === tempMcValue
+                    };
+                    arrayIndex++;
+                }
+                console.log( "done org fields JSON:" );
+                console.dir( sync_fields ); console.log( "" );  
+                for( i = 0; i < this.app.mailshot_only_field_mappings.length; i++ )
+                {
+                    tempMcValue = mailChimpUser.extra_merge_fields[ arrayIndex ].value;
+                    tempMcValue = ( tempMcValue === null ) ? "" : tempMcValue;
+                    sync_fields[ arrayIndex+3 ] = 
+                    {
+                        label: this.app.mailshot_only_field_mappings[ i ].field_label,
+                        mc_only: true,
+                        zd_value: null,
+                        mc_value: tempMcValue,
+                        in_sync: true
+                    };
+                    arrayIndex++;
+                }   
+                
+                return sync_fields;
+            };
+        }
+    }
   };
 
 }());

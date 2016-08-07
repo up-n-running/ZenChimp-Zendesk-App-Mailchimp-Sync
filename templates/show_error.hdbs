@@ -9,9 +9,9 @@
 
 {{#unless overrideMessage}}
 <div class="alert alert-danger">
-	<strong>{{errorResponse.status}} - {{errorResponse.statusText}}</strong> Indicates a dangerous or potentially negative action.<br />
+	<strong>{{errorResponse.status}} - {{errorResponse.statusText}} - {{errorResponse.title}}</strong><br />
 	<br />
-	{{errorResponse.responseText}}<br />
+	{{errorResponse.responseText}} {{errorResponse.detail}}<br />
 	<br />
 	Please report a bug at the link below.
 </div>
