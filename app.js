@@ -296,8 +296,8 @@ console.log("Loading app.js");
         this.mailshot_only_field_mappings = 
         [ 
             //this.customer_type_field_mapping,
-            { field_label:'Maintenance Emails', mailshot_field: 'SEND_MAINT', type: this.resources.FIELD_TYPE_CHECKBOX, default_value: '0' },
-            { field_label:'Announcement Emails', mailshot_field: 'SEND_ANNOU', type: this.resources.FIELD_TYPE_CHECKBOX, default_value:'0' },
+            { field_label:'Maintenance Emails', mailshot_field: 'SEND_MAINT', type: this.resources.FIELD_TYPE_CHECKBOX, default_value: '1' },
+            { field_label:'Announcement Emails', mailshot_field: 'SEND_ANNOU', type: this.resources.FIELD_TYPE_CHECKBOX, default_value:'1' },
             { field_label:'Monthly Scorecards', mailshot_field: 'SEND_CSAT', type: this.resources.FIELD_TYPE_CHECKBOX, default_value:'0' }
         ];
 
@@ -440,10 +440,10 @@ console.log("Loading app.js");
         console.log( "updateZendeskUser_Done = got user back from API data and reattached old organization from old user, this.zendesk_user = ");
         console.dir( this.zendesk_user );
         //now populate the users obganization object through another API call but only if we need it (user type = organization )
-        if( !this.zendesk_user.isOrganization() && this.zendesk_user.belongsToOrganization() && !this.zendesk_user.orgObjectIsPopulated())
+        if( this.zendesk_user.isOrganization() && this.zendesk_user.belongsToOrganization() && !this.zendesk_user.orgObjectIsPopulated())
         {
             //changeCustomerType as yet because we still need to load organization object so register the change necessary on user object temporarily
-            this.zendesk_user.callChangeCustomerTypeAfterFullyLoadedWithOldType=oldCustomerType;
+            this.zendesk_user.callChangeCustomerTypeAfterFullyLoadedWithOldType= ( oldCustomerType === null ) ? 'NOTSET' : null;
             this.switchToLoadingScreen( "Loading Organization" );
             this.ajax( 'getZendeskOrganizations', this.zendesk_user.id, this.zendesk_user.organization_id );
         }
@@ -465,7 +465,7 @@ console.log("Loading app.js");
         //was this load as a result of pressing the "organization" button?
         if( typeof( this.zendesk_user.callChangeCustomerTypeAfterFullyLoadedWithOldType ) !== "undefined" && this.zendesk_user.callChangeCustomerTypeAfterFullyLoadedWithOldType !== null )
         {
-            var oldType = this.zendesk_user.callChangeCustomerTypeAfterFullyLoadedWithOldType;
+            var oldType = ( this.zendesk_user.callChangeCustomerTypeAfterFullyLoadedWithOldType === 'NOTSET' ) ? null : this.zendesk_user.callChangeCustomerTypeAfterFullyLoadedWithOldType;
             this.zendesk_user.callChangeCustomerTypeAfterFullyLoadedWithOldType = null;
             this.changeCustomerType( oldType, this.zendesk_user.customer_type );
         }
@@ -595,9 +595,8 @@ console.log("Loading app.js");
 			//if ORGANIZATION or STANDARD  were selected AND it was previously set to the other one
 			else if( oldType != newType )
 			{
-console.log ("INSERT CODE HERE TO ADD UPDATE USER IN MAILCHIMP VIA MAILCHIMP API - if id is not set then update if email match and add if not");
-//then probably remove the line of code below
-				this.switchToMainTemplate();
+                
+				this.syncExistingUserToMailchimp( this.zendesk_user );
 			}
 		}
 	},
@@ -710,7 +709,7 @@ console.log ("INSERT CODE HERE TO ADD UPDATE USER IN MAILCHIMP VIA MAILCHIMP API
 			}
 			if( errorResponse.status === 404 && responseTextJSON.title === "Resource Not Found" )
 			{
-				return this.switchToErrorMessage( errorResponse, this.zendesk_user.email + " doesn't exist im mailchimp.<br /><br/>Do you want to create a new record for him/her?", "Create New", "error_create_new_mailchimp" );
+				return this.switchToErrorMessage( errorResponse, this.zendesk_user.email + " doesn't exist in mailchimp.<br /><br/>Do you want to create a new record for him/her?", "Create New", "error_create_new_mailchimp" );
 			}
 	    }catch(e)
 	    {
@@ -920,13 +919,15 @@ console.log ("INSERT CODE HERE TO ADD UPDATE USER IN MAILCHIMP VIA MAILCHIMP API
     {
         console.log( "started switchToMainTemplate with the following object:" );
         console.dir( this.zendesk_user ); console.log( "" );
-
+        var syncFields = this.zendesk_user.getFieldSyncInfo( this.mailshot_sync_user );
+        var isInSync = this.zendesk_user.isInSync( syncFields );
+        
         var formData = 
         {
             'zendesk_user': this.zendesk_user,
             'mailchimp_user': this.mailshot_sync_user,
-            'sync_fields': this.zendesk_user.getFieldSyncInfo( this.mailshot_sync_user ),
-            'monkey_URL': this.zendesk_user.isNotset() ? null : ( this.zendesk_user.isExcluded() ? this.assetURL( "exclude_monkey.png" ) : this.assetURL( "outofsync_monkey.png" ) ),
+            'sync_fields': syncFields,
+            'monkey_URL': this.zendesk_user.isNotset() ? null : ( this.zendesk_user.isExcluded() ? this.assetURL( "exclude_monkey.png" ) : ( isInSync ? this.assetURL( "insync_monkey.png" ) : this.assetURL( "outofsync_monkey.png" ) ) ),
             'buttons': 
             {
                 'exclude': { 'show': true, 'classNameInsert': this.zendesk_user.isExcluded() ? " active" : "" },
@@ -940,7 +941,7 @@ console.log ("INSERT CODE HERE TO ADD UPDATE USER IN MAILCHIMP VIA MAILCHIMP API
                 'customer_type_included'    : this.zendesk_user.isIncluded(),
                 'customer_type_organization': this.zendesk_user.isOrganization(),
                 'customer_type_standard'    : this.zendesk_user.isDefault(),
-                'user_in_sync'              : false
+                'user_in_sync'              : isInSync
             }
         };
 
@@ -1018,14 +1019,14 @@ console.log ("INSERT CODE HERE TO ADD UPDATE USER IN MAILCHIMP VIA MAILCHIMP API
             this.clone = function()
             {
                 var clonedOrganization = new this.app.ZendeskObjects.ZendeskOrganization( this.app, this.id, this.name, this.customer_type );
-                console.log( "cloning Org, this.name = '" + this.name + "', new ZendeskOrganization = ");
-                console.dir( clonedOrganization );
+                //console.log( "cloning Org, this.name = '" + this.name + "', new ZendeskOrganization = ");
+                //console.dir( clonedOrganization );
                 for(var i = 0; i < this.extra_org_fields.length; i++) 
                 {
                     clonedOrganization.extra_org_fields[ i ] = { field_def: this.extra_org_fields[ i ].field_def, value: this.extra_org_fields[ i ].value };
                 }
-                console.log( "finished cloning Org, clonedOrganization = ");
-                console.dir( clonedOrganization );
+                //console.log( "finished cloning Org, clonedOrganization = ");
+                //console.dir( clonedOrganization );
                 return clonedOrganization;
             };
 
@@ -1102,6 +1103,10 @@ console.log ("INSERT CODE HERE TO ADD UPDATE USER IN MAILCHIMP VIA MAILCHIMP API
                 {
                     return null;
                 }
+                if( this.customer_type === null || this.isNotset() )
+                {
+                    return null;
+                }
                 
                 var sync_fields = [
                     { label: "Email", mc_only: false, zd_value: this.email, mc_value: mailChimpUser.email_address, in_sync: ( this.email === mailChimpUser.email_address ) },
@@ -1112,6 +1117,8 @@ console.log ("INSERT CODE HERE TO ADD UPDATE USER IN MAILCHIMP VIA MAILCHIMP API
                 var tempZdValue = null;
                 var tempMcValue = null;
                 var arrayIndex = 0;
+                console.log( "about to start user fields, JSON:" );
+                console.dir( sync_fields ); console.log( "" );  
                 for( var i = 0; i < this.extra_user_fields.length; i++ )
                 {
                     tempZdValue = this.extra_user_fields[ i ].value;
@@ -1163,6 +1170,28 @@ console.log ("INSERT CODE HERE TO ADD UPDATE USER IN MAILCHIMP VIA MAILCHIMP API
                 
                 return sync_fields;
             };
+            
+            this.isInSync = function( syncFields, mailChimpUser )
+            {
+                if( typeof( syncFields ) === "undefined" || syncFields === null )
+                {
+                   syncFields = this.getFieldSyncInfo( mailChimpUser );
+                }
+                
+                if( syncFields === null )
+                {
+                    return false;
+                }
+                
+                for(var i=0; i < syncFields.length; i++ )
+                {
+                    if( !syncFields[ i ].in_sync )
+                    {
+                        return false;
+                    }
+                }
+                return true;
+            }
         }
     }
   };

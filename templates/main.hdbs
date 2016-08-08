@@ -20,14 +20,22 @@
 		{{#if display_params.customer_type_included}}
                     {{#if display_params.user_in_sync}}
 			<div class="information-text">
-				<p class="inactive">{{zendesk_user.name}} is in sync</p>
+                            <p class="inactive" style="padding-bottom: 3px">{{zendesk_user.name}} is <a class="sync_popup" data-toggle="modal" data-target="#sync_modal">in sync</a></p>
+                            {{#each mailchimp_user.extra_merge_fields}}
+                            {{#unless this.field_def.zendesk_field}}
+                                <div>
+                                    <input id="MC_ONLY_{{this.field_def.mailshot_field}}" name="MC_ONLY_{{this.field_def.mailshot_field}}" value="1" type="checkbox" {{#if this.value}}checked="checked" {{/if}}/>
+                                    <label for="MC_ONLY_{{this.field_def.mailshot_field}}">{{this.field_def.field_label}}</label>
+                                </div>
+                            {{/unless}}
+                            {{/each}}
 			</div>
                     {{/if}}
                     {{#unless display_params.user_in_sync}}
 			<div class="information-text">
 				<p class="warning">{{zendesk_user.name}} is in out of sync</p>
+                                <a class="btn btn-large sync_popup" data-toggle="modal" data-target="#sync_modal">Synchronize</a>
 			</div>
-                        <a class="btn btn-large sync_popup" data-toggle="modal" data-target="#sync_modal">Synchronize</a>
                     {{/unless}}
 		{{/if}}
   </div>

@@ -26,6 +26,11 @@ td.mc-data
     padding-left: 98px;
 }
 
+.user_page label 
+{
+  display: inline-block;
+}
+
 .user_sync_page .page_content table 
 {
     table-layout:fixed;
