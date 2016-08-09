@@ -24,7 +24,7 @@
                             {{#each mailchimp_user.extra_merge_fields}}
                             {{#unless this.field_def.zendesk_field}}
                                 <div>
-                                    <input id="MC_ONLY_{{this.field_def.mailshot_field}}" name="MC_ONLY_{{this.field_def.mailshot_field}}" value="1" type="checkbox" {{#if this.value}}checked="checked" {{/if}}/>
+                                    <input class="mc_only_field" id="MC_ONLY_{{this.field_def.mailshot_field}}" name="MC_ONLY_{{this.field_def.mailshot_field}}" value="1" type="checkbox" {{#if this.value}}checked="checked" {{/if}}/>
                                     <label for="MC_ONLY_{{this.field_def.mailshot_field}}">{{this.field_def.field_label}}</label>
                                 </div>
                             {{/unless}}
@@ -40,12 +40,6 @@
 		{{/if}}
   </div>
 </div>
-
-
-
-
-
-
 
 
 <!-- modal_popup -->
@@ -66,8 +60,16 @@
                 {{#each sync_fields}}
                 <tr>
                     <td class="field_heading{{#unless this.in_sync}}_out-of-sync{{/unless}}">{{this.label}}</td>
-                    <td class="zd{{#if this.mc_only}}_disabled{{/if}} value">{{this.zd_value}}</td>
-                    <td class="mc value">{{this.mc_value}}</td> 
+                    <td class="zd{{#if this.mc_only}}_disabled{{/if}} value">
+                        {{#if this.is_image}}{{#if this.zd_value}}<img style="margin-top: -7px" height="30" alt="Image Field Image Preview" src="{{this.zd_value}}" />{{else}}-{{/if}}
+                        {{else}}{{this.zd_value}}
+                        {{/if}}
+                    </td>
+                    <td class="mc value">
+                        {{#if this.is_image}}{{#if this.mc_value}}<img style="margin-top: -7px" height="30" alt="Image Field Image Preview" src="{{this.mc_value}}" />{{else}}-{{/if}}
+                        {{else}}{{this.mc_value}}
+                        {{/if}}
+                    </td> 
                 </tr>
                 {{/each}}
                 </table>
@@ -75,6 +77,6 @@
         </div>
     </div>
     <div class="modal-footer">
-        <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+        {{#unless display_params.user_in_sync}}<button class="btn sync" data-dismiss="modal" aria-hidden="true">Sync Zendesk > Mailchimp</button>{{/unless}}<button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
     </div>
 </div>
