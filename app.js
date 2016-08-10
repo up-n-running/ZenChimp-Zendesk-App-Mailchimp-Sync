@@ -2,7 +2,7 @@
 
 (function() {
 
-console.log("Loading app.js");
+//console.log("Loading app.js");
 
   return {
 
@@ -73,7 +73,9 @@ console.log("Loading app.js");
     //    'hidden #sync_modal'    : 'afterHidden',
 
         //main screen events
-        'user.mailshot_customer_type.changed' : 'userScreenCustomerTypeFieldChanged'
+        'user.mailshot_customer_type.changed' : 'userScreenCustomerTypeFieldChanged',
+
+        '*.changed': 'formFieldChanged'
     },
 
     requests: 
@@ -86,8 +88,8 @@ console.log("Loading app.js");
 				type:'GET',
 				dataType: 'json'
 			};
-			console.log( "API CAll DETAILS FOR getZendeskUser;" );
-			console.dir( userApiCallSettings ); console.log();
+			//console.log( "API CAll DETAILS FOR getZendeskUser;" );
+			//console.dir( userApiCallSettings ); //console.log();
         	return userApiCallSettings;
 		},
 
@@ -112,8 +114,8 @@ console.log("Loading app.js");
                                     }
                             })
                     };
-                    console.log( "API CAll DETAILS FOR createOrUpdateZendeskUser;" );
-                    console.dir( userApiCallSettings ); console.log();
+                    //console.log( "API CAll DETAILS FOR createOrUpdateZendeskUser;" );
+                    //console.dir( userApiCallSettings ); //console.log();
             return userApiCallSettings;
         },
 
@@ -125,8 +127,8 @@ console.log("Loading app.js");
                 type:'GET',
                 dataType: 'json'
             };
-            console.log( "API CAll DETAILS FOR getZendeskOrganizationsForUser;" );
-            console.dir( userApiCallSettings ); console.log();
+            //console.log( "API CAll DETAILS FOR getZendeskOrganizationsForUser;" );
+            //console.dir( userApiCallSettings ); //console.log();
             return userApiCallSettings;
         },
 
@@ -152,8 +154,8 @@ console.log("Loading app.js");
                     }
                 })
             };
-            console.log( "API CAll DETAILS FOR getMailChimpAllListMembers;" );
-            console.dir( jsonCall ); console.log();
+            //console.log( "API CAll DETAILS FOR getMailChimpAllListMembers;" );
+            //console.dir( jsonCall ); //console.log();
             return jsonCall;
         },
 
@@ -179,8 +181,8 @@ console.log("Loading app.js");
                     "Authorization": "Basic " + btoa( "api:" + this.mailchimp_api_key )
                 }
             };
-            console.log( "API CAll DETAILS FOR getMailChimpListMember;" );
-            console.dir( jsonCall ); console.log();
+            //console.log( "API CAll DETAILS FOR getMailChimpListMember;" );
+            //console.dir( jsonCall ); //console.log();
             return jsonCall;
         },
 
@@ -232,8 +234,8 @@ console.log("Loading app.js");
                 },
                 data: JSON.stringify( dataJSON )
             };
-            console.log( "API CAll DETAILS FOR createOrUpadateMailChimpListMember;" );
-            console.dir( jsonCall ); console.log();
+            //console.log( "API CAll DETAILS FOR createOrUpadateMailChimpListMember;" );
+            //console.dir( jsonCall ); //console.log();
             return jsonCall;
         },
 
@@ -260,11 +262,39 @@ console.log("Loading app.js");
                         "Authorization": "Basic " + btoa( "api:" + this.mailchimp_api_key )
                 }
             };
-            console.log( "API CAll DETAILS FOR deleteMailChimpListMember:" );
-            console.dir( jsonCall ); console.log();
+            //console.log( "API CAll DETAILS FOR deleteMailChimpListMember:" );
+            //console.dir( jsonCall ); //console.log();
             return jsonCall;
         }
     },		
+
+    formFieldChanged: function( event )
+    {
+        //find field name if it's a dependant field with as few ops as possible as this is a generic function
+        //console.log( event.propertyName + " changed" );
+        var matchedZDFieldName = null;
+        if( this.currentLocation() === this.resources.APP_LOCATION_USER )
+        {
+            var fieldName = event.propertyName;
+            for( var i=0; i < this.user_field_mappings.length; i++)
+            {
+                if( fieldName === "user."+this.user_field_mappings[i].zendesk_field )
+                {
+                    //console.log( "oh my god, its a user mapped field, crikey ");
+                    //console.dir( event );
+                    matchedZDFieldName = this.user_field_mappings[i].zendesk_field;
+                    break;
+                }
+            }
+        }
+        
+        //if it's a dependant 'extra' field
+        if( matchedZDFieldName!==null && typeof( this.zendesk_user ) !== "undefined" && this.zendesk_user !== null )
+        {
+            this.zendesk_user.findExtraFieldByName( matchedZDFieldName, true ).value = event.newValue;
+            this.switchToMainTemplate();
+        }
+    },
 
     syncButtonFromModalOnClick: function() 
     {
@@ -285,14 +315,14 @@ console.warn( "NEED TO CLONE MAILCHIMP USER IDEALLY AT THIS POINT");
                 //clone user if not done already
                 //userClone = userClone === null ? this.zendesk_user.clone() : userClone;
                 //toggle field
-                console.log( "FOUND MATCHING FIELD, tempField =" );
-                console.dir( tempField );
+                //console.log( "FOUND MATCHING FIELD, tempField =" );
+                //console.dir( tempField );
                 if( tempField.field_def.type === this.resources.FIELD_TYPE_CHECKBOX )
                 {
                     //userClone.extra_user_fields[ i ].value === ( tempField.value === "0" ) ? "1" : "0";
-                    console.log( "Updating value from" + tempField.value );
+                    //console.log( "Updating value from" + tempField.value );
                     tempField.value = ( tempField.value === "0" || tempField.value === 0 || tempField.value === false ) ? "1" : "0";
-                    console.log( "to" + tempField.value );
+                    //console.log( "to" + tempField.value );
                 }
                 else
                 {
@@ -310,11 +340,11 @@ console.warn( "NEED TO CLONE MAILCHIMP USER IDEALLY AT THIS POINT");
     // --- INITIALISATION FUCNTIONS
     init: function() 
     {
-    	console.log( "Starting init");
-    	console.log( "Location Object:" );
-    	console.dir( this.currentLocation() );
-    	console.log( "This =" );
-        console.dir( this );
+    	//console.log( "Starting init");
+    	//console.log( "Location Object:" );
+    	//console.dir( this.currentLocation() );
+    	//console.log( "This =" );
+        //console.dir( this );
         
         //get CommonJS Modules
         this.zendeskObjectsModule = require('ZendeskObjects');
@@ -380,8 +410,8 @@ console.warn( "NEED TO CLONE MAILCHIMP USER IDEALLY AT THIS POINT");
     {
         this.zendesk_user = this.createZendeskUserFromAPIReturnData( userObjectFromDataAPI );
 
-        console.log( "mid getZendeskUser_Done, this.zendesk_user = " );
-        console.dir( this.zendesk_user );
+        //console.log( "mid getZendeskUser_Done, this.zendesk_user = " );
+        //console.dir( this.zendesk_user );
        
         //now populate the users obganization object through another API call but only if we need it (user type = organization )
         if( this.zendesk_user.isOrganization() && this.zendesk_user.belongsToOrganization() )
@@ -399,8 +429,8 @@ console.warn( "NEED TO CLONE MAILCHIMP USER IDEALLY AT THIS POINT");
     
     createZendeskUserFromAPIReturnData: function( userObjectFromDataAPI )
     {
-        console.log( 'Starting createZendeskUserFromAPIReturnData, user object from API = ' );
-        console.dir( userObjectFromDataAPI );
+        //console.log( 'Starting createZendeskUserFromAPIReturnData, user object from API = ' );
+        //console.dir( userObjectFromDataAPI );
 
         var zendeskUserObjectToReturn = null;
 
@@ -416,8 +446,8 @@ console.warn( "NEED TO CLONE MAILCHIMP USER IDEALLY AT THIS POINT");
                 userObjectFromDataAPI.user.user_fields.mailshot_customer_type,
                 ( typeof( userObjectFromDataAPI.user.organization_id ) !== 'undefined' && userObjectFromDataAPI.user.organization_id !== null ) ? userObjectFromDataAPI.user.organization_id : null //being careful as sometimes users can be set to link through to more than one org depending on admin settings
             );
-        console.log( 'mid createZendeskUserFromAPIReturnData, just called constructor zendeskUserObjectToReturn = ' );
-        console.dir( zendeskUserObjectToReturn );
+        //console.log( 'mid createZendeskUserFromAPIReturnData, just called constructor zendeskUserObjectToReturn = ' );
+        //console.dir( zendeskUserObjectToReturn );
             //now set the optional extra user fields from returned API data
             zendeskUserObjectToReturn.populateExtraFieldsFromUserAPIData( userObjectFromDataAPI.user );
             
@@ -425,21 +455,21 @@ console.warn( "NEED TO CLONE MAILCHIMP USER IDEALLY AT THIS POINT");
         }
         else console.warn( "createZendeskUserFromAPIReturnData called but userObjectFromDataAPI = null - this should never happen!");
 
-        console.log( 'Finished createZendeskUserFromAPIReturnData, zendeskUserObjectToReturn = ' );
-        console.dir( zendeskUserObjectToReturn );
-        console.log( 'Finished createZendeskUserFromAPIReturnData, testing clone function on zendeskUserObjectToReturn = ' );
-        console.dir( zendeskUserObjectToReturn.clone() );
+        //console.log( 'Finished createZendeskUserFromAPIReturnData, zendeskUserObjectToReturn = ' );
+        //console.dir( zendeskUserObjectToReturn );
+        //console.log( 'Finished createZendeskUserFromAPIReturnData, testing clone function on zendeskUserObjectToReturn = ' );
+        //console.dir( zendeskUserObjectToReturn.clone() );
 
         return zendeskUserObjectToReturn;
     },
     
     getUserFromFrameworkInUserSidebarLocation: function()
     {
-        console.log( 'Starting getUserFromFrameworkInUserSidebarLocation' );
-        console.log( 'this.user() object from framework = ' );
-        console.dir( this.user() );
-        console.log( 'this.user().organizations()[0] object from framework = ' );
-        console.dir( this.user().organizations()[0] );
+        //console.log( 'Starting getUserFromFrameworkInUserSidebarLocation' );
+        //console.log( 'this.user() object from framework = ' );
+        //console.dir( this.user() );
+        //console.log( 'this.user().organizations()[0] object from framework = ' );
+        //console.dir( this.user().organizations()[0] );
 
         //fetch first organization object if there is one, null if not
         var usersOrgObject = ( typeof( this.user().organizations()[0] ) !== 'undefined' && this.user().organizations()[0] !== null ) ? this.user().organizations()[0] : null;
@@ -464,16 +494,16 @@ console.warn( "NEED TO CLONE MAILCHIMP USER IDEALLY AT THIS POINT");
         //popupate org object if one is set on user record
         if( usersOrgObject !== null )
         {
-            console.log( "Found Organization Object" );
-            console.dir( usersOrgObject );
-            this.zendesk_user.orgObject = new this.zendeskObjectsModule.ZendeskOrganization( this, usersOrgObject.id(), usersOrgObject.name() );
+            //console.log( "Found Organization Object" );
+            //console.dir( usersOrgObject );
+            this.zendesk_user.orgObject = new this.zendeskObjectsModule.ZendeskOrganization( this, usersOrgObject.id(), usersOrgObject.name(), usersOrgObject.customField( this.customer_type_field_mapping.zendesk_field ) );
             //REQUIRE
             //this.zendesk_user.orgObject = new this.ZendeskObjects.ZendeskOrganization( this, usersOrgObject.id(), usersOrgObject.name() );
             this.zendesk_user.orgObject.populateExtraFieldsFromFrameworkOrgObject( usersOrgObject );
         }
         
-        console.log( "just got user from user screen, testing clone function" );
-        console.dir( this.zendesk_user.clone() );
+        //console.log( "just got user from user screen, testing clone function" );
+        //console.dir( this.zendesk_user.clone() );
         
         //we now have full populated user object complete with org object if user has an org
         this.fetchMailchimpObjectIfNecessary();
@@ -486,8 +516,8 @@ console.warn( "NEED TO CLONE MAILCHIMP USER IDEALLY AT THIS POINT");
         var oldCustomerType = this.zendesk_user.customer_type;
         this.zendesk_user = returnedUser;
         
-        console.log( "updateZendeskUser_Done = got user back from API data and reattached old organization from old user, this.zendesk_user = ");
-        console.dir( this.zendesk_user );
+        //console.log( "updateZendeskUser_Done = got user back from API data and reattached old organization from old user, this.zendesk_user = ");
+        //console.dir( this.zendesk_user );
         //now populate the users obganization object through another API call but only if we need it (user type = organization )
         if( this.zendesk_user.isOrganization() && this.zendesk_user.belongsToOrganization() && !this.zendesk_user.orgObjectIsPopulated())
         {
@@ -505,9 +535,9 @@ console.warn( "NEED TO CLONE MAILCHIMP USER IDEALLY AT THIS POINT");
 
     getZendeskOrganizations_Done: function( organizationObjectFromDataAPI )
     {
-        console.log( 'Starting getZendeskOrganizations_Done' );
-        console.log( 'organizationObjectFromDataAPI = ' );
-        console.dir( organizationObjectFromDataAPI );
+        //console.log( 'Starting getZendeskOrganizations_Done' );
+        //console.log( 'organizationObjectFromDataAPI = ' );
+        //console.dir( organizationObjectFromDataAPI );
 
         this.zendesk_user.orgObject = this.createZendeskOrganizationFromAPIReturnData( organizationObjectFromDataAPI );
         
@@ -527,8 +557,8 @@ console.warn( "NEED TO CLONE MAILCHIMP USER IDEALLY AT THIS POINT");
 
 	createZendeskOrganizationFromAPIReturnData: function( organizationObjectFromDataAPI )
     {
-        console.log( 'Starting createZendeskOrganizationFromAPIReturnData, organizationObjectFromDataAPI = ' );
-        console.dir( organizationObjectFromDataAPI );
+        //console.log( 'Starting createZendeskOrganizationFromAPIReturnData, organizationObjectFromDataAPI = ' );
+        //console.dir( organizationObjectFromDataAPI );
 
         var organizationObjectToReturn = null;
 
@@ -549,15 +579,15 @@ console.warn( "NEED TO CLONE MAILCHIMP USER IDEALLY AT THIS POINT");
         }
         else console.warn( "createZendeskOrganizationFromAPIReturnData called but organizationObjectFromDataAPI = null or doesnt contain a organization property - this should never happen!");
 
-        console.log( 'Finished createZendeskOrganizationFromAPIReturnData, testinc clone() on organizationObjectToReturn = ' );
-        console.dir( organizationObjectToReturn.clone() );
+        //console.log( 'Finished createZendeskOrganizationFromAPIReturnData, testinc clone() on organizationObjectToReturn = ' );
+        //console.dir( organizationObjectToReturn.clone() );
 
         return organizationObjectToReturn;
     },
     
     fetchMailchimpObjectIfNecessary: function()
     {
-        console.log( 'Starting fetchMailchimpObjectIfNecessary' );
+        //console.log( 'Starting fetchMailchimpObjectIfNecessary' );
 
         //if it's included in the mailchimp sync and we dont already have the mailchimp user then get it
         if( this.zendesk_user.isIncluded() && this.mailshot_sync_user === null )
@@ -570,7 +600,7 @@ console.warn( "NEED TO CLONE MAILCHIMP USER IDEALLY AT THIS POINT");
             this.switchToMainTemplate();
         }
 
-        console.log( 'Finished fetchMailchimpObjectIfNecessary' );
+        //console.log( 'Finished fetchMailchimpObjectIfNecessary' );
     },
     
 /*
@@ -578,8 +608,8 @@ console.warn( "NEED TO CLONE MAILCHIMP USER IDEALLY AT THIS POINT");
 	{
 		if( this.zendesk_user != null )
 		{
-			console.log( 'user object = ' );
-			console.dir( this.zendesk_user );
+			//console.log( 'user object = ' );
+			//console.dir( this.zendesk_user );
 
 			//user is definitely initialised so lets see if they are new and havent been configured for mailshot settings yet
 			if( this.zendesk_user.customer_type == this.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_NOT_SET )
@@ -601,16 +631,16 @@ console.warn( "NEED TO CLONE MAILCHIMP USER IDEALLY AT THIS POINT");
 
 	retrievedMailchimpAllListSubscribers: function( mailchimpSubscriberList ) 
 	{
-		console.log( "started retrievedMailchimpAllListSubscribers with the following object:" );
-		console.dir( mailchimpSubscriberList ); console.log( "" );
+		//console.log( "started retrievedMailchimpAllListSubscribers with the following object:" );
+		//console.dir( mailchimpSubscriberList ); //console.log( "" );
 		//this.switchToMainTemplate();
 	},	
 */
     changeCustomerType: function( oldType, newType ) 
     {
-            console.log( "changeCustomerType called" );
-            console.log( "oldType: " + oldType );
-            console.log( "newType: " + newType );		
+            //console.log( "changeCustomerType called" );
+            //console.log( "oldType: " + oldType );
+            //console.log( "newType: " + newType );		
             //update user object to keep track of change
             this.zendesk_user.customer_type = newType;
 
@@ -663,8 +693,8 @@ console.warn( "NEED TO CLONE MAILCHIMP USER IDEALLY AT THIS POINT");
     retrievedMailchimpSubscriber: function( returnedMailchimpUser ) 
     {
 
-        console.log( "started retrievedMailchimpSubscriber with the following object:" );
-        console.dir( returnedMailchimpUser ); console.log( "" );
+        //console.log( "started retrievedMailchimpSubscriber with the following object:" );
+        //console.dir( returnedMailchimpUser ); //console.log( "" );
 
         this.mailshot_sync_user = 
         {
@@ -682,7 +712,7 @@ console.warn( "NEED TO CLONE MAILCHIMP USER IDEALLY AT THIS POINT");
             this.mailshot_sync_user.extra_merge_fields[ arrayIndex ] = { field_def: this.user_field_mappings[ i ], value: returnedMailchimpUser.merge_fields[ this.user_field_mappings[ i ].mailshot_field ]};
             arrayIndex++;
         }
-        for(var i = 0; i < this.organization_field_mappings.length; i++) 
+        for(i=0; i < this.organization_field_mappings.length; i++) 
         {
             this.mailshot_sync_user.extra_merge_fields[ arrayIndex ] = { field_def: this.organization_field_mappings[ i ], value: returnedMailchimpUser.merge_fields[ this.organization_field_mappings[ i ].mailshot_field ] };
             arrayIndex++;
@@ -693,21 +723,21 @@ console.warn( "NEED TO CLONE MAILCHIMP USER IDEALLY AT THIS POINT");
                 arrayIndex++;
         }        
 
-        console.log( "this.mailshot_sync_user has now been set to" );
-        console.dir( this.mailshot_sync_user ); console.log( "" );
+        //console.log( "this.mailshot_sync_user has now been set to" );
+        //console.dir( this.mailshot_sync_user ); //console.log( "" );
 
         this.switchToMainTemplate();
     },    
 
     syncNewUserToMailchimp: function( zendeskUser ) 
     {
-        console.log( "syncNewUserToMailchimp called with zendesk user =");
-        console.dir( zendeskUser );
+        //console.log( "syncNewUserToMailchimp called with zendesk user =");
+        //console.dir( zendeskUser );
 
         var newMailChimpUserToSave = this.createNewMailchimpSyncUserObject( zendeskUser );
 
-        console.log( "created mailchimp user object to sync new =");
-        console.dir( newMailChimpUserToSave );
+        //console.log( "created mailchimp user object to sync new =");
+        //console.dir( newMailChimpUserToSave );
 
         this.switchToLoadingScreen( "Adding Mailchimp Member" );
         this.ajax( "createOrUpadateMailChimpListMember", newMailChimpUserToSave, false );
@@ -715,13 +745,13 @@ console.warn( "NEED TO CLONE MAILCHIMP USER IDEALLY AT THIS POINT");
 /* 
     updateUserInMailchimp: function( mailchimpUser ) 
     {
-            console.log( "updateUserInMailchimp called with mailchimp =");
-            console.dir( zendeskUser );
+            //console.log( "updateUserInMailchimp called with mailchimp =");
+            //console.dir( zendeskUser );
 
             var newMailChimpUserToSave = this.createNewMailchimpSyncUserObject( zendeskUser );
 
-            console.log( "created mailchimp user object to save =");
-            console.dir( newMailChimpUserToSave );
+            //console.log( "created mailchimp user object to save =");
+            //console.dir( newMailChimpUserToSave );
 
             this.switchToLoadingScreen( "Adding Mailchimp Member" );
             this.ajax( "createOrUpadateMailChimpListMember", newMailChimpUserToSave, false );
@@ -729,8 +759,8 @@ console.warn( "NEED TO CLONE MAILCHIMP USER IDEALLY AT THIS POINT");
 */
     syncExistingUserToMailchimp: function( zendeskUser, tryToPreserveMCOnlyFields ) 
     {
-        console.log( "syncExistingUserToMailchimp called with zendesk user =");
-        console.dir( zendeskUser );
+        //console.log( "syncExistingUserToMailchimp called with zendesk user =");
+        //console.dir( zendeskUser );
 
         var newMailChimpUserToSave = this.createNewMailchimpSyncUserObject( zendeskUser );
         
@@ -746,8 +776,8 @@ console.warn( "NEED TO CLONE MAILCHIMP USER IDEALLY AT THIS POINT");
             }
         }
 
-        console.log( "created mailchimp user object to sync existing =");
-        console.dir( newMailChimpUserToSave );
+        //console.log( "created mailchimp user object to sync existing =");
+        //console.dir( newMailChimpUserToSave );
 
         this.switchToLoadingScreen( "Updating Mailchimp Member" );
         this.ajax( "createOrUpadateMailChimpListMember", newMailChimpUserToSave, true );
@@ -755,8 +785,8 @@ console.warn( "NEED TO CLONE MAILCHIMP USER IDEALLY AT THIS POINT");
 
     deleteExistingUserFromMailchimp: function( mailchimpUser ) 
     {
-        console.log( "deleteExistingUserFromMailchimp called with mailchimp user =");
-        console.dir( mailchimpUser );
+        //console.log( "deleteExistingUserFromMailchimp called with mailchimp user =");
+        //console.dir( mailchimpUser );
 
         this.switchToLoadingScreen( "Deleting Mailchimp Member" );
         this.ajax( "deleteMailChimpListMember", mailchimpUser );
@@ -764,8 +794,8 @@ console.warn( "NEED TO CLONE MAILCHIMP USER IDEALLY AT THIS POINT");
 
     get_or_createOrUpadateMailChimpListMember_OnFail: function( errorResponse ) 
     {
-        console.log( "started createOrUpadateMailChimpListMember_OnFail with the following object:" );
-        console.dir( errorResponse ); console.log( "" );
+        //console.log( "started createOrUpadateMailChimpListMember_OnFail with the following object:" );
+        //console.dir( errorResponse ); //console.log( "" );
 
         //check to see if we were in create only mode but the users email address was already found.
         try
@@ -789,31 +819,31 @@ console.warn( "NEED TO CLONE MAILCHIMP USER IDEALLY AT THIS POINT");
 
     createOrUpadateMailChimpListMember_Override_OnClick: function() 
     {
-        console.log( "started createOrUpadateMailChimpListMember_Override_OnClick" );
+        //console.log( "started createOrUpadateMailChimpListMember_Override_OnClick" );
 
         var newMailChimpUserToSave = this.createNewMailchimpSyncUserObject( this.zendesk_user );
 
-        console.log( "created mailchimp user object to override =");
-        console.dir( newMailChimpUserToSave );
+        //console.log( "created mailchimp user object to override =");
+        //console.dir( newMailChimpUserToSave );
         this.syncExistingUserToMailchimp( newMailChimpUserToSave );
     },
     
     createOrUpadateMailChimpListMember_Add_New_OnClick: function() 
 	{
-		console.log( "started createOrUpadateMailChimpListMember_Add_New_OnClick" );
+		//console.log( "started createOrUpadateMailChimpListMember_Add_New_OnClick" );
 
 		//var newMailChimpUserToSave = this.createNewMailchimpSyncUserObject( this.zendesk_user );
 
-    	//console.log( "created mailchimp user object to add new =");
-		//console.dir( newMailChimpUserToSave );
+    	////console.log( "created mailchimp user object to add new =");
+		////console.dir( newMailChimpUserToSave );
 //newMailChimpUserToSave.id = 'd6acc35fdec6b59208c6e7e6440aeb84';
 		this.syncNewUserToMailchimp( this.zendesk_user );
 	},
 
 	createOrUpadateMailChimpListMember_Done: function( returnedMailchimpUser ) 
 	{
-		console.log( "started createOrUpadateMailChimpListMember_Done with the following object:" );
-		console.dir( returnedMailchimpUser ); console.log( "" );
+		//console.log( "started createOrUpadateMailChimpListMember_Done with the following object:" );
+		//console.dir( returnedMailchimpUser ); //console.log( "" );
 		//if existing user is null or has null id then set id filed on zendesk user object
 
 		this.retrievedMailchimpSubscriber( returnedMailchimpUser );
@@ -821,8 +851,8 @@ console.warn( "NEED TO CLONE MAILCHIMP USER IDEALLY AT THIS POINT");
 
         createNewMailchimpSyncUserObject: function( zendeskSyncUserObject )
         {
-                    console.log( "started createNewMailchimpSyncUserObject with the following zendesk user object:" );
-                    console.dir( zendeskSyncUserObject ); console.log( "" );
+                    //console.log( "started createNewMailchimpSyncUserObject with the following zendesk user object:" );
+                    //console.dir( zendeskSyncUserObject ); //console.log( "" );
 
             var useDefaultOrgValues = zendeskSyncUserObject.customer_type === this.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_USE_DEFAULT;        
 
@@ -857,7 +887,7 @@ console.warn( "NEED TO CLONE MAILCHIMP USER IDEALLY AT THIS POINT");
                     mailchimpUserToReturn.extra_merge_fields[ arrayIndex ] = { field_def: zendeskSyncUserObject.extra_user_fields[ i ].field_def, value: ( zendeskSyncUserObject.extra_user_fields[ i ].value === null ) ? "" : zendeskSyncUserObject.extra_user_fields[ i ].value };
                     arrayIndex++;
             }
-            for (var i=0; i < this.organization_field_mappings.length; i++) 
+            for (i=0; i < this.organization_field_mappings.length; i++) 
             {
                     mailchimpUserToReturn.extra_merge_fields[ arrayIndex ] = { field_def: this.organization_field_mappings[ i ], value: useDefaultOrgValues ? this.organization_field_mappings[ i ].default_value : zendeskSyncUserObject.orgObject.extra_org_fields[ i ].value };
                     arrayIndex++;
@@ -868,8 +898,8 @@ console.warn( "NEED TO CLONE MAILCHIMP USER IDEALLY AT THIS POINT");
                     arrayIndex++;
             }
 
-            console.log( "mailchimpUserToReturn at end point:" );
-            console.dir( mailchimpUserToReturn ); console.log( "" );
+            //console.log( "mailchimpUserToReturn at end point:" );
+            //console.dir( mailchimpUserToReturn ); //console.log( "" );
 
             return mailchimpUserToReturn;
         },
@@ -890,10 +920,10 @@ console.warn( "NEED TO CLONE MAILCHIMP USER IDEALLY AT THIS POINT");
     //EXCLUDE/ORGANISATION/STANDARD FIELD ONCLICK FUNCTIONS
     excludeButtonOnClick: function()
     {
-            console.log( "started excludeButtonOnClick" );
+            //console.log( "started excludeButtonOnClick" );
             if( this.currentLocation() === this.resources.APP_LOCATION_USER )
             {
-                    console.dir(  this.user().customField( this.resources.USER_FIELD_NAME_CUSTOMER_TYPE, this.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_EXCLUDE ) );
+                    //console.dir(  this.user().customField( this.resources.USER_FIELD_NAME_CUSTOMER_TYPE, this.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_EXCLUDE ) );
                 //thsi triggers userScreenCustomerTypeFieldChanged to be changed so no need to make any further calls
             }
             else 
@@ -901,8 +931,8 @@ console.warn( "NEED TO CLONE MAILCHIMP USER IDEALLY AT THIS POINT");
                     //update via apis
                     var updatedUserToSave = this.zendesk_user.clone();
                     updatedUserToSave.customer_type = this.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_EXCLUDE;
-                    console.log( "About to save user:");
-                    console.dir( updatedUserToSave );
+                    //console.log( "About to save user:");
+                    //console.dir( updatedUserToSave );
                     this.ajax( 'updateZendeskUser', updatedUserToSave );
             }
             this.switchToLoadingScreen( "Updating Zendesk User" );
@@ -910,30 +940,31 @@ console.warn( "NEED TO CLONE MAILCHIMP USER IDEALLY AT THIS POINT");
 
     organizationButtonOnClick: function()
     {
-            console.log( "started organizationButtonOnClick" );
+            //console.log( "started organizationButtonOnClick" );
             if( this.currentLocation() === this.resources.APP_LOCATION_USER )
             {
-                    console.dir(  this.user().customField( this.resources.USER_FIELD_NAME_CUSTOMER_TYPE, this.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_USE_ORGANIZATION ) );
+                this.switchToLoadingScreen( "Updating Zendesk User" );
+                //console.dir(  this.user().customField( this.resources.USER_FIELD_NAME_CUSTOMER_TYPE, this.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_USE_ORGANIZATION ) );
                 //this triggers userScreenCustomerTypeFieldChanged to be changed so no need to make any further calls
             }
             else 
             {
-                    //update via apis
-                    var updatedUserToSave = this.zendesk_user.clone();
-                    updatedUserToSave.customer_type = this.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_USE_ORGANIZATION;
-                    console.log( "About to save user:");
-                    console.dir( updatedUserToSave );
-                    this.ajax( 'updateZendeskUser', updatedUserToSave );
+                //update via apis
+                var updatedUserToSave = this.zendesk_user.clone();
+                updatedUserToSave.customer_type = this.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_USE_ORGANIZATION;
+                //console.log( "About to save user:");
+                //console.dir( updatedUserToSave );
+                this.switchToLoadingScreen( "Updating Zendesk User" );
+                this.ajax( 'updateZendeskUser', updatedUserToSave );
             }
-            this.switchToLoadingScreen( "Updating Zendesk User" );
     },
 
     standardButtonOnClick: function()
     {
-            console.log( "started standardButtonOnClick" );
+            //console.log( "started standardButtonOnClick" );
             if( this.currentLocation() === this.resources.APP_LOCATION_USER )
             {
-                    console.dir( this.user().customField( this.resources.USER_FIELD_NAME_CUSTOMER_TYPE, this.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_USE_DEFAULT ) );
+                    //console.dir( this.user().customField( this.resources.USER_FIELD_NAME_CUSTOMER_TYPE, this.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_USE_DEFAULT ) );
                 //this triggers userScreenCustomerTypeFieldChanged to be changed so no need to make any further calls
             }
             else 
@@ -942,11 +973,11 @@ console.warn( "NEED TO CLONE MAILCHIMP USER IDEALLY AT THIS POINT");
                     //var updatedUserToSave = this.cloneUserToSyncObject( this.zendesk_user );
         var updatedUserToSave = this.zendesk_user.clone();
                     updatedUserToSave.customer_type = this.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_USE_DEFAULT;
-                    console.log( "About to save user:");
-                    console.dir( updatedUserToSave );
+                    //console.log( "About to save user:");
+                    //console.dir( updatedUserToSave );
                     this.ajax( 'updateZendeskUser', updatedUserToSave );
             }
-            console.log( "ended standardButtonOnClick" );
+            //console.log( "ended standardButtonOnClick" );
             this.switchToLoadingScreen( "Updating Zendesk User" );
     },
 
@@ -954,8 +985,8 @@ console.warn( "NEED TO CLONE MAILCHIMP USER IDEALLY AT THIS POINT");
 	//MAIN SCREEN EVENT FUNCTIONS
     userScreenCustomerTypeFieldChanged: function(evt)
     {
-		console.log( "userScreenCustomerTypeFieldChanged called");
-		console.log( "event:"); console.dir(evt);
+		//console.log( "userScreenCustomerTypeFieldChanged called");
+		//console.log( "event:"); //console.dir(evt);
 
 		//fetch new value from field and old value from user
 		var oldCustomerType = this.zendesk_user.customer_type;
@@ -968,14 +999,14 @@ console.warn( "NEED TO CLONE MAILCHIMP USER IDEALLY AT THIS POINT");
     //SWITCH TO HTML TEMPLATE FUNCTIONS
     switchToLoadingScreen: function( optionalMessage ) 
     {
-        console.log( "started switchToLoadingScreen" );
+        //console.log( "started switchToLoadingScreen" );
         this.switchTo( this.resources.TEMPLATE_NAME_LOADING, { optional_message: optionalMessage } );
     },
 
     switchToMainTemplate: function() 
     {
-        console.log( "started switchToMainTemplate with the following object:" );
-        console.dir( this.zendesk_user ); console.log( "" );
+        //console.log( "started switchToMainTemplate with the following object:" );
+        //console.dir( this.zendesk_user ); //console.log( "" );
         var syncFields = this.zendesk_user.getFieldSyncInfo( this.mailshot_sync_user );
         var isInSync = this.zendesk_user.isInSync( syncFields );
         
@@ -1002,20 +1033,20 @@ console.warn( "NEED TO CLONE MAILCHIMP USER IDEALLY AT THIS POINT");
             }
         };
 
-        console.log( "switching to form with object:" );
-        console.dir( formData ); console.log( "" );
+        //console.log( "switching to form with object:" );
+        //console.dir( formData ); //console.log( "" );
 
         this.switchTo( this.resources.TEMPLATE_NAME_MAIN, formData );
     },
 
     switchToErrorMessage: function( errorResponse, overrideMessage, additionalButtonText, additionalButtonHandle ) 
     {
-        console.log( "started switchToErrorMessage with the folloring object:" );
-        console.dir( errorResponse ); console.log( "" );
-        console.log( "additionalButtonHandle:" );
-        console.dir( additionalButtonHandle ); console.log( "" );
-        console.log( "overrideMessage:" );
-        console.dir( overrideMessage ); console.log( "" );
+        //console.log( "started switchToErrorMessage with the folloring object:" );
+        //console.dir( errorResponse ); //console.log( "" );
+        //console.log( "additionalButtonHandle:" );
+        //console.dir( additionalButtonHandle ); //console.log( "" );
+        //console.log( "overrideMessage:" );
+        //console.dir( overrideMessage ); //console.log( "" );
 
         //check for catchall error conditions
 	    try
@@ -1056,7 +1087,7 @@ console.warn( "NEED TO CLONE MAILCHIMP USER IDEALLY AT THIS POINT");
             for(var i = 0; i < app.organization_field_mappings.length; i++) 
             {
                 this.extra_org_fields[ i ] = { field_def: app.organization_field_mappings[ i ], value: null };
-            };
+            }
             
             this.populateExtraFieldsFromOrganizationAPIData = function( APIOrgData )
             {
@@ -1076,14 +1107,14 @@ console.warn( "NEED TO CLONE MAILCHIMP USER IDEALLY AT THIS POINT");
             this.clone = function()
             {
                 var clonedOrganization = new this.app.ZendeskObjects.ZendeskOrganization( this.app, this.id, this.name, this.customer_type );
-                //console.log( "cloning Org, this.name = '" + this.name + "', new ZendeskOrganization = ");
-                //console.dir( clonedOrganization );
+                ////console.log( "cloning Org, this.name = '" + this.name + "', new ZendeskOrganization = ");
+                ////console.dir( clonedOrganization );
                 for(var i = 0; i < this.extra_org_fields.length; i++) 
                 {
                     clonedOrganization.extra_org_fields[ i ] = { field_def: this.extra_org_fields[ i ].field_def, value: this.extra_org_fields[ i ].value };
                 }
-                //console.log( "finished cloning Org, clonedOrganization = ");
-                //console.dir( clonedOrganization );
+                ////console.log( "finished cloning Org, clonedOrganization = ");
+                ////console.dir( clonedOrganization );
                 return clonedOrganization;
             };
 
@@ -1091,8 +1122,8 @@ console.warn( "NEED TO CLONE MAILCHIMP USER IDEALLY AT THIS POINT");
         
         ZendeskUser: function(app, id, name, email, customer_type, organization_id)
         {
-            //console.log( "Started ZendeskUser constructor with id=" + id + ", name = " + name + ", email = " + email +  ", customer_type = " + customer_type + ", app = ...");
-            //console.dir( app );
+            ////console.log( "Started ZendeskUser constructor with id=" + id + ", name = " + name + ", email = " + email +  ", customer_type = " + customer_type + ", app = ...");
+            ////console.dir( app );
             this.app = app;
             this.id = id;
             this.name = name;
@@ -1127,17 +1158,17 @@ console.warn( "NEED TO CLONE MAILCHIMP USER IDEALLY AT THIS POINT");
              */
             this.clone = function()
             {
-                console.log( "Started ZendeskUser.prototype.clone with this=");
-                console.dir( this );
-                console.log( "and this.orgObject = ");
-                console.dir( this.orgObject );
+                //console.log( "Started ZendeskUser.prototype.clone with this=");
+                //console.dir( this );
+                //console.log( "and this.orgObject = ");
+                //console.dir( this.orgObject );
                 var clonedUser = new this.app.ZendeskObjects.ZendeskUser( this.app, this.id, this.name, this.email, this.customer_type, this.organization_id );
                 clonedUser.orgObject = ( this.orgObject === null) ? null : this.orgObject.clone();
                 for(var i = 0; i < this.extra_user_fields.length; i++) 
                 {
                     clonedUser.extra_user_fields[ i ] = { field_def: this.extra_user_fields[ i ].field_def, value: this.extra_user_fields[ i ].value };
                 }
-                console.log( "Finished ZendeskUser.prototype.clone, returning:");
+                //console.log( "Finished ZendeskUser.prototype.clone, returning:");
                 return clonedUser;
             };
 
@@ -1153,9 +1184,9 @@ console.warn( "NEED TO CLONE MAILCHIMP USER IDEALLY AT THIS POINT");
             
             this.getFieldSyncInfo = function( mailChimpUser )
             {
-                console.log( "starting getFieldSyncInfo with the following 2 user objects" );
-                console.dir( this ); console.log( "" );
-                console.dir( mailChimpUser ); console.log( "" ); 
+                //console.log( "starting getFieldSyncInfo with the following 2 user objects" );
+                //console.dir( this ); //console.log( "" );
+                //console.dir( mailChimpUser ); //console.log( "" ); 
                 if( mailChimpUser === null )
                 {
                     return null;
@@ -1174,8 +1205,8 @@ console.warn( "NEED TO CLONE MAILCHIMP USER IDEALLY AT THIS POINT");
                 var tempZdValue = null;
                 var tempMcValue = null;
                 var arrayIndex = 0;
-                console.log( "about to start user fields, JSON:" );
-                console.dir( sync_fields ); console.log( "" );  
+                //console.log( "about to start user fields, JSON:" );
+                //console.dir( sync_fields ); //console.log( "" );  
                 for( var i = 0; i < this.extra_user_fields.length; i++ )
                 {
                     tempZdValue = this.extra_user_fields[ i ].value;
@@ -1191,8 +1222,8 @@ console.warn( "NEED TO CLONE MAILCHIMP USER IDEALLY AT THIS POINT");
                     };
                     arrayIndex++;
                 }
-                console.log( "done user fields JSON:" );
-                console.dir( sync_fields ); console.log( "" );  
+                //console.log( "done user fields JSON:" );
+                //console.dir( sync_fields ); //console.log( "" );  
                 for( i = 0; i < this.app.organization_field_mappings.length; i++ )
                 {
                     tempZdValue = this.isDefault() ? this.app.organization_field_mappings[ i ].default_value : ( this.isOrganization() ? this.orgObject.extra_org_fields[ i ].value : null );
@@ -1208,8 +1239,8 @@ console.warn( "NEED TO CLONE MAILCHIMP USER IDEALLY AT THIS POINT");
                     };
                     arrayIndex++;
                 }
-                console.log( "done org fields JSON:" );
-                console.dir( sync_fields ); console.log( "" );  
+                //console.log( "done org fields JSON:" );
+                //console.dir( sync_fields ); //console.log( "" );  
                 for( i = 0; i < this.app.mailshot_only_field_mappings.length; i++ )
                 {
                     tempMcValue = mailChimpUser.extra_merge_fields[ arrayIndex ].value;
