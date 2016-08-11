@@ -84,7 +84,7 @@
 				type:'GET',
 				dataType: 'json'
 			};
-			console.log( "getZendeskUser: API CAll DETAILS:" );console.dir( userApiCallSettings );
+			//console.log( "getZendeskUser: API CAll DETAILS:" );console.dir( userApiCallSettings );
 			return userApiCallSettings;
 		},
 
@@ -109,7 +109,7 @@
 					}
 				})
 			};
-			console.log( "updateZendeskUser: API CAll DETAILS:" );console.dir( userApiCallSettings );
+			//console.log( "updateZendeskUser: API CAll DETAILS:" );console.dir( userApiCallSettings );
 			return userApiCallSettings;
 		},
 
@@ -121,7 +121,7 @@
 				type:'GET',
 				dataType: 'json'
 			};
-			console.log( "getZendeskOrganizations: API CAll DETAILS:" );console.dir( userApiCallSettings );
+			//console.log( "getZendeskOrganizations: API CAll DETAILS:" );console.dir( userApiCallSettings );
 			return userApiCallSettings;
 		},
 
@@ -147,7 +147,7 @@
 					}
 				})
 			};
-			console.log( "getMailChimpAllListMembers: API CAll DETAILS:" );console.dir( jsonCall );
+			//console.log( "getMailChimpAllListMembers: API CAll DETAILS:" );console.dir( jsonCall );
 			return jsonCall;
 		},
 
@@ -173,7 +173,7 @@
 					"Authorization": "Basic " + btoa( "api:" + this.mailchimp_api_key )
 				}
 			};
-			console.log( "getMailChimpListMember: API CAll DETAILS:" );console.dir( jsonCall );
+			//console.log( "getMailChimpListMember: API CAll DETAILS:" );console.dir( jsonCall );
 			return jsonCall;
 		},
 
@@ -223,7 +223,7 @@
 				},
 				data: JSON.stringify( dataJSON )
 			};
-			console.log( "createOrUpadateMailChimpListMember: API CAll DETAILS:" );console.dir( jsonCall );
+			//console.log( "createOrUpadateMailChimpListMember: API CAll DETAILS:" );console.dir( jsonCall );
 			return jsonCall;
 		},
 
@@ -250,7 +250,7 @@
 						"Authorization": "Basic " + btoa( "api:" + this.mailchimp_api_key )
 				}
 			};
-			console.log( "deleteMailChimpListMember: API CAll DETAILS:" );console.dir( jsonCall );
+			//console.log( "deleteMailChimpListMember: API CAll DETAILS:" );console.dir( jsonCall );
 			return jsonCall;
 		}
 	},		
@@ -263,7 +263,7 @@
 	// --- INITIALISATION FUCNTIONS
 	init: function() 
 	{
-		console.log( "Starting app init()");
+		//console.log( "Starting app init()");
 		
 		//hide hidden dustomer type field if in user screen
 		this.hideFieldsIfInUserLocation();
@@ -473,7 +473,7 @@
 	
 	createZendeskUserFromAPIReturnData: function( userObjectFromDataAPI )
 	{
-		console.log( 'Starting createZendeskUserFromAPIReturnData, userObjectFromDataAPI = ' );console.dir( userObjectFromDataAPI );
+		//console.log( 'Starting createZendeskUserFromAPIReturnData, userObjectFromDataAPI = ' );console.dir( userObjectFromDataAPI );
 
 		var zendeskUserObjectToReturn = null;
 		if( userObjectFromDataAPI !== null )
@@ -492,13 +492,13 @@
 		}
 		else console.warn( "createZendeskUserFromAPIReturnData called but userObjectFromDataAPI = null - this should never happen!");
 
-		console.log( 'Finished createZendeskUserFromAPIReturnData, zendeskUserObjectToReturn = ' );console.dir( zendeskUserObjectToReturn );
+		//console.log( 'Finished createZendeskUserFromAPIReturnData, zendeskUserObjectToReturn = ' );console.dir( zendeskUserObjectToReturn );
 		return zendeskUserObjectToReturn;
 	},
 	
 	getUserFromFrameworkInUserSidebarLocation: function()
 	{
-		console.log( 'Starting getUserFromFrameworkInUserSidebarLocation' );
+		//console.log( 'Starting getUserFromFrameworkInUserSidebarLocation' );
 
 		//fetch first organization object if there is one, null if not
 		var usersOrgObject = ( typeof( this.user().organizations()[0] ) !== 'undefined' && this.user().organizations()[0] !== null ) ? this.user().organizations()[0] : null;
@@ -523,7 +523,7 @@
 			this.zendesk_user.orgObject.populateExtraFieldsFromFrameworkOrgObject( usersOrgObject );
 		}
 		
-		console.log( "Finished getUserFromFrameworkInUserSidebarLocation, this.zendesk_user = " );console.dir( this.zendesk_user );
+		//console.log( "Finished getUserFromFrameworkInUserSidebarLocation, this.zendesk_user = " );console.dir( this.zendesk_user );
 		this.fetchMailchimpObjectIfNecessary();
 	},
 
@@ -551,7 +551,7 @@
 
 	getZendeskOrganizations_Done: function( organizationObjectFromDataAPI )
 	{
-		console.log( 'Starting getZendeskOrganizations_Done, organizationObjectFromDataAPI = ' );console.dir( organizationObjectFromDataAPI );
+		//console.log( 'Starting getZendeskOrganizations_Done, organizationObjectFromDataAPI = ' );console.dir( organizationObjectFromDataAPI );
 
 		this.zendesk_user.orgObject = this.createZendeskOrganizationFromAPIReturnData( organizationObjectFromDataAPI );
 		
@@ -571,7 +571,7 @@
 
 	createZendeskOrganizationFromAPIReturnData: function( organizationObjectFromDataAPI )
 	{
-		console.log( 'Starting createZendeskOrganizationFromAPIReturnData, organizationObjectFromDataAPI = ' );console.dir( organizationObjectFromDataAPI );
+		//console.log( 'Starting createZendeskOrganizationFromAPIReturnData, organizationObjectFromDataAPI = ' );console.dir( organizationObjectFromDataAPI );
 
 		var organizationObjectToReturn = null;
 		if( typeof( organizationObjectFromDataAPI ) !== "undefined" && organizationObjectFromDataAPI !== null && typeof( organizationObjectFromDataAPI.organization ) !== "undefined" )
@@ -589,7 +589,7 @@
 		}
 		else console.warn( "createZendeskOrganizationFromAPIReturnData called but organizationObjectFromDataAPI = null or doesnt contain a organization property - this should never happen!");
 
-		console.log( 'Finished createZendeskOrganizationFromAPIReturnData, organizationObjectToReturn = ' );console.dir( organizationObjectToReturn.clone() );
+		//console.log( 'Finished createZendeskOrganizationFromAPIReturnData, organizationObjectToReturn = ' );console.dir( organizationObjectToReturn.clone() );
 		return organizationObjectToReturn;
 	},
 	
@@ -609,7 +609,7 @@
 	
 	changeCustomerType: function( oldType, newType ) 
 	{
-		console.log( "changeCustomerType called, oldType: " + oldType + "newType: " + newType );
+		//console.log( "changeCustomerType called, oldType: " + oldType + "newType: " + newType );
 
 		//update user object so it doesnt get out of sync
 		this.zendesk_user.customer_type = newType;
@@ -660,7 +660,7 @@
 	//MAILCHIMP SYNCING WRAPPER FUNCTIONS
 	retrievedMailchimpSubscriber: function( returnedMailchimpUser ) 
 	{
-		console.log( "started retrievedMailchimpSubscriber, returnedMailchimpUser = returnedMailchimpUser" );console.dir( returnedMailchimpUser ); //console.log( "" );
+		//console.log( "started retrievedMailchimpSubscriber, returnedMailchimpUser = returnedMailchimpUser" );console.dir( returnedMailchimpUser ); ////console.log( "" );
 
 		this.mailshot_sync_user = 
 		{
@@ -689,22 +689,22 @@
 			arrayIndex++;
 		}		
 
-		console.log( "Finished retrievedMailchimpSubscriber, this.mailshot_sync_user = " );console.dir( this.mailshot_sync_user );
+		//console.log( "Finished retrievedMailchimpSubscriber, this.mailshot_sync_user = " );console.dir( this.mailshot_sync_user );
 		this.switchToMainTemplate();
 	},	
 
 	syncNewUserToMailchimp: function( zendeskUser ) 
 	{
-		console.log( "Starting syncNewUserToMailchimp, zendeskUser =");console.dir( zendeskUser );
+		//console.log( "Starting syncNewUserToMailchimp, zendeskUser =");console.dir( zendeskUser );
 		var newMailChimpUserToSave = this.createNewMailchimpSyncUserObject( zendeskUser );
-		console.log( "Finished syncNewUserToMailchimp, newMailChimpUserToSave =");console.dir( newMailChimpUserToSave );
+		//console.log( "Finished syncNewUserToMailchimp, newMailChimpUserToSave =");console.dir( newMailChimpUserToSave );
 		this.switchToLoadingScreen( "Adding Mailchimp Member" );
 		this.ajax( "createOrUpadateMailChimpListMember", newMailChimpUserToSave, false );
 	},
 
 	syncExistingUserToMailchimp: function( zendeskUser, tryToPreserveMCOnlyFields ) 
 	{
-		console.log( "Starting syncExistingUserToMailchimp, zendeskUser =");console.dir( zendeskUser );
+		//console.log( "Starting syncExistingUserToMailchimp, zendeskUser =");console.dir( zendeskUser );
 		var newMailChimpUserToSave = this.createNewMailchimpSyncUserObject( zendeskUser );
 		
 		//if switching between Standard and Org mode try to preserve the value of the Mailchimp only checkbox fields
@@ -719,7 +719,7 @@
 			}
 		}
 
-		console.log( "Finished syncExistingUserToMailchimp, newMailChimpUserToSave =");console.dir( newMailChimpUserToSave );
+		//console.log( "Finished syncExistingUserToMailchimp, newMailChimpUserToSave =");console.dir( newMailChimpUserToSave );
 		this.switchToLoadingScreen( "Updating Mailchimp Member" );
 		this.ajax( "createOrUpadateMailChimpListMember", newMailChimpUserToSave, true );
 	},
@@ -732,7 +732,7 @@
 
 	get_or_createOrUpadateMailChimpListMember_OnFail: function( errorResponse ) 
 	{
-		console.log( "Started get_or_createOrUpadateMailChimpListMember_OnFail, errorResponse = " );console.dir( errorResponse );
+		//console.log( "Started get_or_createOrUpadateMailChimpListMember_OnFail, errorResponse = " );console.dir( errorResponse );
 
 		//check to see if we were in create only mode but the users email address was already found.
 		try
@@ -769,7 +769,7 @@
 
 	createNewMailchimpSyncUserObject: function( zendeskSyncUserObject )
 	{
-		console.log( "Started createNewMailchimpSyncUserObject, zendeskSyncUserObject = " ); console.dir( zendeskSyncUserObject );
+		//console.log( "Started createNewMailchimpSyncUserObject, zendeskSyncUserObject = " ); console.dir( zendeskSyncUserObject );
 
 		var useDefaultOrgValues = zendeskSyncUserObject.isDefault();		
 
@@ -814,7 +814,7 @@
 			arrayIndex++;
 		}
 
-		console.log( "Finished createNewMailchimpSyncUserObject, mailchimpUserToReturn = " ); console.dir( mailchimpUserToReturn );
+		//console.log( "Finished createNewMailchimpSyncUserObject, mailchimpUserToReturn = " ); console.dir( mailchimpUserToReturn );
 		return mailchimpUserToReturn;
 	},
 
@@ -826,7 +826,7 @@
 
 	switchToMainTemplate: function() 
 	{
-		console.log( "Started switchToMainTemplate" );
+		//console.log( "Started switchToMainTemplate" );
 		var syncFields = this.zendesk_user.getFieldSyncInfo( this.mailshot_sync_user );
 		var isInSync = this.zendesk_user.isInSync( syncFields );
 		
@@ -853,7 +853,7 @@
 			}
 		};
 
-		console.log( "Finished switchToMainTemplate, formData = " );console.dir( formData );
+		//console.log( "Finished switchToMainTemplate, formData = " );console.dir( formData );
 		this.switchTo( this.resources.TEMPLATE_NAME_MAIN, formData );
 	},
 
