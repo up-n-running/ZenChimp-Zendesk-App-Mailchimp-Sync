@@ -420,7 +420,6 @@
 			updatedUserToSave.customer_type = this.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_EXCLUDE;
 			this.ajax( 'updateZendeskUser', updatedUserToSave );
 		}
-		
 	},
 
 	organizationButtonOnClick: function()
