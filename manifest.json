@@ -45,6 +45,41 @@
       "required": true,
       "secure": false,
       "default": "LNAME"
+    },
+    {
+      "name": "mailchimp_merge_field_customer_type",
+      "type": "text",
+      "required": true,
+      "secure": false,
+      "default": "CUSTOMER"
+    },
+    {
+      "name": "mailchimp_merge_field_customer_type_default_val",
+      "type": "text",
+      "required": true,
+      "secure": false,
+      "default": "SMEs"
+    },
+    {
+      "name": "mailchimp_organization_field_mappings",
+      "type": "multiline",
+      "required": true,
+      "secure": false,
+      "default": "[\r\n  {\"field_label\":\"Success Email\",\"zendesk_field\":\"mailshot_success_email_address\",\"mailshot_field\":\"FROMEMAIL\",\"type\":\"text\",\"default_value\":\"successteam@greenlightpower.net\"},\r\n  {\"field_label\":\"Logo URL\",\"zendesk_field\":\"mailshot_company_logo_url\",\"mailshot_field\":\"LOGO\",\"type\":\"image\",\"default_value\":\"\"}\r\n]"
+    },
+    {
+      "name": "mailchimp_user_field_mappings",
+      "type": "multiline",
+      "required": true,
+      "secure": false,
+      "default": "[\r\n  { \"field_label\": \"Site List\", \"zendesk_field\":\"site_list\", \"mailshot_field\": \"SME_SITES\", \"type\": \"text\", \"default_value\": \"\" }\r\n]"
+    },
+    {
+      "name": "mailchimp_mailshot_only_field_mappings",
+      "type": "multiline",
+      "required": true,
+      "secure": false,
+      "default": "[\r\n  { \"field_label\":\"Maintenance Emails\", \"mailshot_field\": \"SEND_MAINT\", \"type\": \"checkbox\", \"default_value\": \"1\" },\r\n  { \"field_label\":\"Announcement Emails\", \"mailshot_field\": \"SEND_ANNOU\", \"type\": \"checkbox\", \"default_value\":\"1\" },\r\n  { \"field_label\":\"Monthly Scorecards\", \"mailshot_field\": \"SEND_CSAT\", \"type\": \"checkbox\", \"default_value\":\"0\" }\r\n]"
     }
   ]
 }

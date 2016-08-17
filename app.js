@@ -21,9 +21,6 @@
 		USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_USE_DEFAULT: "mailshot_use_default_values",
 		USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_USE_ORGANIZATION: "mailshot_use_organisation_values",
 
-		MAILSHOT_FIELD_NAMES_CUSTOMER_TYPE: "CUSTOMER",
-		MAILSHOT_FIELD_CUSTOMER_TYPE_DEFAULT_VALUE: "SMEs",
-
 		TEMPLATE_NAME_MAIN: "main",
 		TEMPLATE_NAME_LOADING: "loading_screen"
 	},
@@ -205,7 +202,7 @@
 			//3 x mandatory merge fields plus extra ones from user object
 			dataJSON.merge_fields[ this.mailchimp_merge_field_forename ] = mailchimpSyncUser.forename;
 			dataJSON.merge_fields[ this.mailchimp_merge_field_surname ] = mailchimpSyncUser.surname;
-			dataJSON.merge_fields[ this.resources.MAILSHOT_FIELD_NAMES_CUSTOMER_TYPE ] = mailchimpSyncUser.customer_type;
+			dataJSON.merge_fields[ this.mailchimp_list_field_customer_type_name ] = mailchimpSyncUser.customer_type;
 			for (var i=0; i < mailchimpSyncUser.extra_merge_fields.length; i++) 
 			{
 				dataJSON.merge_fields[ mailchimpSyncUser.extra_merge_fields[ i ].field_def.mailshot_field ] = mailchimpSyncUser.extra_merge_fields[ i ].value;
@@ -279,24 +276,32 @@
 		this.mailchimp_list_id = this.setting('mailchimp_list_id');
 		this.mailchimp_merge_field_forename = this.setting('mailchimp_merge_field_forename');
 		this.mailchimp_merge_field_surname = this.setting('mailchimp_merge_field_surname');
+		this.mailchimp_list_field_customer_type_name = this.setting('mailchimp_merge_field_customer_type');
+		this.mailchimp_list_field_customer_type_default_value = this.setting('mailchimp_merge_field_customer_type_default_val');
 
 		//setup field mappings
-		this.customer_type_field_mapping = { zendesk_field: 'mailshot_customer_display_name', mailshot_field: 'CUSTOMER', type: this.resources.FIELD_TYPE_TEXT, default_value: 'SMEs' };
-		this.organization_field_mappings = 
+		this.customer_type_field_mapping = { zendesk_field: 'mailshot_customer_display_name', mailshot_field: this.mailchimp_list_field_customer_type_name, type: this.resources.FIELD_TYPE_TEXT, default_value: this.mailchimp_list_field_customer_type_default_value };
+		this.organization_field_mappings = JSON.parse( this.setting('mailchimp_organization_field_mappings') );
+		/*this.organization_field_mappings = 
 		[ 
 			{ field_label: 'Success Email', zendesk_field:'mailshot_success_email_address', mailshot_field: 'FROMEMAIL', type: this.resources.FIELD_TYPE_TEXT, default_value: 'successteam@greenlightpower.net' },
 			{ field_label: 'Logo URL', zendesk_field:'mailshot_company_logo_url', mailshot_field: 'LOGO', type: this.resources.FIELD_TYPE_IMAGE, default_value:'' }
 		];
-		this.user_field_mappings = 
+		*/
+		this.user_field_mappings = JSON.parse( this.setting('mailchimp_user_field_mappings') );
+		/*this.user_field_mappings = 
 		[ 
 			{ field_label: 'Site List', zendesk_field:'site_list', mailshot_field: 'SME_SITES', type: this.resources.FIELD_TYPE_TEXT, default_value: '' }
 		];
-		this.mailshot_only_field_mappings = 
+		*/
+		this.mailshot_only_field_mappings = JSON.parse( this.setting('mailchimp_mailshot_only_field_mappings') );
+		/*
 		[ 
 			{ field_label:'Maintenance Emails', mailshot_field: 'SEND_MAINT', type: this.resources.FIELD_TYPE_CHECKBOX, default_value: '1' },
 			{ field_label:'Announcement Emails', mailshot_field: 'SEND_ANNOU', type: this.resources.FIELD_TYPE_CHECKBOX, default_value:'1' },
 			{ field_label:'Monthly Scorecards', mailshot_field: 'SEND_CSAT', type: this.resources.FIELD_TYPE_CHECKBOX, default_value:'0' }
 		];
+		*/
 
 		//delcare other instance variables
 		this.mailshot_sync_user = null;
@@ -415,7 +420,6 @@
 			updatedUserToSave.customer_type = this.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_EXCLUDE;
 			this.ajax( 'updateZendeskUser', updatedUserToSave );
 		}
-		
 	},
 
 	organizationButtonOnClick: function()
