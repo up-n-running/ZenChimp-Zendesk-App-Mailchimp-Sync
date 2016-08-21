@@ -27,7 +27,11 @@
 
 	events: 
 	{
-		'app.activated'				: 'init',
+		//init events
+		'app.activated'				 : 'init',
+		'ticket.requester.id.changed': 'resetAppIfPageFullyLoaded',
+		'user.email.changed'		 : 'resetAppIfPageFullyLoaded',
+
 
 		// Zendesk API Requests
 		'getZendeskUser.done'		: 'getZendeskUser_Done',
@@ -55,7 +59,7 @@
 		'click .sync'			   : 'syncButtonFromModalOnClick',
 
 		//buttons on error form
-		'click .error_go_back'			: 'resetAppAfterInitialization',
+		'click .error_go_back'			: 'resetAppIfPageFullyLoaded',
 		'click .error_override_mailchimp' : 'createOrUpadateMailChimpListMember_Override_OnClick',
 		'click .error_create_new_mailchimp' : 'createOrUpadateMailChimpListMember_Add_New_OnClick',
 		
@@ -282,36 +286,29 @@
 		//setup field mappings
 		this.customer_type_field_mapping = { zendesk_field: 'mailshot_customer_display_name', mailshot_field: this.mailchimp_list_field_customer_type_name, type: this.resources.FIELD_TYPE_TEXT, default_value: this.mailchimp_list_field_customer_type_default_value };
 		this.organization_field_mappings = JSON.parse( this.setting('mailchimp_organization_field_mappings') );
-		/*this.organization_field_mappings = 
-		[ 
-			{ field_label: 'Success Email', zendesk_field:'mailshot_success_email_address', mailshot_field: 'FROMEMAIL', type: this.resources.FIELD_TYPE_TEXT, default_value: 'successteam@greenlightpower.net' },
-			{ field_label: 'Logo URL', zendesk_field:'mailshot_company_logo_url', mailshot_field: 'LOGO', type: this.resources.FIELD_TYPE_IMAGE, default_value:'' }
-		];
-		*/
 		this.user_field_mappings = JSON.parse( this.setting('mailchimp_user_field_mappings') );
-		/*this.user_field_mappings = 
-		[ 
-			{ field_label: 'Site List', zendesk_field:'site_list', mailshot_field: 'SME_SITES', type: this.resources.FIELD_TYPE_TEXT, default_value: '' }
-		];
-		*/
 		this.mailshot_only_field_mappings = JSON.parse( this.setting('mailchimp_mailshot_only_field_mappings') );
-		/*
-		[ 
-			{ field_label:'Maintenance Emails', mailshot_field: 'SEND_MAINT', type: this.resources.FIELD_TYPE_CHECKBOX, default_value: '1' },
-			{ field_label:'Announcement Emails', mailshot_field: 'SEND_ANNOU', type: this.resources.FIELD_TYPE_CHECKBOX, default_value:'1' },
-			{ field_label:'Monthly Scorecards', mailshot_field: 'SEND_CSAT', type: this.resources.FIELD_TYPE_CHECKBOX, default_value:'0' }
-		];
-		*/
 
 		//delcare other instance variables
 		this.mailshot_sync_user = null;
 		this.zendesk_user = null;
 
-		this.resetAppAfterInitialization();
+		this.isFullyInitialized = false;
+		this.resetAppIfPageFullyLoaded();
 	},
+//events: { 'app.activated': 'welcomeIfDataReady', 'ticket.subject.changed': 'welcomeIfDataReady', 'ticket.requester.email.changed': 'welcomeIfDataReady' },
 
-	resetAppAfterInitialization: function() 
+
+	resetAppIfPageFullyLoaded: function() 
 	{
+		//dont continue if page not fuly loaded yet
+		if( !this.isFullyInitialized && 
+			( (this.currentLocation() === this.resources.APP_LOCATION_TICKET && typeof( this.ticket().requester().id() ) === null ) || (this.currentLocation() === this.resources.APP_LOCATION_USER && ( this.user().id() === null || this.user().email() === null ) ) ) 
+		)
+		{
+			return;
+		}
+		
 		this.mailshot_sync_user = null;
 		this.zendesk_user = null;
 		
@@ -326,6 +323,7 @@
 			this.switchToLoadingScreen( "Loading Zendesk User" );
 			this.getUserFromFrameworkInUserSidebarLocation();
 		}
+		this.isFullyInitialized = true;
 	},
 	
 	//MAIN SCREEN UTILITY FUNCTIONS
