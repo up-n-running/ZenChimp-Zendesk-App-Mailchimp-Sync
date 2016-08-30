@@ -28,9 +28,10 @@
 	events: 
 	{
 		//init events
-		'app.activated'				 : 'init',
-		'ticket.requester.id.changed': 'resetAppIfPageFullyLoaded',
+		'app.activated'                  : 'init',
+		'ticket.requester.id.changed'    : 'resetAppIfPageFullyLoaded',
 		'user.email.changed'		 : 'resetAppIfPageFullyLoaded',
+                'user.id.changed'		 : 'resetAppIfPageFullyLoaded',
 
 
 		// Zendesk API Requests
@@ -282,6 +283,8 @@
 		this.mailchimp_merge_field_surname = this.setting('mailchimp_merge_field_surname');
 		this.mailchimp_list_field_customer_type_name = this.setting('mailchimp_merge_field_customer_type');
 		this.mailchimp_list_field_customer_type_default_value = this.setting('mailchimp_merge_field_customer_type_default_val');
+                this.mailchimp_organisation_button_label = this.setting('mailchimp_organisation_button_label');
+                this.mailchimp_standard_button_label = this.setting('mailchimp_standard_button_label');
 
 		//setup field mappings
 		this.customer_type_field_mapping = { zendesk_field: 'mailshot_customer_display_name', mailshot_field: this.mailchimp_list_field_customer_type_name, type: this.resources.FIELD_TYPE_TEXT, default_value: this.mailchimp_list_field_customer_type_default_value };
@@ -302,13 +305,15 @@
 	resetAppIfPageFullyLoaded: function() 
 	{
 		//dont continue if page not fuly loaded yet
-		if( !this.isFullyInitialized && 
-			( (this.currentLocation() === this.resources.APP_LOCATION_TICKET && typeof( this.ticket().requester().id() ) === null ) || (this.currentLocation() === this.resources.APP_LOCATION_USER && ( this.user().id() === null || this.user().email() === null ) ) ) 
-		)
+		if( !this.isFullyInitialized && this.currentLocation() === this.resources.APP_LOCATION_TICKET && typeof( this.ticket().requester().id() ) === null )
 		{
 			return;
 		}
-		
+                if( !this.isFullyInitialized && this.currentLocation() === this.resources.APP_LOCATION_USER && ( this.user().id() === null || this.user().email() === null ) )
+		{
+			return;
+		}
+                
 		this.mailshot_sync_user = null;
 		this.zendesk_user = null;
 		
@@ -840,9 +845,9 @@
 			'monkey_URL': this.zendesk_user.isNotset() ? null : ( this.zendesk_user.isExcluded() ? this.assetURL( "exclude_monkey.png" ) : ( isInSync ? this.assetURL( "insync_monkey.png" ) : this.assetURL( "outofsync_monkey.png" ) ) ),
 			'buttons': 
 			{
-				'exclude': { 'show': true, 'classNameInsert': this.zendesk_user.isExcluded() ? " active" : "" },
-				'organization': { 'show': ( this.zendesk_user.belongsToOrganization() ), 'classNameInsert': this.zendesk_user.isOrganization() ? " active" : "" },
-				'standard': { 'show': true, 'classNameInsert': this.zendesk_user.isDefault() ? " active" : "" }
+				'exclude': { 'show': true, 'classNameInsert': this.zendesk_user.isExcluded() ? " active" : "", 'label' : "Exclude" },
+				'organization': { 'show': ( this.zendesk_user.belongsToOrganization() ), 'classNameInsert': this.zendesk_user.isOrganization() ? " active" : "", 'label' : this.mailchimp_organisation_button_label },
+				'standard': { 'show': true, 'classNameInsert': this.zendesk_user.isDefault() ? " active" : "", 'label' : this.mailchimp_standard_button_label }
 			},
 			'display_params':
 			{

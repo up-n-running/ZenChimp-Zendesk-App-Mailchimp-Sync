@@ -61,6 +61,20 @@
       "default": "SMEs"
     },
     {
+      "name": "mailchimp_organisation_button_label",
+      "type": "text",
+      "required": true,
+      "secure": false,
+      "default": "Organisation"
+    },
+    {
+      "name": "mailchimp_standard_button_label",
+      "type": "text",
+      "required": true,
+      "secure": false,
+      "default": "Standard"
+    },
+    {
       "name": "mailchimp_organization_field_mappings",
       "type": "multiline",
       "required": true,
