@@ -32,6 +32,9 @@
 		'ticket.requester.id.changed'    : 'resetAppIfPageFullyLoaded',
 		'user.email.changed'		 : 'resetAppIfPageFullyLoaded',
                 'user.id.changed'		 : 'resetAppIfPageFullyLoaded',
+                'user.name.changed'		 : 'resetAppIfPageFullyLoaded',
+                'user.organizations.changed'	 : 'resetAppIfPageFullyLoaded',
+                
 
 
 		// Zendesk API Requests
@@ -305,11 +308,11 @@
 	resetAppIfPageFullyLoaded: function() 
 	{
 		//dont continue if page not fuly loaded yet
-		if( !this.isFullyInitialized && this.currentLocation() === this.resources.APP_LOCATION_TICKET && typeof( this.ticket().requester().id() ) === null )
+		if( !this.isFullyInitialized && this.currentLocation() === this.resources.APP_LOCATION_TICKET && ( typeof( this.ticket().requester().id() ) === "undefined" || this.ticket().requester().id() === null ) )
 		{
 			return;
 		}
-                if( !this.isFullyInitialized && this.currentLocation() === this.resources.APP_LOCATION_USER && ( this.user().id() === null || this.user().email() === null ) )
+                if( !this.isFullyInitialized && this.currentLocation() === this.resources.APP_LOCATION_USER && ( this.user().id() === null || this.user().email() === null || this.user().name() ) )
 		{
 			return;
 		}
