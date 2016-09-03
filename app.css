@@ -31,12 +31,12 @@ td.mc-data
   display: inline-block;
 }
 
-.user_sync_page .page_content table 
+.user_sync_page .page_content .fixed table 
 {
     table-layout:fixed;
 }
 
-.user_sync_page .page_content td
+.user_sync_page .page_content .fixed td
 {
     border: #aaaaaa 1px solid;
     padding-top: 7px;
@@ -48,7 +48,7 @@ td.mc-data
     display: inline-block;
     white-space: nowrap;
 }
-.user_sync_page .page_content td.blank
+.user_sync_page .page_content .fixed td.blank
 {
     border-top-color: white;
     border-left-color: white;
@@ -57,7 +57,7 @@ td.mc-data
     width: 100px;
 }
 
-.user_sync_page .page_content td.field_heading
+.user_sync_page .page_content .fixed td.field_heading
 {
     color: #484848;
     border-right-color: #d2d2d2;
@@ -67,7 +67,7 @@ td.mc-data
     width: 100px;
 }
 
-.user_sync_page .page_content td.field_heading_out-of-sync
+.user_sync_page .page_content .fixed td.field_heading_out-of-sync
 {
     color: #C90000;
     border-right-color: #DB9595;
@@ -78,60 +78,58 @@ td.mc-data
 }
 
 
-.user_sync_page .page_content td.out-of-sync
+.user_sync_page .page_content .fixed td.out-of-sync
 {
     color: #red;
 }
 
 
-.user_sync_page .page_content td.zdheading
+.user_sync_page .page_content .fixed td.zdheading
 {
     border-right: none;
     color: #484848;
     background-color: #06A684;
     font-weight: bold;
     
-    width: 200px;
+    width: 199px;
 }
 
-.user_sync_page .page_content td.mcheading
+.user_sync_page .page_content .fixed td.mcheading
 {
     border-left: none;
     color: #484848;
     background-color: #42bdd3;
     font-weight: bold;
     
-    width: 200px;
+    width: 199px;
 }
 
-.user_sync_page .page_content td.value
+.user_sync_page .page_content .fixed td.value
 {
     color: #484848;
     border-top-color: white;
     font-size: 12px;
-    xpadding-top: 8px;
-    
-    width: 200px;
+    width: 199px;
 }
 
-.user_sync_page .page_content td.zd
+.user_sync_page .page_content .fixed td.zd
 {
     border-right: none;
     background-color: #99d8cb;
     border-top-color: #99d8cb;
 }
 
-.user_sync_page .page_content td.zd_disabled
+.user_sync_page .page_content .fixed td.zd_disabled
 {
     border-right: none;
     background-color: white;
     border-top-color: white;
     border-bottom-color: white;
     border-right: #DB9595 solid 1px;
-    width: 199px;
+    width: 198px;
 }
 
-.user_sync_page .page_content td.mc
+.user_sync_page .page_content .fixed td.mc
 {
     border-left: none;
     background-color: #a8dee7;

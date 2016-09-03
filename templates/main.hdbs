@@ -51,27 +51,35 @@
     <div class="modal-body" >
         <div class="user_sync_page">
             <div class="page_content">
-                <table>
+                <table cellpadding="0" cellspacing="0" border="0" width="521">
+                <tr><td colspan="2" width="521"><img width="521" height="1" src="{{assetURL '1x1.png'}}" /></td></tr>
                 <tr>
-                    <td class="blank">&nbsp;</td>
-                    <td class="zdheading">Zendesk User</td>
-                    <td class="mcheading">Mailchimp User</td>
-                </tr>
-                {{#each sync_fields}}
-                <tr>
-                    <td class="field_heading{{#unless this.in_sync}}_out-of-sync{{/unless}}">{{this.label}}</td>
-                    <td class="zd{{#if this.mc_only}}_disabled{{/if}} value">
-                        {{#if this.is_image}}{{#if this.zd_value}}<img style="margin-top: -7px" height="30" alt="Image Field Image Preview" src="{{this.zd_value}}" />{{else}}-{{/if}}
-                        {{else}}{{this.zd_value}}
-                        {{/if}}
+                    <td width="1"><img width="1" height="300" src="{{assetURL '1x1.png'}}" /></td>
+                    <td width="520" class="fixed">
+                        <table>
+                        <tr>
+                            <td class="blank">&nbsp;</td>
+                            <td class="zdheading">Zendesk User</td>
+                            <td class="mcheading">Mailchimp User</td>
+                        </tr>
+                        {{#each sync_fields}}
+                        <tr>
+                            <td class="field_heading{{#unless this.in_sync}}_out-of-sync{{/unless}}">{{this.label}}</td>
+                            <td class="zd{{#if this.mc_only}}_disabled{{/if}} value">
+                                {{#if this.is_image}}{{#if this.zd_value}}<img style="margin-top: -7px" height="30" alt="Image Field Image Preview" src="{{this.zd_value}}" />{{else}}-{{/if}}
+                                {{else}}{{this.zd_value}}
+                                {{/if}}
+                            </td>
+                            <td class="mc value">
+                                {{#if this.is_image}}{{#if this.mc_value}}<img style="margin-top: -7px" height="30" alt="Image Field Image Preview" src="{{this.mc_value}}" />{{else}}-{{/if}}
+                                {{else}}{{this.mc_value}}
+                                {{/if}}
+                            </td> 
+                        </tr>
+                        {{/each}}
+                        </table>
                     </td>
-                    <td class="mc value">
-                        {{#if this.is_image}}{{#if this.mc_value}}<img style="margin-top: -7px" height="30" alt="Image Field Image Preview" src="{{this.mc_value}}" />{{else}}-{{/if}}
-                        {{else}}{{this.mc_value}}
-                        {{/if}}
-                    </td> 
                 </tr>
-                {{/each}}
                 </table>
             </div>
         </div>
