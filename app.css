@@ -193,4 +193,5 @@ div.btn-group
 
 .modal{
   width: 570px;
+  display: table;
 }

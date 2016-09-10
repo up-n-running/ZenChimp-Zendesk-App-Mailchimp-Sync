@@ -1,10 +1,11 @@
 <div class="user_page">
 		<div class="btn-group" data-toggle="buttons-radio" style="text-align: center">
 		    <span>
-				{{#if buttons.exclude.show}}<button class="btn exclude{{buttons.exclude.classNameInsert}}">{{buttons.exclude.label}}</button>{{/if}}
-				{{#if buttons.organization.show}}<button class="btn organization{{buttons.organization.classNameInsert}}">{{#if zendesk_user.organization.name}}{{zendesk_user.organization.name}}{{/if}}{{#unless zendesk_user.organization.name}}{{buttons.organization.label}}{{/unless}}</button>{{/if}}
-				{{#if buttons.standard.show}}<button class="btn standard{{buttons.standard.classNameInsert}}">{{buttons.standard.label}}</button>{{/if}}
-			</span>
+                        {{#if display_params.DEBUG}}<a id="debugtest">debug</a>{{/if}}
+			{{#if buttons.exclude.show}}<button class="btn exclude{{buttons.exclude.classNameInsert}}">{{buttons.exclude.label}}</button>{{/if}}
+			{{#if buttons.organization.show}}<button class="btn organization{{buttons.organization.classNameInsert}}">{{#if zendesk_user.organization.name}}{{zendesk_user.organization.name}}{{/if}}{{#unless zendesk_user.organization.name}}{{buttons.organization.label}}{{/unless}}</button>{{/if}}
+			{{#if buttons.standard.show}}<button class="btn standard{{buttons.standard.classNameInsert}}">{{buttons.standard.label}}</button>{{/if}}
+                    </span>
 		</div>
 	<div class="page_content"{{#if monkey_URL}} style="background-image: url('{{monkey_URL}}');"{{/if}}>
 		{{#if display_params.customer_type_not_set}}
@@ -33,7 +34,7 @@
                     {{/if}}
                     {{#unless display_params.user_in_sync}}
 			<div class="information-text">
-				<p class="warning">{{zendesk_user.name}} is in out of sync</p>
+				<p class="warning">{{zendesk_user.name}} is out of sync</p>
                                 <a class="btn btn-large sync_popup" data-toggle="modal" data-target="#sync_modal">Synchronize</a>
 			</div>
                     {{/unless}}
@@ -43,9 +44,9 @@
 
 
 <!-- modal_popup -->
-<div id="sync_modal" width="570" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="Sync Data Modal Popup" aria-hidden="true">
+<div id="sync_modal" width="570" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="Sync Data Modal Popup" aria-hidden="false">
     <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">X</button>
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="false">X</button>
         <h3 class="my_modal_label">Synchronize User</h3>
     </div>
     <div class="modal-body" >

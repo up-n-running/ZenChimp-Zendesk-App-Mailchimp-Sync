@@ -22,7 +22,9 @@
 		USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_USE_ORGANIZATION: "mailshot_use_organisation_values",
 
 		TEMPLATE_NAME_MAIN: "main",
-		TEMPLATE_NAME_LOADING: "loading_screen"
+		TEMPLATE_NAME_LOADING: "loading_screen",
+		
+		DEBUG: false
 	},
 
 	events: 
@@ -31,9 +33,9 @@
 		'app.activated'                  : 'init',
 		'ticket.requester.id.changed'    : 'resetAppIfPageFullyLoaded',
 		'user.email.changed'		 : 'resetAppIfPageFullyLoaded',
-                'user.id.changed'		 : 'resetAppIfPageFullyLoaded',
-                'user.name.changed'		 : 'resetAppIfPageFullyLoaded',
-                'user.organizations.changed'	 : 'resetAppIfPageFullyLoaded',
+        'user.id.changed'		 : 'resetAppIfPageFullyLoaded',
+        'user.name.changed'		 : 'resetAppIfPageFullyLoaded',
+        'user.organizations.changed'	 : 'resetAppIfPageFullyLoaded',
                 
 
 
@@ -76,7 +78,10 @@
 		//main screen events
 		'user.mailshot_customer_type.changed' : 'userScreenCustomerTypeFieldChanged',
 
-		'*.changed': 'formFieldChanged'
+		'*.changed': 'formFieldChanged',
+		
+		//debug button
+		'click #debugtest': 'debugButtonOnClick'
 	},
 
 	requests: 
@@ -307,13 +312,16 @@
 
 	resetAppIfPageFullyLoaded: function() 
 	{
+		if( this.resources.DEBUG ) { console.log( "resetAppIfPageFullyLoaded called. this.isFullyInitialized = " + this.isFullyInitialized + " and this.resources.APP_LOCATION_TICKET = " + this.resources.APP_LOCATION_TICKET ); }
 		//dont continue if page not fuly loaded yet
 		if( !this.isFullyInitialized && this.currentLocation() === this.resources.APP_LOCATION_TICKET && ( typeof( this.ticket().requester().id() ) === "undefined" || this.ticket().requester().id() === null ) )
 		{
+			if( this.resources.DEBUG ) { console.log( "resetAppIfPageFullyLoaded, check failed: typeof( this.ticket().requester().id() ) = " + typeof( this.ticket().requester().id() ) + " and this.ticket().requester().id() = " + this.ticket().requester().id() ); }
 			return;
 		}
-                if( !this.isFullyInitialized && this.currentLocation() === this.resources.APP_LOCATION_USER && ( this.user().id() === null || this.user().email() === null || this.user().name() ) )
+        if( !this.isFullyInitialized && this.currentLocation() === this.resources.APP_LOCATION_USER && ( this.user().id() === null || this.user().email() === null || this.user().name() === null ) )
 		{
+			if( this.resources.DEBUG ) { console.log( "resetAppIfPageFullyLoaded, check failed: this.user().id() = " + this.user().id() + " and this.user().email() = " + this.user().email() + " and this.user().name() = " + this.user().name() ); }
 			return;
 		}
                 
@@ -859,7 +867,8 @@
 				'customer_type_included'	: this.zendesk_user.isIncluded(),
 				'customer_type_organization': this.zendesk_user.isOrganization(),
 				'customer_type_standard'	: this.zendesk_user.isDefault(),
-				'user_in_sync'			  : isInSync
+				'user_in_sync'			  : isInSync,
+				'DEBUG'					: this.resources.DEBUG
 			}
 		};
 
@@ -888,6 +897,12 @@
 		};
 
 		this.switchTo( 'show_error', formData );
+	}
+	
+	,debugButtonOnClick: function()
+	{
+		console.log( 'Starting debugButtonOnClick' );
+		console.dir( this );
 	}
 	
   };
