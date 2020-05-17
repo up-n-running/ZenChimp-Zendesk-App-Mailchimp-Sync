@@ -533,7 +533,7 @@ var pluginFactory = function( thisV2Client ) {
                             }
                             else
                             {
-                                    console.warn( "Unsupported field type: " + tempField.type );
+                                    console.error( "Unsupported field type: " + tempField.type );
                             }
                     }
             }
