@@ -1,7 +1,7 @@
 /* global Function, app */
 
 /**
- *  * Constructor to create a new ZendeskUser
+ *  * Constructor to create a new ZendeskOrganization
  * @param {Object} app The Zendesk App That is being used to call this constructor 
  * @param {int} id The Zendesk ID of organization
  * @param {string} name The Zendesk name of organization

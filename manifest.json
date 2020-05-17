@@ -21,21 +21,21 @@
       "type": "text",
       "required": true,
       "secure": false,
-      "default": "460c3ee2bde9457af9d9da7b245a83db-us13"
+      "default": "69f6e3b710acc3fa83aa18e2a64a265b-us18"
     },
     {
       "name": "mailchimp_datacentre_prefix",
       "type": "text",
       "required": true,
       "secure": false,
-      "default": "us13"
+      "default": "us18"
     },
     {
       "name": "mailchimp_list_id",
       "type": "text",
       "required": true,
       "secure": false,
-      "default": "78ecb74923"
+      "default": "865422fc09"
     },
     {
       "name": "mailchimp_merge_field_forename",

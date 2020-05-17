@@ -1,10 +1,10 @@
 <div class="user_page">
-                {{#if display_params.DEBUG}}<a id="debugtest">Debug Mode On</a>{{/if}}
+                {{#if display_params.DEBUG}}<a id="debugtest" onclick="return zenChimpPlugin.debugButtonOnClick();">Debug Mode On</a>{{/if}}
 		<div class="btn-group" data-toggle="buttons-radio" style="text-align: center">
 		    <span>
-			{{#if buttons.exclude.show}}<button class="btn exclude{{buttons.exclude.classNameInsert}}">{{buttons.exclude.label}}</button>{{/if}}
-			{{#if buttons.organization.show}}<button class="btn organization{{buttons.organization.classNameInsert}}">{{#if zendesk_user.organization.name}}{{zendesk_user.organization.name}}{{/if}}{{#unless zendesk_user.organization.name}}{{buttons.organization.label}}{{/unless}}</button>{{/if}}
-			{{#if buttons.standard.show}}<button class="btn standard{{buttons.standard.classNameInsert}}">{{buttons.standard.label}}</button>{{/if}}
+			{{#if buttons.exclude.show}}<button class="btn exclude{{buttons.exclude.classNameInsert}}" onclick="return zenChimpPlugin.{{buttons.exclude.onclick}};">{{buttons.exclude.label}}</button>{{/if}}
+			{{#if buttons.organization.show}}<button class="btn organization{{buttons.organization.classNameInsert}}" onclick="return zenChimpPlugin.{{buttons.organization.onclick}};">{{#if zendesk_user.organization.name}}{{zendesk_user.organization.name}}{{/if}}{{#unless zendesk_user.organization.name}}{{buttons.organization.label}}{{/unless}}</button>{{/if}}
+			{{#if buttons.standard.show}}<button class="btn standard{{buttons.standard.classNameInsert}}" onclick="return zenChimpPlugin.{{buttons.standard.onclick}};">{{buttons.standard.label}}</button>{{/if}}
                     </span>
 		</div>
                 <div class="page_content"{{#if monkey_URL}} style="background-image: url('{{monkey_URL}}');"{{/if}}>
@@ -35,7 +35,7 @@
                     {{#unless display_params.user_in_sync}}
 			<div class="information-text">
 				<p class="warning">{{zendesk_user.name}} is out of sync</p>
-                                <a class="btn btn-large sync_popup" data-toggle="modal" data-target="#sync_modal">Synchronize</a>
+                                <a class="btn btn-large sync_popup" onclick="return syncButtonOnclick();">Synchronize</a>
 			</div>
                     {{/unless}}
 		{{/if}}

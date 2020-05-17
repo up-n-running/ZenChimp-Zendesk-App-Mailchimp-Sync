@@ -2,32 +2,32 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <!--   See Using Zendesk Garden:
-    https://developer.zendesk.com/apps/docs/developer-guide/setup#using-zendesk-garden
-    https://garden.zendesk.com/css-components/bedrock/
-    https://garden.zendesk.com/css-components/utilities/typography/
-   -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/combine/npm/@zendeskgarden/css-bedrock@7.0.21,npm/@zendeskgarden/css-utilities@4.3.0">
+  <link href="./css/main.css" rel="stylesheet">
+<!--  <link rel="stylesheet" href="https://cdn.jsdelivr.net/combine/npm/@zendeskgarden/css-bedrock@7.0.21,npm/@zendeskgarden/css-utilities@4.3.0"> -->
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" crossorigin="anonymous">
-  <link href="main.css" rel="stylesheet">
   <title>upnrunning ZenChimp Sidebar App</title>
 </head>
 <body>
     
-  <div id="content"></div>
-  
-  <footer>
-    <a href="https://github.com/up-n-running/ZenChimp-Zendesk-App-Mailchimp-Sync/issues" target="_blank">Report bugs</a>
-  </footer>
-  
-  <script src="https://cdn.jsdelivr.net/npm/handlebars@4.3.3/dist/handlebars.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jquery@3.4.1/dist/jquery.min.js"></script>
-  <script src="https://requirejs.org/docs/release/2.3.6/minified/require.js"></script>
-  <script src="https://static.zdassets.com/zendesk_app_framework_sdk/2.0/zaf_sdk.min.js"></script>
-  
-  <script src="ZendeskObjects.js"></script>  
-  <script src="./lib/parse-names.js"></script>  
-  <script src="old_app.js"></script>  
-  <script src="main.js"></script>  
+    <div id="page_content"></div>
+
+    <footer>
+      <a href="https://github.com/up-n-running/ZenChimp-Zendesk-App-Mailchimp-Sync/issues?q=is%3Aissue+" target="_blank">Report bugs</a>
+    </footer>
+
+    <script src="https://static.zdassets.com/zendesk_app_framework_sdk/2.0/zaf_sdk.min.js"></script>
+    
+    <script src="./js/lib/handlebars-v4.7.6.min.js"></script>
+    <script src="./js/lib/jquery-3.5.1.min.js"></script>
+
+    <script src="./js/lib/parse-names.js"></script>
+    <script src="./js/lib/md5.js"></script>
+
+    <script src="./js/ZendeskObjects.js"></script>
+
+    <script src="./js/common-utils.js"></script>
+    <script src="./js/plugin.js"></script>
+    <script src="./js/main.js"></script> 
+
 </body>
 </html>

@@ -1,0 +1,89 @@
+<html>
+<head>
+  <meta charset="utf-8">
+  <!-- http://garden.zendesk.com -->
+  <!-- <link rel="stylesheet" href="https://assets.zendesk.com/apps/sdk-assets/css/0/zendesk_garden.css" type="text/css"> -->
+  <link href="./css/main.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" crossorigin="anonymous">
+</head>
+<body>
+    <div id="page_content"></div>
+
+    <footer>
+      <a href="https://github.com/up-n-running/ZenChimp-Zendesk-App-Mailchimp-Sync/issues?q=is%3Aissue+" target="_blank">Report bugs</a>
+    </footer>
+    
+    <!-- https://github.com/zendesk/zendesk_app_framework_sdk -->
+    <script src="https://static.zdassets.com/zendesk_app_framework_sdk/2.0/zaf_sdk.min.js"></script>
+    
+    <script src="./js/lib/handlebars-v4.7.6.min.js"></script>
+    <script src="./js/lib/jquery-3.5.1.min.js"></script>
+
+    <script src="./js/lib/parse-names.js"></script>
+    <script src="./js/lib/md5.js"></script>
+
+    <script src="./js/ZendeskObjects.js"></script>
+
+    <script src="./js/common-utils.js"></script>
+    <script src="./js/plugin.js"></script>
+    
+    <script>
+        var parentClient = null;
+        var zenChimpPlugin = null;
+        var urlParams = 
+        
+        //thisV2Client.invoke('resize', { width: '100%', height: '400px' });
+        thisV2Client.on('app.registered', init);
+
+        function init(){
+            console.group( "POPUP: init() called" );
+            console.log( "init() called because of popupClient.on('app.registered', init);" );
+            urlParams = parseURLParams(window.location.hash); //We start the modal client, then parse any parameters in the url
+            console.log( "urlParams = %o", urlParams );
+            parentClient = getClientInstanceFromGuid(urlParams.parent_guid); //Hopefully this includes the parent_guid we want to send when creating modals
+            console.log( "parentClient = %o", parentClient );
+            
+            //test
+            parentClient.get('ticket').then(function(ticket_data){console.log('INSIDE MODAL: ticket_data = %o', ticket_data);});  //And like that we now have easy access to the parent ticket modal without guessing which instance the parent is from an array.. Winning!
+            
+            init2( parentClient );
+
+            
+            console.groupEnd();
+        };
+        
+        function init2( parentClient ) 
+        {
+            /* DebugOnlyCode - START */
+            if( debug_mode ) 
+            { 
+                console.group( "POPUP:: init2(parentClient) called" );
+                console.log( "ARG1: parentClient = %o", parentClient );
+                console.log( "init called because of thisV2Client.on('app.registered', init);" );
+                console.log( "Creating plugin instance from PARENT CLIENT: zenChimpPlugin = pluginFactory( parentClient );" );
+            }
+            /* DebugOnlyCode - END */ 
+            
+            zenChimpPlugin = pluginFactory( parentClient );
+
+            var viewData = { optional_message: 'Loading App...' };
+            var templateUrl = "./templates/loading_screen.hdbs";
+            switchTo(templateUrl, viewData);
+
+            /* DebugOnlyCode - START */
+            if( debug_mode ) { console.log( "Creating and Initialising plugin.js object:\nzenChimpPlugin.init();" ); } 
+            /* DebugOnlyCode - END */
+
+            zenChimpPlugin.init( true, { location: urlParams.parent_location, instanceGuid: urlParams.parent_guid } ); //here we're saying it's modal popup mode and pass in spoofed context object as we cant get it from parent client from modal annoyingly!
+
+            /* DebugOnlyCode - START */  
+            if( debug_mode ) 
+            { 
+                console.log( "Finished init2" );
+                console.groupEnd();
+            }
+            /* DebugOnlyCode - END */ 
+        }
+    </script>
+</body>
+</html>

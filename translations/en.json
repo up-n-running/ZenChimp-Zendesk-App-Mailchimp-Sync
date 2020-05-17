@@ -1,11 +1,11 @@
 {
   "app": {
-    "description": "Mailchimp Mailshot Sync - No need to have the customer lists feature installed. Sync your user contacts into mailchim paccount or mark them as not for sync. Sycn on a per user basis or check out the global sync options on the navbar",
+    "description": "Welcome Zenchimp Mailchimp Sync - No need to have the customer lists feature installed. Sync each customer on a user-by-user basis from the ticket or user screen whenever you're viewing his/her tickets or user screen. FOr each customer you can choose to sync to mailchimp account as a standalone user, sync user and selected organisation fields for a user linked to an organisation, or mark them as excluded from the sync.",
     "name": "Mailchimp Mailshot Sync",
     "parameters": {
-      "mailchimp_api_key" : { "label": "Mailchimp API Key", "helpText": "Login to Mailchimp --> Account --> Extras --> API Key" },
+      "mailchimp_api_key" : { "label": "Mailchimp API Key", "helpText": "Login to Mailchimp --> Click your name at the top --> Account --> Extras --> API Keys --> Your API Keys --> Create a key if you dont alreaady have one" },
       "mailchimp_datacentre_prefix" : { "label": "Mailchimp Datacentre Prefix", "helpText": "Login to Mailchimp -->\r\nlook for the subdomain in the url after login: XXXX.admin.mailchimp.com" },
-      "mailchimp_list_id" : { "label": "Mailchimp List ID of List to sync to", "helpText": "Login to Mailchimp --> Lists --> Select List --> Settings --> List Name and Defaults -->\r\nList ID (Should look something like 78ecb74923)" },
+      "mailchimp_list_id" : { "label": "Mailchimp ID of the Audience to sync to", "helpText": "Login to Mailchimp -->\r\nClick 'Audience' (at top) -->\r\nClick 'Manage Audience' --> 'Settings'\r\n--> Scroll right to the bottom -->\r\nLook for 'Unique id for audience' -->\r\nIt Should look something like: 865422fc09" },
       "mailchimp_merge_field_forename" : { "label": "Mailchimp Tag Name of First Name merge field", "helpText": "Login to Mailchimp --> Lists --> Select List --> Settings --> List Fields -->\r\nFind Tag for First Name Field" },
       "mailchimp_merge_field_surname" : { "label": "Mailchimp Tag Name of Last Name name merge field", "helpText": "Login to Mailchimp --> Lists --> Select List --> Settings --> List Fields -->\r\nFind Tag for Last Name Field" },
       "mailchimp_merge_field_customer_type" : { "label": "Mailchimp Tag Name of Customer Type merge field", "helpText": "Login to Mailchimp --> Lists --> Select List --> Settings --> List Fields -->\r\nFind Tag for Customer Field (create drop down field if it doesn't exist and add ALL values you need)" },
@@ -17,13 +17,13 @@
       "mailchimp_mailshot_only_field_mappings" : { "label": "Field Definitions for Mailchimp only fields", "helpText": "Define the Mailchimp only fields that dont exist in Zendesk\r\nFORMAT: JS array of JSON objects. eg:\r\n[ {field 1 mapping}, {field 2 mapping}, {field 3 mapping} ]" }
     }
   },
-  "loading": "Welcome to Mailchimp Mailshot Sync",
+  "loading": "Welcome Zenchimp Mailchimp Sync",
   "fetch": {
     "done": "Good",
     "fail": "Failed to fetch information from the server"
   },
   "id": "ID",
-  "email": "johndev@gmail.com",
+  "email": "john@upnrunning.co.uk",
   "name": "John Milner",
   "role": "Role",
   "groups": "Groups"
