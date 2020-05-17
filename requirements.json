@@ -4,8 +4,10 @@
     "mailshot_customer_type": 
     {
       "key": "mailshot_customer_type",
+      "active" : "true",
       "type": "dropdown",
-      "title": "MAILSHOT - Customer Type"
+      "title": "Mailchimp Customer Type",
+      "custom_field_options": [{"value":"mailshot_exclude_from_mailshot", "name":"Exclude form Mailchimp"}, {"value":"mailshot_use_default_values", "name":"Sync to mailchimp as single customer"}, {"value":"mailshot_use_organisation_values", "name":"Sync for corporate branded emails"} ]
     }
   }
 }

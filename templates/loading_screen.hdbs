@@ -1,8 +1,0 @@
-{{#if optional_message}}
-<div class="alert alert-info">
-	{{{optional_message}}}
-</div>
-{{/if}}
-<div class="spinner">
-  <h3>{{spinner "dotted"}}</h3>
-</div>

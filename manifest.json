@@ -1,14 +1,19 @@
 {
-  "name": "Mailchimp Mailshot Sync",
+  "name": "Zenchimp Mailchimp Sync",
   "author": {
     "name": "John Milner",
-    "email": "johndev@gmail.com",
-    "url": ""
+    "email": "john@upnruning.co.uk",
+    "url": "www.upnrunning.co.uk"
   },
   "defaultLocale": "en",
   "private": true,
-  "location": ["ticket_sidebar","user_sidebar"],
-  "version": "1.0",
+   "location": {
+    "support": {
+      "ticket_sidebar": "assets/iframe.html",
+      "user_sidebar": "assets/iframe.html"
+    }
+  },
+  "version": "1.1.0",
   "frameworkVersion": "2.0",
   "parameters": [
     {
@@ -79,7 +84,7 @@
       "type": "multiline",
       "required": true,
       "secure": false,
-      "default": "[\r\n  {\"field_label\":\"Success Email\",\"zendesk_field\":\"mailshot_success_email_address\",\"mailshot_field\":\"FROMEMAIL\",\"type\":\"text\",\"default_value\":\"successteam@greenlightpower.net\"},\r\n  {\"field_label\":\"Logo URL\",\"zendesk_field\":\"mailshot_company_logo_url\",\"mailshot_field\":\"LOGO\",\"type\":\"image\",\"default_value\":\"\"}\r\n]"
+      "default": "[\r\n  {\"field_label\":\"Success Email\",\"zendesk_field\":\"mailshot_success_email_address\",\"mailshot_field\":\"FROMEMAIL\",\"type\":\"text\",\"default_value\":\"successteam@upnrunning.net\"},\r\n  {\"field_label\":\"Logo URL\",\"zendesk_field\":\"mailshot_company_logo_url\",\"mailshot_field\":\"LOGO\",\"type\":\"image\",\"default_value\":\"\"}\r\n]"
     },
     {
       "name": "mailchimp_user_field_mappings",
