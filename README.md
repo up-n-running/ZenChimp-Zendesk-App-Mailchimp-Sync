@@ -6,6 +6,6 @@ It used to work really well and I used it commercially over a year.
 
 **PLEASE NOTE: It's no longer compliant since framework v1 was discontinued. I'm in the process of updating it to use latest version of framework - Watch this space it shouldnt be long (17/May/2020)**
 
-**PLEASE NOTE 2: Master branch now works in zendesk but is a bit buggy - will perform a full release once it's perfect (19/May/2020)**
+**PLEASE NOTE 2: Master branch now works in zendesk and is Zendesk App Framework V2 Compliant :) :) but is still a bit buggy - will perform a full release once tested and fully working (19/May/2020)**
 
 Please submit bug reports to [john@upnrunning.co.uk](). Pull requests are welcome.
