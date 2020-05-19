@@ -174,10 +174,11 @@
             return null;
         }
 
+        //get the mandatory fields that are non-negotiable
         var sync_fields = [
-            { label: "Email", mc_only: false, is_image: false, zd_value: this.email, mc_value: mailChimpUser.email_address, in_sync: ( this.email.toLowerCase() === mailChimpUser.email_address.toLowerCase() ) },
-            { label: "Name", mc_only: false, is_image: false, zd_value: this.name, mc_value: "[" + mailChimpUser.forename + "] [" + mailChimpUser.surname + "]", in_sync: ( mailChimpUser.forename.toLowerCase() === this.getForeName().toLowerCase() && mailChimpUser.surname.toLowerCase() === this.getSurname().toLowerCase() ) },
-            { label: "Customer Type", mc_only:false, is_image: false, zd_value: this.getMailchimpCustomerType(), mc_value: mailChimpUser.customer_type, in_sync: ( this.getMailchimpCustomerType() === mailChimpUser.customer_type ) } 
+            { label: "Email", mc_only: false, zd_field_location: "user", is_image: false, zd_value: this.email, mc_value: mailChimpUser.email_address, in_sync: ( this.email.toLowerCase() === mailChimpUser.email_address.toLowerCase() ) },
+            { label: "Name", mc_only: false, zd_field_location: "user", is_image: false, zd_value: this.name, mc_value: "[" + mailChimpUser.forename + "] [" + mailChimpUser.surname + "]", in_sync: ( mailChimpUser.forename.toLowerCase() === this.getForeName().toLowerCase() && mailChimpUser.surname.toLowerCase() === this.getSurname().toLowerCase() ) },
+            { label: "Customer Type", mc_only:false, zd_field_location: "user", is_image: false, zd_value: this.getMailchimpCustomerType(), mc_value: mailChimpUser.customer_type, in_sync: ( this.getMailchimpCustomerType() === mailChimpUser.customer_type ) } 
         ];
 
         var tempZdValue = null;
@@ -189,11 +190,12 @@
         {
             tempZdValue = this.extra_user_fields[ i ].value;
             tempMcValue = mailChimpUser.extra_merge_fields[ arrayIndex ].value;
-            tempZdValue = ( tempZdValue === null ) ? "" : tempZdValue; tempMcValue = ( tempMcValue === null ) ? "" : tempMcValue;
+            tempZdValue = ( tempZdValue === null ) ? "" : tempZdValue; 
+            tempMcValue = ( tempMcValue === null ) ? "" : tempMcValue;
             sync_fields[ arrayIndex+3 ] = 
             {
                 label: this.extra_user_fields[ i ].field_def.field_label,
-                mc_only: false,
+                zd_field_location: "user",
                 is_image: this.extra_user_fields[ i ].field_def.type === this.app.resources.FIELD_TYPE_IMAGE,
                 zd_value: tempZdValue,
                 mc_value: tempMcValue,
@@ -207,11 +209,12 @@
         {
             tempZdValue = this.isDefault() ? this.app.organization_field_mappings[ i ].default_value : ( this.isOrganization() ? this.orgObject.extra_org_fields[ i ].value : null );
             tempMcValue = mailChimpUser.extra_merge_fields[ arrayIndex ].value;
-            tempZdValue = ( tempZdValue === null ) ? "" : tempZdValue; tempMcValue = ( tempMcValue === null ) ? "" : tempMcValue;
+            tempZdValue = ( tempZdValue === null ) ? "" : tempZdValue; 
+            tempMcValue = ( tempMcValue === null ) ? "" : tempMcValue;
             sync_fields[ arrayIndex+3 ] = 
             {
                 label: this.app.organization_field_mappings[ i ].field_label,
-                mc_only: false,
+                zd_field_location: "organisation",
                 is_image: this.app.organization_field_mappings[ i ].type === this.app.resources.FIELD_TYPE_IMAGE,
                 zd_value: tempZdValue,
                 mc_value: tempMcValue,
@@ -228,7 +231,7 @@
             sync_fields[ arrayIndex+3 ] = 
             {
                 label: this.app.mailshot_only_field_mappings[ i ].field_label,
-                mc_only: true,
+                zd_field_location: null,
                 is_image: this.app.mailshot_only_field_mappings[ i ].type === this.app.resources.FIELD_TYPE_IMAGE,
                 zd_value: null,
                 mc_value: tempMcValue,

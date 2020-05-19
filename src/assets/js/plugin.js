@@ -340,9 +340,9 @@ var pluginFactory = function( thisV2Client ) {
 
                 //setup field mappings
                 this.customer_type_field_mapping = { zendesk_field: 'mailshot_customer_display_name', mailchimp_field: this.mailchimp_list_field_customer_type_name, type: this.resources.FIELD_TYPE_TEXT, default_value: this.mailchimp_list_field_customer_type_default_value };
-                this.organization_field_mappings = this.validateFieldMappingsJSON( metadata.settings.mailchimp_organization_field_mappings, 'Organisation Field Mapping' );
-                this.user_field_mappings = this.validateFieldMappingsJSON( metadata.settings.mailchimp_user_field_mappings, 'User Field Mapping' );
-                this.mailshot_only_field_mappings = this.validateFieldMappingsJSON( metadata.settings.mailchimp_user_field_mappings, 'Mailchimp Only Field Mapping' );
+                this.organization_field_mappings = this.validateFieldMappingsJSON( metadata.settings.mailchimp_organization_field_mappings, 'Organisation Field Mapping', false );
+                this.user_field_mappings = this.validateFieldMappingsJSON( metadata.settings.mailchimp_user_field_mappings, 'User Field Mapping', false );
+                this.mailshot_only_field_mappings = this.validateFieldMappingsJSON( metadata.settings.mailchimp_mailshot_only_field_mappings, 'Mailchimp Only Field Mapping', true );
 
                 if ( this.organization_field_mappings !== null &&
                             this.user_field_mappings !== null &&
@@ -534,27 +534,27 @@ var pluginFactory = function( thisV2Client ) {
     //---APP FIELD ONCLICK EVENT
     mailchimpOnlyField_OnClick: function( event ) 
     {
-            let tempField = null;
-            console.warn( "NEED TO CLONE MAILCHIMP USER IDEALLY AT THIS POINT");
-            for( let i=0; i < this.mailshot_sync_user.extra_merge_fields.length; i++)
+        let tempField = null;
+        console.warn( "NEED TO CLONE MAILCHIMP USER IDEALLY AT THIS POINT");
+        for( let i=0; i < this.mailshot_sync_user.extra_merge_fields.length; i++)
+        {
+            tempField = this.mailshot_sync_user.extra_merge_fields[ i ];
+            if( typeof( tempField.field_def.zendesk_field ) === "undefined" && ( "MC_ONLY_" + tempField.field_def.mailchimp_field ) === event.target.id )
             {
-                    tempField = this.mailshot_sync_user.extra_merge_fields[ i ];
-                    if( typeof( tempField.field_def.zendesk_field ) === "undefined" && ( "MC_ONLY_" + tempField.field_def.mailchimp_field ) === event.target.id )
-                    {
-                            if( tempField.field_def.type === this.resources.FIELD_TYPE_CHECKBOX )
-                            {
-                                    tempField.value = ( tempField.value === "0" || tempField.value === 0 || tempField.value === false ) ? "1" : "0";
-                            }
-                            else
-                            {
-                                    console.error( "Unsupported field type: " + tempField.type );
-                            }
-                    }
+                if( tempField.field_def.type === this.resources.FIELD_TYPE_CHECKBOX )
+                {
+                        tempField.value = ( tempField.value === "0" || tempField.value === 0 || tempField.value === false ) ? "1" : "0";
+                }
+                else
+                {
+                        console.error( "Unsupported field type: " + tempField.type );
+                }
             }
+        }
 
-            //now save the updated user in mailchimp
-            this.switchToLoadingScreen( "Updating Mailchimp Member" );
-            this.ajax( "createOrUpadateMailChimpListMember", this.mailshot_sync_user, true );
+        //now save the updated user in mailchimp
+        this.switchToLoadingScreen( "Updating Mailchimp Member" );
+        this.ajax( "createOrUpadateMailChimpListMember", this.mailshot_sync_user, true );
     },	
 
     //EXCLUDE/ORGANISATION/STANDARD FIELD ONCLICK FUNCTIONS
@@ -961,29 +961,29 @@ var pluginFactory = function( thisV2Client ) {
 
             this.mailshot_sync_user = 
             {
-                    email_address: returnedMailchimpUser.email_address,
-                    status: "subscribed",
-                    forename: returnedMailchimpUser.merge_fields[ this.mailchimp_merge_field_forename ],
-                    surname: returnedMailchimpUser.merge_fields[ this.mailchimp_merge_field_surname  ],
-                    customer_type: returnedMailchimpUser.merge_fields[ this.customer_type_field_mapping.mailchimp_field ],
-                    extra_merge_fields: []
+                email_address: returnedMailchimpUser.email_address,
+                status: "subscribed",
+                forename: returnedMailchimpUser.merge_fields[ this.mailchimp_merge_field_forename ],
+                surname: returnedMailchimpUser.merge_fields[ this.mailchimp_merge_field_surname  ],
+                customer_type: returnedMailchimpUser.merge_fields[ this.customer_type_field_mapping.mailchimp_field ],
+                extra_merge_fields: []
             };
 
             let arrayIndex = 0;
             for (let i=0; i < this.user_field_mappings.length; i++) 
             {
-                    this.mailshot_sync_user.extra_merge_fields[ arrayIndex ] = { field_def: this.user_field_mappings[ i ], value: returnedMailchimpUser.merge_fields[ this.user_field_mappings[ i ].mailchimp_field ]};
-                    arrayIndex++;
+                this.mailshot_sync_user.extra_merge_fields[ arrayIndex ] = { field_def: this.user_field_mappings[ i ], value: returnedMailchimpUser.merge_fields[ this.user_field_mappings[ i ].mailchimp_field ]};
+                arrayIndex++;
             }
             for(i=0; i < this.organization_field_mappings.length; i++) 
             {
-                    this.mailshot_sync_user.extra_merge_fields[ arrayIndex ] = { field_def: this.organization_field_mappings[ i ], value: returnedMailchimpUser.merge_fields[ this.organization_field_mappings[ i ].mailchimp_field ] };
-                    arrayIndex++;
+                this.mailshot_sync_user.extra_merge_fields[ arrayIndex ] = { field_def: this.organization_field_mappings[ i ], value: returnedMailchimpUser.merge_fields[ this.organization_field_mappings[ i ].mailchimp_field ] };
+                arrayIndex++;
             }
             for (i=0; i < this.mailshot_only_field_mappings.length; i++) 
             {
-                    this.mailshot_sync_user.extra_merge_fields[ arrayIndex ] = { field_def: this.mailshot_only_field_mappings[ i ], value: returnedMailchimpUser.merge_fields[ this.mailshot_only_field_mappings[ i ].mailchimp_field ] };
-                    arrayIndex++;
+                this.mailshot_sync_user.extra_merge_fields[ arrayIndex ] = { field_def: this.mailshot_only_field_mappings[ i ], value: returnedMailchimpUser.merge_fields[ this.mailshot_only_field_mappings[ i ].mailchimp_field ] };
+                arrayIndex++;
             }		
 
             //console.log( "Finished retrievedMailchimpSubscriber, this.mailshot_sync_user = " );console.dir( this.mailshot_sync_user );
@@ -1361,7 +1361,7 @@ var pluginFactory = function( thisV2Client ) {
         return false;
     },
 
-    validateFieldMappingsJSON: function( fieldMappingsJSONText, settingsName ) 
+    validateFieldMappingsJSON: function( fieldMappingsJSONText, settingsName, mailchimpOnlyFields ) 
     {
        /* DebugOnlyCode - START */
         if( debug_mode ) 
@@ -1393,23 +1393,51 @@ var pluginFactory = function( thisV2Client ) {
             console.error( "JSON Validation for settings '%s' Falied with exception e = %o ",settingsName, e );
             console.error( "JSON TEXT WAS: %o ", fieldMappingsJSONText );
             errorObject = e;
-            errorMessage = 'The JSON Settings text you entered for the '+settingsName+' Settings was formatted incorrectly, it must be valid JSON.<br /><br />'+
+            errorMessage = 'The JSON Settings text you entered for the '+settingsName+' setting was formatted incorrectly, it must be valid JSON.<br /><br />'+
                            'The failure reason was: '+parseErrorMessage+'<br /><br />'+
                            'For help with these settings fields use our <a target="_blank" href="./downloads/ZenchimpAppSettingsGenerator.xlsx">Zenchimp App Settings Generator</a> in Microsoft Excel';
         }
 
-        //More Validation to come in a future version - watch this space!
-
         if( fieldMappingsJSON !== null )
         {
-            /* DebugOnlyCode - START */
-            if( debug_mode ) 
-            { 
-                console.log( "Success, returning: %o", fieldMappingsJSON );
-                console.groupEnd();
+            
+            //More Validation, checking hte JSON for each field defintiion in turn
+            let fieldMap = null;
+            let validTypeArray = mailchimpOnlyFields ? ['checkbox'] : ['image', 'text', 'checkbox'];
+            let errorArray = [];
+            for( let i = 0; i < fieldMappingsJSON.length; i++ )
+            {
+                fieldMap = fieldMappingsJSON[i];
+                //these values have to exist and be not empty
+                if( !fieldMap.field_label ) { errorArray.push( 'Missing Field/Value: field_label' ); }
+                if( !fieldMap.mailchimp_field ) { errorArray.push( 'Missing Field/Value: mailchimp_field' ); }
+                if( !fieldMap.type ) { errorArray.push( 'Missing Field/Value: type' ); }
+                else if ( !validTypeArray.includes(fieldMap.type)) { errorArray.push( "Invalid type: '"+fieldMap.type+"'. Valid types are: " + validTypeArray.toString() + " (all lower case)" ); }
+                //these values have to exist but dont necessarily havt to have a value
+                if( typeof fieldMap.default_value === 'undefined' || fieldMap.default_value === null ) { errorArray.push( 'Missing Field: default_value'); }
+                //this field depends on if its a mailchimp only field
+                if( mailchimpOnlyFields && typeof fieldMap.zendesk_field !== 'undefined' ) { errorArray.push( 'Field: zendesk_field is not allowed on mailchimp-only field lists' ); }
+                if( !mailchimpOnlyFields && !fieldMap.zendesk_field ) { errorArray.push( 'Missing Field/Value: zendesk_field' ); }
+                
+                if( errorArray.length > 0 )
+                {
+                    errorMessage = "Field Definition " + (i+1) + " for the '" + settingsName + 
+                                   "' setting has errors:<br /><br />" + errorArray.join('<br />');
+                    break;
+                }
             }
-            /* DebugOnlyCode - END */
-            return fieldMappingsJSON;
+            
+            if( errorMessage === null )
+            {
+                /* DebugOnlyCode - START */
+                if( debug_mode ) 
+                { 
+                    console.log( "Success, returning: %o", fieldMappingsJSON );
+                    console.groupEnd();
+                }
+                /* DebugOnlyCode - END */
+                return fieldMappingsJSON;
+            }
         }
        
         this.switchToErrorMessage( errorObject, errorMessage );
