@@ -1,59 +1,48 @@
-                {{#if display_params.DEBUG}}<a id="debugtest" onclick="return zenChimpPlugin.debugButtonOnClick();">Debug Mode On</a><br />{{/if}}
+{{#if display_params.DEBUG}}<a id="debugtest" onclick="return zenChimpPlugin.debugButtonOnClick();">Debug Mode On</a><br />{{/if}}
 
-<div class="btn-toolbar" role="toolbar" aria-label="Toolbar with button groups">
-  <div class="btn-group mr-2 btn-group-sm" role="group" aria-label="First group">
-    <button type="button" class="btn btn-secondary">1</button>
-    <button type="button" class="btn btn-secondary">2</button>
-    <button type="button" class="btn btn-secondary">3</button>
-    <button type="button" class="btn btn-secondary">4</button>
+<div class="btn-toolbar" role="toolbar" aria-label="Button Toolbar" style="text-align: center">
+{{#if buttons.exclude.show}}
+  <div class="btn-group mr-2 btn-group-sm" role="group" aria-label="Exclude from Mailchimp">
+    <button type="button" class="btn btn-secondary exclude{{buttons.exclude.classNameInsert}}" onclick="return zenChimpPlugin.{{buttons.exclude.onclick}};">{{buttons.exclude.label}}</button>
   </div>
-  <div class="btn-group mr-2 btn-group-sm" role="group" aria-label="Second group">
-    <button type="button" class="btn btn-primary">5</button>
-    <button type="button" class="btn btn-primary">6</button>
-    <button type="button" class="btn btn-primary">7</button>
-  </div>
-  <div class="btn-group btn-group-sm" role="group" aria-label="Third group">
-    <button type="button" class="btn btn-secondary">8</button>
+{{/if}}
+  <div class="btn-group btn-group-sm" role="group" aria-label="Include Options">
+    {{#if buttons.organization.show}}<button class="btn btn-primary organization{{buttons.organization.classNameInsert}}" onclick="return zenChimpPlugin.{{buttons.organization.onclick}};">{{#if zendesk_user.organization.name}}{{zendesk_user.organization.name}}{{/if}}{{#unless zendesk_user.organization.name}}{{buttons.organization.label}}{{/unless}}</button>{{/if}}
+    {{#if buttons.standard.show}}<button class="btn btn-primary standard{{buttons.standard.classNameInsert}}" onclick="return zenChimpPlugin.{{buttons.standard.onclick}};">{{buttons.standard.label}}</button>{{/if}}
   </div>
 </div>
 
+<div class="main_content"{{#if monkey_URL}} style="background-image: url('{{monkey_URL}}');"{{/if}}>
 
-		<div class="btn-group" data-toggle="buttons-radio" style="text-align: center">
-		    <span>
-			{{#if buttons.exclude.show}}<button class="btn exclude{{buttons.exclude.classNameInsert}}" onclick="return zenChimpPlugin.{{buttons.exclude.onclick}};">{{buttons.exclude.label}}</button>{{/if}}
-			{{#if buttons.organization.show}}<button class="btn organization{{buttons.organization.classNameInsert}}" onclick="return zenChimpPlugin.{{buttons.organization.onclick}};">{{#if zendesk_user.organization.name}}{{zendesk_user.organization.name}}{{/if}}{{#unless zendesk_user.organization.name}}{{buttons.organization.label}}{{/unless}}</button>{{/if}}
-			{{#if buttons.standard.show}}<button class="btn standard{{buttons.standard.classNameInsert}}" onclick="return zenChimpPlugin.{{buttons.standard.onclick}};">{{buttons.standard.label}}</button>{{/if}}
-                    </span>
-		</div>
-                <div class="main_content"{{#if monkey_URL}} style="background-image: url('{{monkey_URL}}');"{{/if}}>
-		{{#if display_params.customer_type_not_set}}
-			<div class="information-text">
-				<p class="warning">{{zendesk_user.name}} isn't setup for Mailchimp, How should his/her emails be branded?</p>
-			</div>
-		{{/if}}
-		{{#if display_params.customer_type_exclude}}
-			<div class="information-text">
-				<p class="inactive">{{zendesk_user.name}} is excluded from Mailchimp</p>
-			</div>
-		{{/if}}
-		{{#if display_params.customer_type_included}}
-                    {{#if display_params.user_in_sync}}
-			<div class="information-text">
-                            <p class="inactive" style="padding-bottom: 3px">{{zendesk_user.name}} is <a class="sync_popup" data-toggle="modal" data-target="#sync_modal">in sync</a></p>
-                            {{#each mailchimp_user.extra_merge_fields}}
-                            {{#unless this.field_def.zendesk_field}}
-                                <div>
-                                    <input class="mc_only_field" id="MC_ONLY_{{this.field_def.mailchimp_field}}" name="MC_ONLY_{{this.field_def.mailchimp_field}}" value="1" type="checkbox" {{#if this.value}}checked="checked" {{/if}}/>
-                                    <label for="MC_ONLY_{{this.field_def.mailchimp_field}}">{{this.field_def.field_label}}</label>
-                                </div>
-                            {{/unless}}
-                            {{/each}}
-			</div>
-                    {{/if}}
-                    {{#unless display_params.user_in_sync}}
-			<div class="information-text">
-				<p class="warning">{{zendesk_user.name}} is out of sync</p>
-                                <a class="btn btn-large sync_popup" onclick="return syncButtonOnclick();">Synchronize</a>
-			</div>
-                    {{/unless}}
-		{{/if}}
+    {{#if display_params.customer_type_not_set}}
+        <div class="information-text">
+            <p class="warning">{{zendesk_user.name}} isn't setup for Mailchimp, How should his/her emails be branded?</p>
+        </div>
+    {{/if}}
+    {{#if display_params.customer_type_exclude}}
+        <div class="information-text">
+            <p class="inactive">{{zendesk_user.name}} is excluded from Mailchimp</p>
+        </div>
+    {{/if}}
+    {{#if display_params.customer_type_included}}
+        {{#if display_params.user_in_sync}}
+            <div class="information-text">
+                <p class="success" style="padding-bottom: 3px">{{zendesk_user.name}} is <a class="sync-popup-link" onclick="return syncButtonOnclick();">in sync</a></p>
+                {{#each mailchimp_user.extra_merge_fields}}
+                {{#unless this.field_def.zendesk_field}}
+                    <div class="mc-only-field">
+                        <input class="mc_only_field" id="MC_ONLY_{{this.field_def.mailchimp_field}}" name="MC_ONLY_{{this.field_def.mailchimp_field}}" value="1" type="checkbox" {{#if this.value}}checked="checked" {{/if}}/>
+                        <label for="MC_ONLY_{{this.field_def.mailchimp_field}}">{{this.field_def.field_label}}</label>
+                    </div>
+                {{/unless}}
+                {{/each}}
+            </div>
+        {{/if}}
+        {{#unless display_params.user_in_sync}}
+            <div class="information-text">
+                <p class="warning">{{zendesk_user.name}} is out of sync</p>
+                <a class="btn btn-large sync_popup" onclick="return syncButtonOnclick();">Synchronize</a>
+            </div>
+        {{/unless}}
+    {{/if}}
+</div>

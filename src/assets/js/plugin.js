@@ -27,7 +27,9 @@ var pluginFactory = function( thisV2Client ) {
         TEMPLATE_NAME_MAIN: "./templates/main.hdbs",
         TEMPLATE_NAME_MAIN_MODAL_MODE: "./templates/sync-modal.hdbs",
         TEMPLATE_NAME_LOADING: "./templates/loading_screen.hdbs",
-        TEMPLATE_NAME_SHOWERROR: "./templates/show_error.hdbs"
+        TEMPLATE_NAME_SHOWERROR: "./templates/show_error.hdbs",
+        
+        SETTINGS_HELPER_SPREADSHEET_DOWNLOAD_URL: "https://github.com/up-n-running/ZenChimp-Zendesk-App-Mailchimp-Sync/raw/master/extras/ZenchimpSettingsGenerator.xlsx"
     },
 
     events: 
@@ -65,7 +67,7 @@ var pluginFactory = function( thisV2Client ) {
         //'click .standard'               : 'standardButtonOnClick',
 
         //buttons on modal form
-        'click .sync'                   : 'syncButtonFromModalOnClick',
+        //'click .sync'                   : 'syncButtonFromModalOnClick',
 
         //buttons on error form
         //'click .error_go_back'              : 'resetAppIfPageFullyLoaded',
@@ -148,6 +150,7 @@ var pluginFactory = function( thisV2Client ) {
             return userApiCallSettings;
         },
 /*
+            //THIS IS FUNCTIONCAL CODE BUT IS NOT NEEDED IN THIS IMPLEMENTATION
             getMailChimpAllListMembers: function()
             {
                     let jsonCall =
@@ -257,31 +260,36 @@ var pluginFactory = function( thisV2Client ) {
             return jsonCall;
         },
 
-            deleteMailChimpListMember: function( mailchimpSyncUser )
+        //NOT SURE THIS IS EVER CALLED OR NEEDED BUT IT'S FUNCTIONAL CODE
+        deleteMailChimpListMember: function( mailchimpSyncUser )
+        {
+            if( mailchimpSyncUser === null || mailchimpSyncUser.email_address === null )
             {
-
-                    if( mailchimpSyncUser === null || mailchimpSyncUser.email_address === null )
-                    {
-                            return console.warn( "ERROR CONDITION: deleteMailChimpListMember called with either null user or user with no email address" );
-                    }
-
-                    //requires md5.js utils js to create md5 hash of email address
-                    let md5HashOfEmail = md5(mailchimpSyncUser.email_address.toLowerCase());
-
-                    let jsonCall =
-                    {
-                            url: helpers.fmt( "https://%@.api.mailchimp.com/3.0/lists/%@/members/%@", this.mailchimp_datacentre_prefix, this.mailchimp_list_id, md5HashOfEmail ),
-                            type: 'DELETE',
-                            dataType: 'json',
-                            contentType: 'application/json; charset=UTF-8',
-                            headers: 
-                            {
-                                            "Authorization": "Basic " + btoa( "api:" + this.mailchimp_api_key )
-                            }
-                    };
-                    //console.log( "deleteMailChimpListMember: API CAll DETAILS:" );console.dir( jsonCall );
-                    return jsonCall;
+                return console.error( "ERROR CONDITION: deleteMailChimpListMember called with either null user or user with no email address" );
             }
+
+            //requires md5.js utils js to create md5 hash of email address
+            let md5HashOfEmail = md5(mailchimpSyncUser.email_address.toLowerCase());
+
+            let jsonCall =
+            {
+                url: "https://"+encodeURIComponent(this.parentPlugin.mailchimp_datacentre_prefix)+
+                     ".api.mailchimp.com/3.0/lists/"+encodeURIComponent(this.parentPlugin.mailchimp_list_id)+
+                     "/members/"+encodeURIComponent(md5HashOfEmail),
+                type: 'DELETE',
+                dataType: 'json',
+                contentType: 'application/json; charset=UTF-8',
+                headers: 
+                {
+                    "Authorization": "Basic " + btoa( "api:" + this.parentPlugin.mailchimp_api_key )
+                }
+            };
+            
+            /* DebugOnlyCode - START */
+            if( debug_mode ) { console.log( "requests.deleteMailChimpListMember( mailchimpSyncUser:%o ), jsonCall = %o", jsonCall ); }
+            /* DebugOnlyCode - END */ 
+            return jsonCall;
+        }
     },		
 
     syncButtonFromModalOnClick: function() 
@@ -415,7 +423,8 @@ var pluginFactory = function( thisV2Client ) {
         if(this.context.location === this.resources.APP_LOCATION_TICKET )
         {
             this.switchToLoadingScreen( "Loading Ticket Requester..." );
-            this.makeAjaxCall( 
+            makeAjaxCall(
+                this,
                 this.requests.getZendeskUser( this.zendesk_user.id ), 
                 this.getZendeskUser_Done,  
                 this.switchToErrorMessage 
@@ -434,48 +443,6 @@ var pluginFactory = function( thisV2Client ) {
         { 
             console.log( "this.isFullyInitialized = %o", this.isFullyInitialized );
             console.log( "********** APP INITIALISED ******* this = %o", this );
-            console.groupEnd();
-        }
-        /* DebugOnlyCode - END */
-    },
-
-    makeAjaxCall: function (ajaxSettings, successFunction, failFunction, useZendeskCORSProxy) 
-    {
-        /* DebugOnlyCode - START */
-        if( debug_mode ) 
-        { 
-            console.groupCollapsed( "makeAjaxCall (ajaxSettings, %s, %s) called", successFunction.name, failFunction.name );
-            console.log( "ARG1: ajaxSettings = %o", ajaxSettings );
-            console.log( "ARG2: successFunction = %o", successFunction );
-            console.log( "ARG3: failFunction = %o", failFunction );
-            console.log( "ARG4: useZendeskCORSProxy = %o", useZendeskCORSProxy );
-        }
-        /* DebugOnlyCode - END */
-
-        if( typeof useZendeskCORSProxy !== 'undefined' && useZendeskCORSProxy )
-        {
-            ajaxSettings.cors = false;
-        }
-
-        this.v2Client.request(ajaxSettings).then(
-            (data) => {
-                /* DebugOnlyCode - START */
-                if( debug_mode ) { console.log( "AJAX SUCCESS: calling success function '%s(data)', data = %o", successFunction.name, data ); }
-                /* DebugOnlyCode - END */
-                successFunction.call( this, data );
-            },
-            (response) => {
-                /* DebugOnlyCode - START */
-                if( debug_mode ) { console.log( "AJAX FAIL: calling failure function '%s(response)', response = %o", failFunction.name, response ); }
-                /* DebugOnlyCode - END */
-                failFunction.call( this, response);
-            }
-        );
-
-        /* DebugOnlyCode - START */
-        if( debug_mode ) 
-        { 
-            console.log( "Finished" );
             console.groupEnd();
         }
         /* DebugOnlyCode - END */
@@ -580,7 +547,8 @@ var pluginFactory = function( thisV2Client ) {
             let updatedUserToSave = this.zendesk_user.clone();
             updatedUserToSave.customer_type = this.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_EXCLUDE;
             this.switchToLoadingScreen( "Updating Zendesk User..." );
-            this.makeAjaxCall( 
+            makeAjaxCall(
+                this,
                 this.requests.updateZendeskUser( updatedUserToSave ), 
                 this.updateZendeskUser_Done,  
                 this.switchToErrorMessage 
@@ -619,7 +587,8 @@ var pluginFactory = function( thisV2Client ) {
             let updatedUserToSave = this.zendesk_user.clone();
             updatedUserToSave.customer_type = this.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_USE_ORGANIZATION;
             this.switchToLoadingScreen( "Updating Zendesk User..." );
-            this.makeAjaxCall( 
+            makeAjaxCall(
+                this,
                 this.requests.updateZendeskUser( updatedUserToSave ), 
                 this.updateZendeskUser_Done,  
                 this.switchToErrorMessage 
@@ -679,7 +648,8 @@ var pluginFactory = function( thisV2Client ) {
         if( this.zendesk_user.isOrganization() && this.zendesk_user.belongsToOrganization() )
         {
             this.switchToLoadingScreen( "Loading Organization..." );
-            this.makeAjaxCall( 
+            makeAjaxCall(
+                this,
                 this.requests.getZendeskOrganizations( this.zendesk_user.id, this.zendesk_user.organization_id ), 
                 this.getZendeskOrganizations_Done,  
                 this.switchToErrorMessage 
@@ -772,24 +742,50 @@ var pluginFactory = function( thisV2Client ) {
 
     updateZendeskUser_Done: function( userObjectFromDataAPI )
     {
-            let returnedUser = this.createZendeskUserFromAPIReturnData( userObjectFromDataAPI );
-            returnedUser.orgObject = this.zendesk_user.orgObject;  //user object was updated but the org object wasn't so copy the proper org object from org API call on init for this basic one created by the above method
-            let oldCustomerType = this.zendesk_user.customer_type;
-            this.zendesk_user = returnedUser;
+       /* DebugOnlyCode - START */
+        if( debug_mode ) 
+        { 
+            console.group( "updateZendeskUser_Done(userObjectFromDataAPI) called" );
+            console.log( "ARG1: userObjectFromDataAPI = %o", userObjectFromDataAPI );
+            console.log( "Creating Zendesk User from API Return data, copying old orgObject onto it (as org remains unchanged), updating customer type and keeping track of old type", userObjectFromDataAPI );
+        }
+        /* DebugOnlyCode - END */
+        
+        let returnedUser = this.createZendeskUserFromAPIReturnData( userObjectFromDataAPI );
+        returnedUser.orgObject = this.zendesk_user.orgObject;  //user object was updated but the org object wasn't so copy the proper org object from org API call on init for this basic one created by the above method
+        let oldCustomerType = this.zendesk_user.customer_type;
+        this.zendesk_user = returnedUser;
 
-            //now populate the users arganization object through another API call but only if we need it (user type = organization )
-            if( this.zendesk_user.isOrganization() && this.zendesk_user.belongsToOrganization() && !this.zendesk_user.orgObjectIsPopulated())
-            {
-                    //cant call changeCustomerType as yet because we still need to load organization object so register the change necessary on user object temporarily
-                    this.zendesk_user.callChangeCustomerTypeAfterFullyLoadedWithOldType= ( oldCustomerType === null ) ? 'NOTSET' : oldCustomerType;
-                    this.switchToLoadingScreen( "Loading Organization" );
-                    this.ajax( 'getZendeskOrganizations', this.zendesk_user.id, this.zendesk_user.organization_id );
-            }
-            else
-            {
-                    //nothing left to do - so register the new customer type in order to delete mailchimp member if necessary
-                    this.changeCustomerType( oldCustomerType, this.zendesk_user.customer_type );
-            }	 
+       /* DebugOnlyCode - START */
+        if( debug_mode ) 
+        { 
+            console.log( "Done oldCustomerType = '%s' and this.zendesk_user is now: %o", oldCustomerType, this.zendesk_user );
+            console.log( "If we just switched to Organisation customer type then this.zendesk_user.orgObject MAY need populating. Checking..." );
+        }
+        /* DebugOnlyCode - END */
+
+        //now populate the users arganization object through another API call but only if we need it (user type = organization )
+        if( this.zendesk_user.isOrganization() && this.zendesk_user.belongsToOrganization() && !this.zendesk_user.orgObjectIsPopulated())
+        {
+            this.zendesk_user.callChangeCustomerTypeAfterFullyLoaded_OldCustTypeIs = ( oldCustomerType === null ) ? 'NOTSET' : oldCustomerType;
+            /* DebugOnlyCode - START */
+            if( debug_mode ) { console.log( "We do need to populate org object. But we also need to call changeCustomerType(old, new) after it's populated, so setting this.zendesk_user.callChangeCustomerTypeAfterFullyLoaded_OldCustTypeIs = '%s' temporarily then calling getZendeskOrganizations", this.zendesk_user.callChangeCustomerTypeAfterFullyLoaded_OldCustTypeIs ); }
+            /* DebugOnlyCode - END */
+            this.switchToLoadingScreen( "Loading Organization..." );
+            makeAjaxCall(
+                this,
+                this.requests.getZendeskOrganizations( this.zendesk_user.id, this.zendesk_user.organization_id ), 
+                this.getZendeskOrganizations_Done,  
+                this.switchToErrorMessage 
+            );
+        }
+        else
+        {
+            /* DebugOnlyCode - START */
+            if( debug_mode ) { console.log( "We do NOT need to populate org object. Object fully loaded so nothing left to do but to call this.changeCustomerType( oldCustomerType, this.zendesk_user.customer_type )" ); }
+            /* DebugOnlyCode - END */
+            this.changeCustomerType( oldCustomerType, this.zendesk_user.customer_type );
+        }	 
     },
 
     getZendeskOrganizations_Done: function( organizationObjectFromDataAPI )
@@ -805,14 +801,14 @@ var pluginFactory = function( thisV2Client ) {
         this.zendesk_user.orgObject = this.createZendeskOrganizationFromAPIReturnData( organizationObjectFromDataAPI );
 
         /* DebugOnlyCode - START */
-        if( debug_mode ) { console.log( "Checking was this load as a result of agent pressing the 'organization' button?  \nthis.zendesk_user.callChangeCustomerTypeAfterFullyLoadedWithOldType = %o", this.zendesk_user.callChangeCustomerTypeAfterFullyLoadedWithOldType ); }
+        if( debug_mode ) { console.log( "Checking was this load as a result of agent pressing the 'organization' button?  \nthis.zendesk_user.callChangeCustomerTypeAfterFullyLoaded_OldCustTypeIs = %o", this.zendesk_user.callChangeCustomerTypeAfterFullyLoaded_OldCustTypeIs ); }
         /* DebugOnlyCode - END */
 
         //was this load as a result of pressing the "organization" button?
-        if( typeof( this.zendesk_user.callChangeCustomerTypeAfterFullyLoadedWithOldType ) !== "undefined" && this.zendesk_user.callChangeCustomerTypeAfterFullyLoadedWithOldType !== null )
+        if( typeof( this.zendesk_user.callChangeCustomerTypeAfterFullyLoaded_OldCustTypeIs ) !== "undefined" && this.zendesk_user.callChangeCustomerTypeAfterFullyLoaded_OldCustTypeIs !== null )
         {
-            let oldType = ( this.zendesk_user.callChangeCustomerTypeAfterFullyLoadedWithOldType === 'NOTSET' ) ? null : this.zendesk_user.callChangeCustomerTypeAfterFullyLoadedWithOldType;
-            this.zendesk_user.callChangeCustomerTypeAfterFullyLoadedWithOldType = null;
+            let oldType = ( this.zendesk_user.callChangeCustomerTypeAfterFullyLoaded_OldCustTypeIs === 'NOTSET' ) ? null : this.zendesk_user.callChangeCustomerTypeAfterFullyLoaded_OldCustTypeIs;
+            this.zendesk_user.callChangeCustomerTypeAfterFullyLoaded_OldCustTypeIs = null;
             this.changeCustomerType( oldType, this.zendesk_user.customer_type );
         }
         else
@@ -884,7 +880,8 @@ var pluginFactory = function( thisV2Client ) {
         if( this.zendesk_user.isIncluded() && this.mailshot_sync_user === null )
         {
             this.switchToLoadingScreen( "Loading user from Mailchimp..." );
-            this.makeAjaxCall( 
+            makeAjaxCall(
+                this,
                 this.requests.getMailChimpListMember( this.zendesk_user.email, this ), 
                 this.retrievedMailchimpSubscriber,  
                 this.get_or_createOrUpadateMailChimpListMember_OnFail 
@@ -911,7 +908,7 @@ var pluginFactory = function( thisV2Client ) {
             //update user object so it doesnt get out of sync
             this.zendesk_user.customer_type = newType;
 
-            //if NOT SET or EXCLUDE were selected 
+            //if NOT SET or EXCLUDE was selected 
             if( newType === this.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_NOT_SET || newType === this.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_EXCLUDE  )
             {
                     //if NOT SET or EXCLUDE were selected AND it was previously set to STANDARD or ORGANIZATION
@@ -1003,7 +1000,8 @@ var pluginFactory = function( thisV2Client ) {
         let newMailChimpUserToSave = this.createNewMailchimpSyncUserObject( zendeskUser );
 
         this.switchToLoadingScreen( "Adding Mailchimp Member..." );
-        this.makeAjaxCall( 
+        makeAjaxCall(
+            this,
             this.requests.createOrUpadateMailChimpListMember( newMailChimpUserToSave, false ), 
             this.createOrUpadateMailChimpListMember_Done,  
             this.get_or_createOrUpadateMailChimpListMember_OnFail 
@@ -1047,11 +1045,11 @@ var pluginFactory = function( thisV2Client ) {
         }
 
         this.switchToLoadingScreen( "Updating Mailchimp Member..." );
-        this.makeAjaxCall( 
+        makeAjaxCall(
+            this,
             this.requests.createOrUpadateMailChimpListMember( newMailChimpUserToSave, true ), 
             this.createOrUpadateMailChimpListMember_Done,  
-            this.get_or_createOrUpadateMailChimpListMember_OnFail,
-            true
+            this.get_or_createOrUpadateMailChimpListMember_OnFail
         );
 
         /* DebugOnlyCode - START */
@@ -1065,8 +1063,34 @@ var pluginFactory = function( thisV2Client ) {
 
     deleteExistingUserFromMailchimp: function( mailchimpUser ) 
     {
-            this.switchToLoadingScreen( "Deleting Mailchimp Member" );
-            this.ajax( "deleteMailChimpListMember", mailchimpUser );
+       /* DebugOnlyCode - START */
+        if( debug_mode ) 
+        { 
+            console.group( "deleteExistingUserFromMailchimp(mailchimpUser) called" );
+            console.log( "ARG1: mailchimpUser = %o", mailchimpUser );
+        }
+        /* DebugOnlyCode - END */
+        
+        //OLD CODE - no Pass or fail functojns were configured in events!!!!
+        //this.switchToLoadingScreen( "Deleting Mailchimp Member" );
+        //this.ajax( "deleteMailChimpListMember", mailchimpUser );
+            
+        this.switchToLoadingScreen( "Deleting Mailchimp Member..." );
+        makeAjaxCall(
+            this,
+            this.requests.deleteMailChimpListMember( mailchimpUser ), 
+            null,  
+            null, //this shoudl call get_or_createOrUpadateMailChimpListMember_OnFail ONLY 404 MESSAGE SHOUD BE DIFFERENT FOR DELETES!
+            true
+        );
+
+        /* DebugOnlyCode - START */
+        if( debug_mode ) 
+        { 
+            console.log( "Finished" );
+            console.groupEnd();
+        }
+        /* DebugOnlyCode - END */
     },
 
     get_or_createOrUpadateMailChimpListMember_OnFail: function( errorResponse ) 
@@ -1095,11 +1119,59 @@ var pluginFactory = function( thisV2Client ) {
                 this.switchToErrorMessage( errorResponse, this.zendesk_user.email + " already exists in mailchimp.<br /><br/>Do you want to override his/her details?", "Override", "error_override_mailchimp", "createOrUpadateMailChimpListMember_Override_OnClick()" );
                 redirectedToBespokeErrorPage = true;
             }
-            if( errorResponse.status === 404 && responseTextJSON.title === "Resource Not Found" )
-            {
+            if( errorResponse.status === 404 /* && responseTextJSON.title === "Resource Not Found" */ ) //the old code commetned out stopped working when zendesk helpfully started overriding the 404 page with its own data thereby losing the returned error information!!!
+            { //need to alter this if this is ever called on delete as 404 should be handled differently on delete
                 this.switchToErrorMessage( errorResponse, this.zendesk_user.email + " doesn't exist in mailchimp.<br /><br/>Do you want to create a new record for him/her?", "Create New", "error_create_new_mailchimp", "createOrUpadateMailChimpListMember_Add_New_OnClick()" );
                 redirectedToBespokeErrorPage = true;
             }
+            
+/*
+HERES AN EXAMPLE 405 ERROR FROM CONSOLE.LOG WHEN I TRIED TO DELETE A MAILCHIMP MEMBER THAT SHOULDNT BE DELETED:
+            
+AJAX FAIL: calling failure function 'null(response)', response = 
+{readyState: 4, responseJSON: {…}, responseText: "{"type":"http://developer.mailchimp.com/documentat…instance":"9bbc42cf-84b1-4f03-ba89-ae01e89304ad"}", status: 405, statusText: "error"}
+readyState: 4
+responseJSON:
+detail: "This list member cannot be removed.  Please contact support."
+instance: "9bbc42cf-84b1-4f03-ba89-ae01e89304ad"
+status: 405
+title: "Method Not Allowed"
+type: "http://developer.mailchimp.com/documentation/mailchimp/guides/error-glossary/"
+__proto__: Object
+responseText: "{"type":"http://developer.mailchimp.com/documentation/mailchimp/guides/error-glossary/","title":"Method Not Allowed","status":405,"detail":"This list member cannot be removed.  Please contact support.","instance":"9bbc42cf-84b1-4f03-ba89-ae01e89304ad"}"
+status: 405
+statusText: "error"
+__proto__: Object            
+
+
+
+
+HERES AN EXAMPLE 400 ERROR FROM CONSOLE.LOG WHEN I TRIED TO CREATE A MAILCHIMP MEMBER WITH INCOMPATIBLE DATA TYPES IM MERGE FIELDS:
+
+readyState: 4
+responseJSON:
+detail: "Your merge fields were invalid."
+errors: Array(1)
+0:
+field: "SEND_MAINT"
+message: "Value must be one of: Yes,  (not 1)"
+__proto__: Object
+length: 1
+__proto__: Array(0)
+instance: "77644a9d-0b09-44d1-aa3e-6bd55fc70eed"
+status: 400
+title: "Invalid Resource"
+type: "http://developer.mailchimp.com/documentation/mailchimp/guides/error-glossary/"
+__proto__: Object
+responseText: "{"type":"http://developer.mailchimp.com/documentation/mailchimp/guides/error-glossary/","title":"Invalid Resource","status":400,"detail":"Your merge fields were invalid.","instance":"77644a9d-0b09-44d1-aa3e-6bd55fc70eed","errors":[{"field":"SEND_MAINT","message":"Value must be one of: Yes,  (not 1)"}]}"
+status: 400
+statusText: "error"  
+*/ 
+
+
+
+
+            
         }
         catch(e)
         {
@@ -1395,7 +1467,7 @@ var pluginFactory = function( thisV2Client ) {
             errorObject = e;
             errorMessage = 'The JSON Settings text you entered for the '+settingsName+' setting was formatted incorrectly, it must be valid JSON.<br /><br />'+
                            'The failure reason was: '+parseErrorMessage+'<br /><br />'+
-                           'For help with these settings fields use our <a target="_blank" href="./downloads/ZenchimpAppSettingsGenerator.xlsx">Zenchimp App Settings Generator</a> in Microsoft Excel';
+                           'For help with these settings fields use our <a target="_blank" href="'+this.resources.SETTINGS_HELPER_SPREADSHEET_DOWNLOAD_URL+'">Zenchimp App Settings Generator</a> in Microsoft Excel';
         }
 
         if( fieldMappingsJSON !== null )

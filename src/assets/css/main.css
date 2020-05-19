@@ -10,7 +10,7 @@ html, body
 }
 .sidebar_page
 {
-    padding-bottom: 8px;
+    padding-bottom: 16px; /* getting footer at right height on sidebar page */
 }
 footer
 {
@@ -20,37 +20,36 @@ footer
     margin-top: -17px;
     font-size: 10px;
 }
-footer
-{
-    height: 15px;
-    font-size: 10px;
-}
 
 
+
+/* General Cross Screen Styling */
 #page_content .btn
 {
-	text-align: center;
+    text-align: center;
 }
 
 #page_content .warning
 {
-	color: red;
-	font-weight: 500;
+    color: red;
+    font-weight: 500;
 }
 
 #page_content .inactive
 {
-	color: gray;
-	font-weight: bold;
+    color: gray;
+    font-weight: 500;
 }
 
-#page_content div.btn-group
+#page_content .success
 {
-    padding-bottom: 10px;
+    color: #007bff;
+    font-weight: 500;
+    margin-bottom: 0px;
 }
 
 
-
+/* Main App Styling */
 .sidebar_page #page_content
 {
     font-size: 14px;
@@ -68,9 +67,32 @@ footer
     padding-left: 98px;
 }
 
+.sidebar_page #page_content div.btn-toolbar
+{
+    margin-bottom: 10px;
+}
+.sidebar_page #page_content button.exclude
+{
+    width: 89px;
+}
+.sidebar_page #page_content button.organization,
+.sidebar_page #page_content button.standard
+{
+    width: 109px;
+}
 
+.sidebar_page #page_content .information-text div.mc-only-field label
+{
+    margin-bottom: 0px;
+}
 
+.sidebar_page #page_content .information-text a.sync-popup-link
+{
+    cursor: pointer;
+    text-decoration: underline;
+}
 
+/* Modal Popup Styling */
 .user_sync_page #page_content .fixed table 
 {
     width: 100%;
@@ -82,7 +104,6 @@ footer
     border: #aaaaaa 1px solid;
     padding-top: 4px;
     padding-left: 5px;
-    
     height: 24px;
     overflow: hidden;
     text-overflow: ellipsis;

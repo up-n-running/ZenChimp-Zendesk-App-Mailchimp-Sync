@@ -106,3 +106,60 @@ function parseURLParams(param_string){
     return param_obj;
 };
 
+function makeAjaxCall( promiseFunctionContext, ajaxSettings, successFunction, failFunction, useZendeskCORSProxy) 
+{
+    /* DebugOnlyCode - START */
+    if( debug_mode ) 
+    { 
+        console.groupCollapsed( "COMMON-UTILS.JS: makeAjaxCall(ajaxSettings, %s, %s) called", (successFunction)?successFunction.name:successFunction, (failFunction)?failFunction.name:failFunction );
+        console.log( "ARG1: ajaxSettings = %o", ajaxSettings );
+        console.log( "ARG2: successFunction = %o", successFunction );
+        console.log( "ARG3: failFunction = %o", failFunction );
+        console.log( "ARG4: useZendeskCORSProxy = %o", useZendeskCORSProxy );
+    }
+    /* DebugOnlyCode - END */
+
+    if( typeof useZendeskCORSProxy !== 'undefined' && useZendeskCORSProxy )
+    {
+        ajaxSettings.cors = false;
+    }
+
+    thisV2Client.request(ajaxSettings).then(
+        (data) => {
+            /* DebugOnlyCode - START */
+            if( debug_mode ) { console.log( "AJAX SUCCESS: calling success function '%s(data)', data = %o", (successFunction)?successFunction.name:successFunction, data ); }
+            /* DebugOnlyCode - END */
+            
+            if( typeof successFunction === 'undefined' || successFunction === null )
+            {
+                console.warn( "AJAX SUCCESS: and no successFunction was defined so no futher action can be taken to handle the response. returned data = %o", data );
+            }
+            else
+            {
+                successFunction.call( promiseFunctionContext, data);
+            }
+        },
+        (response) => {
+            /* DebugOnlyCode - START */
+            if( debug_mode ) { console.log( "AJAX FAIL: calling failure function '%s(response)', response = %o", (failFunction)?failFunction.name:failFunction, response ); }
+            /* DebugOnlyCode - END */
+            
+            if( typeof failFunction === 'undefined' || failFunction === null )
+            {
+                console.warn( "AJAX FAIL: and no failFunction was defined so no futher action can be taken to handle the error. error response = %o", response );
+            }
+            else
+            {
+                failFunction.call( promiseFunctionContext, response);
+            }
+        }
+    );
+
+    /* DebugOnlyCode - START */
+    if( debug_mode ) 
+    { 
+        console.log( "Finished" );
+        console.groupEnd();
+    }
+    /* DebugOnlyCode - END */
+}

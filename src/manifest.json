@@ -98,7 +98,7 @@
       "type": "multiline",
       "required": true,
       "secure": false,
-      "default": "[\r\n  { \"field_label\":\"Maintenance Emails\", \"mailchimp_field\": \"SEND_MAINT\", \"type\": \"checkbox\", \"default_value\": \"1\" },\r\n  { \"field_label\":\"VIP Promotion Emails\", \"mailchimp_field\": \"SEND_PROMO\", \"type\": \"checkbox\", \"default_value\":\"1\" },\r\n  { \"field_label\":\"Monthly Scorecards\", \"mailchimp_field\": \"SEND_SC\", \"type\": \"checkbox\", \"default_value\":\"0\" }\r\n]"
+      "default": "[\r\n  { \"field_label\":\"Maintenance Emails\", \"mailchimp_field\": \"SEND_MAINT\", \"type\": \"checkbox\", \"default_value\": \"Yes\" },\r\n  { \"field_label\":\"VIP Promotion Emails\", \"mailchimp_field\": \"SEND_PROMO\", \"type\": \"checkbox\", \"default_value\":\"1\" },\r\n  { \"field_label\":\"Monthly Scorecards\", \"mailchimp_field\": \"SEND_SC\", \"type\": \"checkbox\", \"default_value\":\"0\" }\r\n]"
     }
   ]
 }
