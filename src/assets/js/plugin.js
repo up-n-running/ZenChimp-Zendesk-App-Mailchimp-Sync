@@ -785,7 +785,15 @@ var pluginFactory = function( thisV2Client ) {
             if( debug_mode ) { console.log( "We do NOT need to populate org object. Object fully loaded so nothing left to do but to call this.changeCustomerType( oldCustomerType, this.zendesk_user.customer_type )" ); }
             /* DebugOnlyCode - END */
             this.changeCustomerType( oldCustomerType, this.zendesk_user.customer_type );
-        }	 
+        }
+        
+        /* DebugOnlyCode - START */
+        if( debug_mode ) 
+        { 
+            console.log( "Finished" );
+            console.groupEnd();
+        }
+        /* DebugOnlyCode - END */
     },
 
     getZendeskOrganizations_Done: function( organizationObjectFromDataAPI )
