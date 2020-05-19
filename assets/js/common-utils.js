@@ -58,9 +58,9 @@ function modal_createChildFromParent(context)
         location: 'modal',
         size: {
             width: '700px',
-            height: '600px'
+            height: '450px'
         },
-        url: 'assets/modal-popup.html#parent_guid=' + encodeURIComponent( context.instanceGuid ) +
+        url: 'assets/modal-iframe.html#parent_guid=' + encodeURIComponent( context.instanceGuid ) +
              '&parent_location=' + encodeURIComponent( context.location )
     };
     thisV2Client.invoke('instances.create', options);

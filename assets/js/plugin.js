@@ -228,12 +228,12 @@ var pluginFactory = function( thisV2Client ) {
             };
 
             //3 x mandatory merge fields plus extra ones from user object
-            dataJSON.merge_fields[ this.mailchimp_merge_field_forename ] = mailchimpSyncUser.forename;
-            dataJSON.merge_fields[ this.mailchimp_merge_field_surname ] = mailchimpSyncUser.surname;
-            dataJSON.merge_fields[ this.mailchimp_list_field_customer_type_name ] = mailchimpSyncUser.customer_type;
+            dataJSON.merge_fields[ this.parentPlugin.mailchimp_merge_field_forename ] = mailchimpSyncUser.forename;
+            dataJSON.merge_fields[ this.parentPlugin.mailchimp_merge_field_surname ] = mailchimpSyncUser.surname;
+            dataJSON.merge_fields[ this.parentPlugin.mailchimp_list_field_customer_type_name ] = mailchimpSyncUser.customer_type;
             for (let i=0; i < mailchimpSyncUser.extra_merge_fields.length; i++) 
             {
-                dataJSON.merge_fields[ mailchimpSyncUser.extra_merge_fields[ i ].field_def.mailshot_field ] = mailchimpSyncUser.extra_merge_fields[ i ].value;
+                dataJSON.merge_fields[ mailchimpSyncUser.extra_merge_fields[ i ].field_def.mailchimp_field ] = mailchimpSyncUser.extra_merge_fields[ i ].value;
             }
 
             let jsonCall =
@@ -246,13 +246,13 @@ var pluginFactory = function( thisV2Client ) {
                 contentType: 'application/json; charset=UTF-8',
                 headers: 
                 {
-                    "Authorization": "Basic " + btoa( "api:" + this.mailchimp_api_key )
+                    "Authorization": "Basic " + btoa( "api:" + this.parentPlugin.mailchimp_api_key )
                 },
                 data: JSON.stringify( dataJSON )
             };
 
             /* DebugOnlyCode - START */
-            if( debug_mode ) { console.log( "requests.createOrUpadateMailChimpListMember( mailchimpSyncUser:'%o', updateNotCreate: '%o' ), jsonCall = %o", mailchimpSyncUser, updateNotCreate, jsonCall ); }
+            if( debug_mode ) { console.log( "requests.createOrUpadateMailChimpListMember( mailchimpSyncUser:'%o', updateNotCreate: '%o' ), dataJSON = %o, jsonCall = %o", mailchimpSyncUser, updateNotCreate, dataJSON, jsonCall ); }
             /* DebugOnlyCode - END */ 
             return jsonCall;
         },
@@ -286,7 +286,8 @@ var pluginFactory = function( thisV2Client ) {
 
     syncButtonFromModalOnClick: function() 
     {
-            this.syncExistingUserToMailchimp( this.zendesk_user, true );
+        this.syncExistingUserToMailchimp( this.zendesk_user, true );
+        return false;
     },
 
     // --- INITIALISATION FUCNTIONS
@@ -338,7 +339,7 @@ var pluginFactory = function( thisV2Client ) {
                 this.mailchimp_standard_button_label = metadata.settings.mailchimp_standard_button_label;
 
                 //setup field mappings
-                this.customer_type_field_mapping = { zendesk_field: 'mailshot_customer_display_name', mailshot_field: this.mailchimp_list_field_customer_type_name, type: this.resources.FIELD_TYPE_TEXT, default_value: this.mailchimp_list_field_customer_type_default_value };
+                this.customer_type_field_mapping = { zendesk_field: 'mailshot_customer_display_name', mailchimp_field: this.mailchimp_list_field_customer_type_name, type: this.resources.FIELD_TYPE_TEXT, default_value: this.mailchimp_list_field_customer_type_default_value };
                 this.organization_field_mappings = JSON.parse( metadata.settings.mailchimp_organization_field_mappings );
                 this.user_field_mappings = JSON.parse( metadata.settings.mailchimp_user_field_mappings );
                 this.mailshot_only_field_mappings = JSON.parse( metadata.settings.mailchimp_mailshot_only_field_mappings );
@@ -425,13 +426,14 @@ var pluginFactory = function( thisV2Client ) {
         /* DebugOnlyCode - START */
         if( debug_mode ) 
         { 
-            console.log( "this.isFullyInitialized = " + this.isFullyInitialized );
+            console.log( "this.isFullyInitialized = %o", this.isFullyInitialized );
+            console.log( "********** APP INITIALISED ******* this = %o", this );
             console.groupEnd();
         }
         /* DebugOnlyCode - END */
     },
 
-    makeAjaxCall: function (ajaxSettings, successFunction, failFunction) 
+    makeAjaxCall: function (ajaxSettings, successFunction, failFunction, useZendeskCORSProxy) 
     {
         /* DebugOnlyCode - START */
         if( debug_mode ) 
@@ -440,8 +442,14 @@ var pluginFactory = function( thisV2Client ) {
             console.log( "ARG1: ajaxSettings = %o", ajaxSettings );
             console.log( "ARG2: successFunction = %o", successFunction );
             console.log( "ARG3: failFunction = %o", failFunction );
+            console.log( "ARG4: useZendeskCORSProxy = %o", useZendeskCORSProxy );
         }
         /* DebugOnlyCode - END */
+
+        if( typeof useZendeskCORSProxy !== 'undefined' && useZendeskCORSProxy )
+        {
+            ajaxSettings.cors = false;
+        }
 
         this.v2Client.request(ajaxSettings).then(
             (data) => {
@@ -525,7 +533,7 @@ var pluginFactory = function( thisV2Client ) {
             for( let i=0; i < this.mailshot_sync_user.extra_merge_fields.length; i++)
             {
                     tempField = this.mailshot_sync_user.extra_merge_fields[ i ];
-                    if( typeof( tempField.field_def.zendesk_field ) === "undefined" && ( "MC_ONLY_" + tempField.field_def.mailshot_field ) === event.target.id )
+                    if( typeof( tempField.field_def.zendesk_field ) === "undefined" && ( "MC_ONLY_" + tempField.field_def.mailchimp_field ) === event.target.id )
                     {
                             if( tempField.field_def.type === this.resources.FIELD_TYPE_CHECKBOX )
                             {
@@ -721,6 +729,7 @@ var pluginFactory = function( thisV2Client ) {
             console.log( "Finished, zendeskUserObjectToReturn = %o", this.zendesk_user );
             console.groupEnd();
         }
+        
         return zendeskUserObjectToReturn;
     },
 
@@ -817,26 +826,42 @@ var pluginFactory = function( thisV2Client ) {
 
     createZendeskOrganizationFromAPIReturnData: function( organizationObjectFromDataAPI )
     {
-            //console.log( 'Starting createZendeskOrganizationFromAPIReturnData, organizationObjectFromDataAPI = ' );console.dir( organizationObjectFromDataAPI );
+        /* DebugOnlyCode - START */
+        if( debug_mode ) 
+        { 
+            console.group( "createZendeskOrganizationFromAPIReturnData(organizationObjectFromDataAPI) called" );
+            console.log( "ARG1: organizationObjectFromDataAPI = %o", organizationObjectFromDataAPI );
+            console.log( "Checking if We need to populate organisation, next comment will be check passed if we actually do");
+        }
+        /* DebugOnlyCode - END */
+        
+        let organizationObjectToReturn = null;
+        if( typeof( organizationObjectFromDataAPI ) !== "undefined" && organizationObjectFromDataAPI !== null && typeof( organizationObjectFromDataAPI.organization ) !== "undefined" && organizationObjectFromDataAPI.organization !== null )
+        {
+            /* DebugOnlyCode - START */
+            if( debug_mode ) { console.log( "Check Passed, building base object and adding extra fields.    this.customer_type_field_mapping.zendesk_field = %s", this.customer_type_field_mapping.zendesk_field ); }
+            /* DebugOnlyCode - END */
+            console.log( "Checking if We need to populate organisation, next comment will be check passed if we actually do");
+            organizationObjectToReturn = new this.zendeskObjectsModule.ZendeskOrganization(
+                    this,
+                    organizationObjectFromDataAPI.organization.id,
+                    organizationObjectFromDataAPI.organization.name,
+                    organizationObjectFromDataAPI.organization.organization_fields[ this.customer_type_field_mapping.zendesk_field ]
+            );
+            organizationObjectToReturn.populateExtraFieldsFromOrganizationAPIData( organizationObjectFromDataAPI.organization );
+        }
+        else console.warn( "createZendeskOrganizationFromAPIReturnData called but organizationObjectFromDataAPI = null or doesnt contain a organization property - this should never happen!");
 
-            let organizationObjectToReturn = null;
-            if( typeof( organizationObjectFromDataAPI ) !== "undefined" && organizationObjectFromDataAPI !== null && typeof( organizationObjectFromDataAPI.organization ) !== "undefined" )
-            {
-                    if( organizationObjectFromDataAPI.organization !== null )
-                    {
-                            organizationObjectToReturn = new this.zendeskObjectsModule.ZendeskOrganization(
-                                    this,
-                                    organizationObjectFromDataAPI.organization.id,
-                                    organizationObjectFromDataAPI.organization.name,
-                                    organizationObjectFromDataAPI.organization.organization_fields[ this.customer_type_field_mapping.zendesk_field ]
-                            );
-                            organizationObjectToReturn.populateExtraFieldsFromOrganizationAPIData( organizationObjectFromDataAPI.organization );
-                    }
-            }
-            else console.warn( "createZendeskOrganizationFromAPIReturnData called but organizationObjectFromDataAPI = null or doesnt contain a organization property - this should never happen!");
 
-            //console.log( 'Finished createZendeskOrganizationFromAPIReturnData, organizationObjectToReturn = ' );console.dir( organizationObjectToReturn.clone() );
-            return organizationObjectToReturn;
+
+        /* DebugOnlyCode - START */
+        if( debug_mode ) 
+        { 
+            console.log( "Finished, organizationObjectToReturn = %o", organizationObjectToReturn );
+            console.groupEnd();
+        }
+        /* DebugOnlyCode - END */
+        return organizationObjectToReturn;
     },
 
     fetchMailchimpObjectIfNecessary: function()
@@ -934,24 +959,24 @@ var pluginFactory = function( thisV2Client ) {
                     status: "subscribed",
                     forename: returnedMailchimpUser.merge_fields[ this.mailchimp_merge_field_forename ],
                     surname: returnedMailchimpUser.merge_fields[ this.mailchimp_merge_field_surname  ],
-                    customer_type: returnedMailchimpUser.merge_fields[ this.customer_type_field_mapping.mailshot_field ],
+                    customer_type: returnedMailchimpUser.merge_fields[ this.customer_type_field_mapping.mailchimp_field ],
                     extra_merge_fields: []
             };
 
             let arrayIndex = 0;
             for (let i=0; i < this.user_field_mappings.length; i++) 
             {
-                    this.mailshot_sync_user.extra_merge_fields[ arrayIndex ] = { field_def: this.user_field_mappings[ i ], value: returnedMailchimpUser.merge_fields[ this.user_field_mappings[ i ].mailshot_field ]};
+                    this.mailshot_sync_user.extra_merge_fields[ arrayIndex ] = { field_def: this.user_field_mappings[ i ], value: returnedMailchimpUser.merge_fields[ this.user_field_mappings[ i ].mailchimp_field ]};
                     arrayIndex++;
             }
             for(i=0; i < this.organization_field_mappings.length; i++) 
             {
-                    this.mailshot_sync_user.extra_merge_fields[ arrayIndex ] = { field_def: this.organization_field_mappings[ i ], value: returnedMailchimpUser.merge_fields[ this.organization_field_mappings[ i ].mailshot_field ] };
+                    this.mailshot_sync_user.extra_merge_fields[ arrayIndex ] = { field_def: this.organization_field_mappings[ i ], value: returnedMailchimpUser.merge_fields[ this.organization_field_mappings[ i ].mailchimp_field ] };
                     arrayIndex++;
             }
             for (i=0; i < this.mailshot_only_field_mappings.length; i++) 
             {
-                    this.mailshot_sync_user.extra_merge_fields[ arrayIndex ] = { field_def: this.mailshot_only_field_mappings[ i ], value: returnedMailchimpUser.merge_fields[ this.mailshot_only_field_mappings[ i ].mailshot_field ] };
+                    this.mailshot_sync_user.extra_merge_fields[ arrayIndex ] = { field_def: this.mailshot_only_field_mappings[ i ], value: returnedMailchimpUser.merge_fields[ this.mailshot_only_field_mappings[ i ].mailchimp_field ] };
                     arrayIndex++;
             }		
 
@@ -1000,24 +1025,28 @@ var pluginFactory = function( thisV2Client ) {
 
         let newMailChimpUserToSave = this.createNewMailchimpSyncUserObject( zendeskUser );
 
-
         /* DebugOnlyCode - START */
         if( debug_mode ) { console.log( "Checking if we need to copy across extra merge fields to mailchimp object too? (answer = %o)  \n tryToPreserveMCOnlyFields = %o, this.mailshot_sync_user = %o, zendeskUser.email = %o, this.mailshot_sync_user.email_address = %o", ( typeof( tryToPreserveMCOnlyFields ) !== "undefined" && tryToPreserveMCOnlyFields === true && this.mailshot_sync_user !== null && zendeskUser.email === this.mailshot_sync_user.email_address ), tryToPreserveMCOnlyFields, this.mailshot_sync_user, zendeskUser.email, this.mailshot_sync_user.email_address ); }
         /* DebugOnlyCode - END */
         //if switching between Standard and Org mode try to preserve the value of the Mailchimp only checkbox fields
         if( typeof( tryToPreserveMCOnlyFields ) !== "undefined" && tryToPreserveMCOnlyFields === true && this.mailshot_sync_user !== null && zendeskUser.email === this.mailshot_sync_user.email_address )
         {
-                for( let i=0; i < this.mailshot_sync_user.extra_merge_fields.length; i++)
+            for( let i=0; i < this.mailshot_sync_user.extra_merge_fields.length; i++)
+            {
+                if( typeof( this.mailshot_sync_user.extra_merge_fields[ i ].field_def.zendesk_field ) === "undefined" ) 
                 {
-                        if( typeof( this.mailshot_sync_user.extra_merge_fields[ i ].field_def.zendesk_field ) === "undefined" ) 
-                        {
-                                newMailChimpUserToSave.extra_merge_fields[ i ].value = this.mailshot_sync_user.extra_merge_fields[ i ].value;
-                        }
+                        newMailChimpUserToSave.extra_merge_fields[ i ].value = this.mailshot_sync_user.extra_merge_fields[ i ].value;
                 }
+            }
         }
 
         this.switchToLoadingScreen( "Updating Mailchimp Member..." );
-        this.ajax( "createOrUpadateMailChimpListMember", newMailChimpUserToSave, true );
+        this.makeAjaxCall( 
+            this.requests.createOrUpadateMailChimpListMember( newMailChimpUserToSave, true ), 
+            this.createOrUpadateMailChimpListMember_Done,  
+            this.get_or_createOrUpadateMailChimpListMember_OnFail,
+            true
+        );
 
         /* DebugOnlyCode - START */
         if( debug_mode ) 
@@ -1036,24 +1065,53 @@ var pluginFactory = function( thisV2Client ) {
 
     get_or_createOrUpadateMailChimpListMember_OnFail: function( errorResponse ) 
     {
-            //console.log( "Started get_or_createOrUpadateMailChimpListMember_OnFail, errorResponse = " );console.dir( errorResponse );
+        /* DebugOnlyCode - START */
+        if( debug_mode ) 
+        { 
+            console.group( "get_or_createOrUpadateMailChimpListMember_OnFail(errorResponse) called" );
+            console.log( "ARG1: errorResponse = %o", errorResponse );
+        }
 
-            //check to see if we were in create only mode but the users email address was already found.
-            try
+        //check to see if we were in create only mode but the users email address was already found.
+        let redirectedToBespokeErrorPage = false;
+        try
+        {
+            /* DebugOnlyCode - START */
+            if( debug_mode ) { console.log( "PEEKING AT ERROR MESSAGE: running: let responseTextJSON = JSON.parse( errorResponse.responseText );"); }
+            /* DebugOnlyCode - END */
+            let responseTextJSON = JSON.parse( errorResponse.responseText );
+            /* DebugOnlyCode - START */
+            if( debug_mode ) { console.log( "now responseTextJSON = %o", responseTextJSON ); }
+            /* DebugOnlyCode - END */
+                
+            if( errorResponse.status === 400 && responseTextJSON.title === "Member Exists" )
             {
-                    let responseTextJSON = JSON.parse( errorResponse.responseText );
-                    if( errorResponse.status === 400 && responseTextJSON.title === "Member Exists" )
-                    {
-                                    return this.switchToErrorMessage( errorResponse, this.zendesk_user.email + " already exists in mailchimp.<br /><br/>Do you want to override his/her details?", "Override", "error_override_mailchimp", "createOrUpadateMailChimpListMember_Override_OnClick()" );
-                    }
-                    if( errorResponse.status === 404 && responseTextJSON.title === "Resource Not Found" )
-                    {
-                                    return this.switchToErrorMessage( errorResponse, this.zendesk_user.email + " doesn't exist in mailchimp.<br /><br/>Do you want to create a new record for him/her?", "Create New", "error_create_new_mailchimp", "createOrUpadateMailChimpListMember_Add_New_OnClick()" );
-                    }
+                this.switchToErrorMessage( errorResponse, this.zendesk_user.email + " already exists in mailchimp.<br /><br/>Do you want to override his/her details?", "Override", "error_override_mailchimp", "createOrUpadateMailChimpListMember_Override_OnClick()" );
+                redirectedToBespokeErrorPage = true;
             }
-            catch(e){}
+            if( errorResponse.status === 404 && responseTextJSON.title === "Resource Not Found" )
+            {
+                this.switchToErrorMessage( errorResponse, this.zendesk_user.email + " doesn't exist in mailchimp.<br /><br/>Do you want to create a new record for him/her?", "Create New", "error_create_new_mailchimp", "createOrUpadateMailChimpListMember_Add_New_OnClick()" );
+                redirectedToBespokeErrorPage = true;
+            }
+        }
+        catch(e)
+        {
+            console.warn( "Could not JSON Parse errorResponse.responseText from get_or_createOrUpadateMailChimpListMember. errorResponse = %o", errorResponse );
+        }
 
-            this.switchToErrorMessage( errorResponse );
+        if( !redirectedToBespokeErrorPage )
+        {
+                this.switchToErrorMessage( errorResponse );
+        }
+    
+        /* DebugOnlyCode - START */
+        if( debug_mode ) 
+        { 
+            console.log( "Finished, redirectedToBespokeErrorPage = %o", redirectedToBespokeErrorPage );
+            console.groupEnd();
+        }
+        /* DebugOnlyCode - END */
     },
 
     createOrUpadateMailChimpListMember_Override_OnClick: function() 
@@ -1128,14 +1186,14 @@ var pluginFactory = function( thisV2Client ) {
         }
 
         //base object without extra merge fields
-        let mailchimpUserToReturn =
+        var mailchimpUserToReturn =
         {
-                email_address: zendeskSyncUserObject.email,
-                status: "subscribed",
-                forename: zendeskSyncUserObject.getForeName(),
-                surname: zendeskSyncUserObject.getSurname(),
-                customer_type: zendeskSyncUserObject.getMailchimpCustomerType(),
-                extra_merge_fields: []
+            email_address: zendeskSyncUserObject.email,
+            status: "subscribed",
+            forename: zendeskSyncUserObject.getForeName(),
+            surname: zendeskSyncUserObject.getSurname(),
+            customer_type: zendeskSyncUserObject.getMailchimpCustomerType(),
+            extra_merge_fields: []
         };
         
         /* DebugOnlyCode - START */

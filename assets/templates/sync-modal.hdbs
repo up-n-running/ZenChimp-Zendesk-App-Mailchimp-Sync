@@ -1,8 +1,8 @@
-<table cellpadding="0" cellspacing="0" border="0" width="521">
-<tr><td colspan="2" width="521"><img width="521" height="1" src="./img/1x1.png" /></td></tr>
+<table cellpadding="0" cellspacing="0" border="0" style="width: 100%">
+<tr><td colspan="2" width="100%"><img width="500" height="1" src="./img/1x1.png" /></td></tr>
 <tr>
     <td width="1"><img width="1" height="300" src="./img/1x1.png" /></td>
-    <td width="520" class="fixed">
+    <td class="fixed">
         <table>
         <tr>
             <td class="blank">&nbsp;</td>
@@ -10,22 +10,28 @@
             <td class="mcheading">Mailchimp User</td>
         </tr>
         {{#each sync_fields}}
-        <tr>
-            <td class="field_heading{{#unless this.in_sync}}_out-of-sync{{/unless}}">{{this.label}}</td>
-            <td class="zd{{#if this.mc_only}}_disabled{{/if}} value">
-                {{#if this.is_image}}{{#if this.zd_value}}<img style="margin-top: -7px" height="30" alt="Image Field Image Preview" src="{{this.zd_value}}" />{{else}}-{{/if}}
-                {{else}}{{this.zd_value}}
-                {{/if}}
-            </td>
-            <td class="mc value">
-                {{#if this.is_image}}{{#if this.mc_value}}<img style="margin-top: -7px" height="30" alt="Image Field Image Preview" src="{{this.mc_value}}" />{{else}}-{{/if}}
-                {{else}}{{this.mc_value}}
-                {{/if}}
-            </td> 
+        <tr{{#unless this.in_sync}} class="out-of-sync"{{/unless}}>
+            <td class="field_heading">{{this.label}}</td>
+            <td class="zd{{#if this.mc_only}}_disabled{{/if}} value">{{#if this.is_image}}{{#if this.zd_value}}<img style="margin-top: -7px" height="30" alt="Image Field Image Preview" src="{{this.zd_value}}" />{{else}}-{{/if}}{{else}}{{this.zd_value}}{{/if}}</td>
+            <td class="mc value">{{#if this.is_image}}{{#if this.mc_value}}<img style="margin-top: -7px" height="30" alt="Image Field Image Preview" src="{{this.mc_value}}" />{{else}}-{{/if}}{{else}}{{this.mc_value}}{{/if}}</td> 
         </tr>
         {{/each}}
+       <tr class="button-row">
+            <td class="close-button-cell"><button class="btn btn-secondary" onclick="return closeButtonOnClick();">Close</button></td>
+            <td class="sync-button-cell">{{#unless display_params.user_in_sync}}<button class="btn sync zendesk" onclick="return zenChimpPlugin.syncButtonFromModalOnClick();">Sync Zendesk > Mailchimp</button>{{/unless}}</td>
+            <td class="sync-button-cell"></td>
+        </tr>
         </table>
     </td>
 </tr>
 </table>
-{{#unless display_params.user_in_sync}}<button class="btn sync" data-dismiss="modal" aria-hidden="true">Sync Zendesk > Mailchimp</button>{{/unless}}<button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+
+
+
+
+<script>
+$('.user_sync_page #page_content .fixed td').bind('mouseenter', function(){
+    var $this = $(this);
+    $this.attr('title', $this.text() === '' ? '<No Value>' : $this.text() );
+});
+</script>

@@ -152,7 +152,7 @@
     {
         for(var i = 0; i < this.extra_user_fields.length; i++) 
         {
-            if( ( zdNotMcField && this.extra_user_fields[i].field_def.zendesk_field  === fieldName ) || ( !zdNotMcField && this.extra_user_fields[i].field_def.mailshot_field === fieldName ) )
+            if( ( zdNotMcField && this.extra_user_fields[i].field_def.zendesk_field  === fieldName ) || ( !zdNotMcField && this.extra_user_fields[i].field_def.mailchimp_field === fieldName ) )
             {
                 return this.extra_user_fields[i];
             }

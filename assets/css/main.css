@@ -1,45 +1,86 @@
-footer 
+/* Get the footer to stay at the bottom */
+html, body
 {
-  font-size: 10px;
-  padding-top: 20px;
+    height: 100%;
+}
+.user_sync_page
+{
+    min-height: 100%;
+    padding-bottom: 8px;
+}
+.sidebar_page
+{
+    padding-bottom: 8px;
+}
+footer
+{
+    position: relative;
+    clear: both;
+    height: 15px;
+    margin-top: -17px;
+    font-size: 10px;
+}
+footer
+{
+    height: 15px;
+    font-size: 10px;
 }
 
-#content td {
-	font-size: 12px;
-	padding-top: 2px;
+
+#page_content .btn
+{
+	text-align: center;
 }
 
-td.mc-data
+#page_content .warning
+{
+	color: red;
+	font-weight: 500;
+}
+
+#page_content .inactive
 {
 	color: gray;
-	padding-left: 5px;
+	font-weight: bold;
+}
+
+#page_content div.btn-group
+{
+    padding-bottom: 10px;
 }
 
 
 
-
-.user_page .page_content
+.sidebar_page #page_content
 {
-    height: 91px;
+    font-size: 14px;
+}
+
+.sidebar_page #page_content .main_content
+{
     background-repeat: no-repeat;
-    background-position: left top;
+    min-height: 100px;
+}
+
+.sidebar_page #page_content .information-text
+{
+    text-align: left;
     padding-left: 98px;
 }
 
-.user_page label 
+
+
+
+.user_sync_page #page_content .fixed table 
 {
-  display: inline-block;
+    width: 100%;
 }
 
-.user_sync_page .page_content .fixed table 
+.user_sync_page #page_content .fixed td
 {
-    table-layout:fixed;
-}
-
-.user_sync_page .page_content .fixed td
-{
+    font-size: 12px;
     border: #aaaaaa 1px solid;
-    padding-top: 7px;
+    padding-top: 4px;
     padding-left: 5px;
     
     height: 24px;
@@ -48,150 +89,135 @@ td.mc-data
     display: inline-block;
     white-space: nowrap;
 }
-.user_sync_page .page_content .fixed td.blank
+.user_sync_page #page_content .fixed td.blank
 {
     border-top-color: white;
     border-left-color: white;
     border-right-color: white;
     
-    width: 100px;
+    width: 20%;
 }
 
-.user_sync_page .page_content .fixed td.field_heading
+.user_sync_page #page_content .fixed td.field_heading
 {
     color: #484848;
     border-right-color: #d2d2d2;
     border-top-color: #d2d2d2;
     background-color: #d2d2d2;
     font-weight: bold;
-    width: 100px;
+    width: 20%;
 }
 
-.user_sync_page .page_content .fixed td.field_heading_out-of-sync
+.user_sync_page #page_content .fixed tr.out-of-sync td.field_heading
 {
     color: #C90000;
     border-right-color: #DB9595;
     border-top-color: #DB9595;
     background-color: #DB9595;
-    font-weight: bold;
-    width: 100px;
 }
 
-
-.user_sync_page .page_content .fixed td.out-of-sync
-{
-    color: #red;
-}
-
-
-.user_sync_page .page_content .fixed td.zdheading
+.user_sync_page #page_content .fixed td.zdheading
 {
     border-right: none;
     color: #484848;
     background-color: #06A684;
+    /* background-color: #03363D; */
     font-weight: bold;
     
-    width: 199px;
+    width: 40%;
 }
 
-.user_sync_page .page_content .fixed td.mcheading
+.user_sync_page #page_content .fixed td.mcheading
 {
     border-left: none;
     color: #484848;
     background-color: #42bdd3;
     font-weight: bold;
-    
-    width: 199px;
+    width: 40%;
 }
 
-.user_sync_page .page_content .fixed td.value
+.user_sync_page #page_content .fixed td.value
 {
     color: #484848;
     border-top-color: white;
     font-size: 12px;
-    width: 199px;
+    width: 40%;
 }
 
-.user_sync_page .page_content .fixed td.zd
+.user_sync_page #page_content .fixed tr.out-of-sync td.value
+{
+    color: #C90000;
+    border-right-color: #DB9595;
+    border-right: #aaaaaa solid 1px;
+    border-top-color: #DB9595;
+    background-color: #DB9595;
+}
+
+.user_sync_page #page_content .fixed td.zd
 {
     border-right: none;
     background-color: #99d8cb;
     border-top-color: #99d8cb;
 }
 
-.user_sync_page .page_content .fixed td.zd_disabled
+.user_sync_page #page_content .fixed td.zd_disabled
 {
     border-right: none;
     background-color: white;
     border-top-color: white;
     border-bottom-color: white;
     border-right: #DB9595 solid 1px;
-    width: 198px;
+    width: 40%;
 }
 
-.user_sync_page .page_content .fixed td.mc
+.user_sync_page #page_content .fixed td.mc
 {
     border-left: none;
     background-color: #a8dee7;
     border-top-color: #a8dee7;
 }
 
-.page_content .temp td.zendesk
-{
-    color: green;
-    padding-left: 5px;
-    font-size: 10px;
-
-    /* Required for text-overflow to do anything */
-    white-space: nowrap;
-    overflow: hidden;	
-}
-
-.page_content .temp td
-{
-	width: 200px;
-}
-
-.page_content .temp td.mailchimp
-{
-	color: blue;
-	padding-left: 5px;
-	font-size: 10px;
-
-
-  /* Required for text-overflow to do anything */
-  white-space: nowrap;
-  overflow: hidden;
-}
-
-.page_content .btn
-{
-	text-align: center;
-}
-
-.page_content .warning
-{
-	color: red;
-	font-weight: bold;
-}
-
-.page_content .inactive
+.user_sync_page #page_content td.mc-data
 {
 	color: gray;
-	font-weight: bold;
+	padding-left: 5px;
 }
 
-.page_content .information-text
+.user_sync_page #page_content .fixed tr.button-row td
 {
-	text-align: left;
+    color: #000000;
+    border: none;
+    background: none;
+    height: 59px;
+    padding-top: 20px;
+    padding-left: 1px;
+    text-align: center;
 }
 
-div.btn-group
+.user_sync_page #page_content .fixed tr.button-row td.close-button-cell
 {
-	padding-bottom: 10px;
+    width: 20%;
 }
 
-.modal{
-  width: 570px;
-  display: table;
+.user_sync_page #page_content .fixed tr.button-row td.sync-button-cell
+{
+    width: 40%;
 }
+
+.user_sync_page #page_content .fixed tr.button-row td button
+{
+     color: white; 
+     font-weight: 500; 
+     width: 100%;
+}
+
+button.zendesk
+{
+     background-color: #06A684;
+}
+
+button.zendesk:hover
+{
+     background-color: #058065;
+}
+

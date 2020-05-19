@@ -56,14 +56,14 @@
       "type": "text",
       "required": true,
       "secure": false,
-      "default": "CUSTOMER"
+      "default": "ZD_CUSTYPE"
     },
     {
       "name": "mailchimp_merge_field_customer_type_default_val",
       "type": "text",
       "required": true,
       "secure": false,
-      "default": "SMEs"
+      "default": "Standard"
     },
     {
       "name": "mailchimp_organisation_button_label",
@@ -84,21 +84,21 @@
       "type": "multiline",
       "required": true,
       "secure": false,
-      "default": "[\r\n  {\"field_label\":\"Success Email\",\"zendesk_field\":\"mailshot_success_email_address\",\"mailshot_field\":\"FROMEMAIL\",\"type\":\"text\",\"default_value\":\"successteam@upnrunning.net\"},\r\n  {\"field_label\":\"Logo URL\",\"zendesk_field\":\"mailshot_company_logo_url\",\"mailshot_field\":\"LOGO\",\"type\":\"image\",\"default_value\":\"\"}\r\n]"
+      "default": "[\r\n  {\"field_label\":\"Success Email\",\"zendesk_field\":\"mailshot_success_email_address\",\"mailchimp_field\":\"FROMEMAIL\",\"type\":\"text\",\"default_value\":\"supportteam@upnrunning.net\"},\r\n  {\"field_label\":\"Mailchimp Logo URL\",\"zendesk_field\":\"mailshot_company_logo_url\",\"mailchimp_field\":\"LOGO\",\"type\":\"image\",\"default_value\":\"\"},\r\n  ,{\"field_label\":\"Mailchimp Footer Message\",\"zendesk_field\":\"mailchimp_footer_message\",\"mailchimp_field\":\"FOOTER_MSG\",\"type\":\"text\",\"default_value\":\"\"}\r\n]"
     },
     {
       "name": "mailchimp_user_field_mappings",
       "type": "multiline",
       "required": true,
       "secure": false,
-      "default": "[\r\n  { \"field_label\": \"Site List\", \"zendesk_field\":\"site_list\", \"mailshot_field\": \"SME_SITES\", \"type\": \"text\", \"default_value\": \"\" }\r\n]"
+      "default": "[\r\n  { \"field_label\": \"Hosted Sites List (comma separated)\", \"zendesk_field\":\"site_list\", \"mailchimp_field\": \"SITES_LIST\", \"type\": \"text\", \"default_value\": \"\" }\r\n]"
     },
     {
       "name": "mailchimp_mailshot_only_field_mappings",
       "type": "multiline",
       "required": true,
       "secure": false,
-      "default": "[\r\n  { \"field_label\":\"Maintenance Emails\", \"mailshot_field\": \"SEND_MAINT\", \"type\": \"checkbox\", \"default_value\": \"1\" },\r\n  { \"field_label\":\"Announcement Emails\", \"mailshot_field\": \"SEND_ANNOU\", \"type\": \"checkbox\", \"default_value\":\"1\" },\r\n  { \"field_label\":\"Monthly Scorecards\", \"mailshot_field\": \"SEND_CSAT\", \"type\": \"checkbox\", \"default_value\":\"0\" }\r\n]"
+      "default": "[\r\n  { \"field_label\":\"Maintenance Emails\", \"mailchimp_field\": \"SEND_MAINT\", \"type\": \"checkbox\", \"default_value\": \"1\" },\r\n  { \"field_label\":\"VIP Promotion Emails\", \"mailchimp_field\": \"SEND_PROMO\", \"type\": \"checkbox\", \"default_value\":\"1\" },\r\n  { \"field_label\":\"Monthly Scorecards\", \"mailchimp_field\": \"SEND_SC\", \"type\": \"checkbox\", \"default_value\":\"0\" }\r\n]"
     }
   ]
 }

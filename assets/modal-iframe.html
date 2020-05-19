@@ -7,10 +7,13 @@
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" crossorigin="anonymous">
 </head>
 <body>
-    <div id="page_content"></div>
+    <div class="user_sync_page">
+        <div id="page_content"></div>
+    </div>
 
     <footer>
-      <a href="https://github.com/up-n-running/ZenChimp-Zendesk-App-Mailchimp-Sync/issues?q=is%3Aissue+" target="_blank">Report bugs</a>
+      <a href="https://github.com/up-n-running/ZenChimp-Zendesk-App-Mailchimp-Sync/issues?q=is%3Aissue" target="_blank">Report bugs</a> | 
+      <a href="https://github.com/up-n-running/ZenChimp-Zendesk-App-Mailchimp-Sync/releases" target="_blank">New Release?</a>
     </footer>
     
     <!-- https://github.com/zendesk/zendesk_app_framework_sdk -->
@@ -18,6 +21,7 @@
     
     <script src="./js/lib/handlebars-v4.7.6.min.js"></script>
     <script src="./js/lib/jquery-3.5.1.min.js"></script>
+    
 
     <script src="./js/lib/parse-names.js"></script>
     <script src="./js/lib/md5.js"></script>
@@ -83,6 +87,11 @@
                 console.groupEnd();
             }
             /* DebugOnlyCode - END */ 
+        }
+        
+        function closeButtonOnClick() {
+            thisV2Client.invoke('destroy');
+            return false;
         }
     </script>
 </body>
