@@ -147,7 +147,7 @@ var pluginFactory = function( thisV2Client ) {
             /* DebugOnlyCode - END */ 
             return userApiCallSettings;
         },
-
+/*
             getMailChimpAllListMembers: function()
             {
                     let jsonCall =
@@ -173,7 +173,7 @@ var pluginFactory = function( thisV2Client ) {
                     //console.log( "getMailChimpAllListMembers: API CAll DETAILS:" );console.dir( jsonCall );
                     return jsonCall;
             },
-
+*/
         getMailChimpListMember: function( emailAddress )
         {
             if( typeof( emailAddress ) === "undefined" || emailAddress === null )
@@ -340,12 +340,18 @@ var pluginFactory = function( thisV2Client ) {
 
                 //setup field mappings
                 this.customer_type_field_mapping = { zendesk_field: 'mailshot_customer_display_name', mailchimp_field: this.mailchimp_list_field_customer_type_name, type: this.resources.FIELD_TYPE_TEXT, default_value: this.mailchimp_list_field_customer_type_default_value };
-                this.organization_field_mappings = JSON.parse( metadata.settings.mailchimp_organization_field_mappings );
-                this.user_field_mappings = JSON.parse( metadata.settings.mailchimp_user_field_mappings );
-                this.mailshot_only_field_mappings = JSON.parse( metadata.settings.mailchimp_mailshot_only_field_mappings );
+                this.organization_field_mappings = this.validateFieldMappingsJSON( metadata.settings.mailchimp_organization_field_mappings, 'Organisation Field Mapping' );
+                this.user_field_mappings = this.validateFieldMappingsJSON( metadata.settings.mailchimp_user_field_mappings, 'User Field Mapping' );
+                this.mailshot_only_field_mappings = this.validateFieldMappingsJSON( metadata.settings.mailchimp_user_field_mappings, 'Mailchimp Only Field Mapping' );
 
-                this.settings_fetched = true;
-                this.resetAppIfPageFullyLoaded();
+                if ( this.organization_field_mappings !== null &&
+                            this.user_field_mappings !== null &&
+                            this.mailshot_only_field_mappings !== null 
+                ) {
+                    this.settings_fetched = true;
+                    this.resetAppIfPageFullyLoaded();
+                }
+                //if not - switchToErrorMessage has already been called inside validateFieldMappingsJSON() so no need to redirect user anywhere
             }, ( error ) => { this.switchToErrorMessage(error, "Could not get your app settings, please check your internet connection and try again");} );
     },
 
@@ -1291,8 +1297,8 @@ var pluginFactory = function( thisV2Client ) {
 
         /* DebugOnlyCode - START */
         if( debug_mode ) { console.log( "Switching to template '%s' with form data: %o ", ( this.modalMode ? this.resources.TEMPLATE_NAME_MAIN_MODAL_MODE : this.resources.TEMPLATE_NAME_MAIN ), formData); }
-        switchTo( ( this.modalMode ? this.resources.TEMPLATE_NAME_MAIN_MODAL_MODE : this.resources.TEMPLATE_NAME_MAIN ), formData );
         /* DebugOnlyCode - END */
+        switchTo( ( this.modalMode ? this.resources.TEMPLATE_NAME_MAIN_MODAL_MODE : this.resources.TEMPLATE_NAME_MAIN ), formData );
 
         /* DebugOnlyCode - START */
         if( debug_mode ) 
@@ -1330,7 +1336,7 @@ var pluginFactory = function( thisV2Client ) {
 
         let formData = 
         {
-          'errorResponse'			: errorResponse,
+          'errorResponse'		: errorResponse,
           'overrideMessage' 		: ( typeof( overrideMessage ) === "undefined" || overrideMessage === "error") ? null:  overrideMessage, /* sometimes just the string error is passed as the 2nd param!) */
           'additionalButtonText' 	: ( typeof( additionalButtonText ) === "undefined" ) ? null : additionalButtonText,
           'additionalButtonHandle' 	: ( typeof( additionalButtonHandle ) === "undefined" ) ? null : additionalButtonHandle,
@@ -1346,15 +1352,78 @@ var pluginFactory = function( thisV2Client ) {
             console.groupEnd();
         }
         /* DebugOnlyCode - END */
-    }
+    },
 
-    ,debugButtonOnClick: function()
+    debugButtonOnClick: function()
     {
         console.log( 'Starting debugButtonOnClick' );
         console.dir( this );
         return false;
-    }
-	
+    },
+
+    validateFieldMappingsJSON: function( fieldMappingsJSONText, settingsName ) 
+    {
+       /* DebugOnlyCode - START */
+        if( debug_mode ) 
+        { 
+            console.group( "validateFieldMappingsJSON( fieldMappingsJSONText, settingsName ) called" );
+            console.log( "ARG1: fieldMappingsJSONText = %o", fieldMappingsJSONText );
+            console.log( "ARG2: settingsName = %o", settingsName );
+            console.log( "Attempting to parse..." );
+        }
+        /* DebugOnlyCode - END */
+
+        //parse JSON but catch all error conditions
+        let fieldMappingsJSON = null;
+        let errorObject = null;
+        let errorMessage = null;
+        try
+        {
+            fieldMappingsJSON = JSON.parse( fieldMappingsJSONText );
+        }
+        catch(e)
+        {
+            let parseErrorMessage = 'unknown';       
+            if (e instanceof SyntaxError) {
+                parseErrorMessage = e.name + ' ' + e.message;
+            } else {
+                parseErrorMessage = e.message;
+            }            
+            
+            console.error( "JSON Validation for settings '%s' Falied with exception e = %o ",settingsName, e );
+            console.error( "JSON TEXT WAS: %o ", fieldMappingsJSONText );
+            errorObject = e;
+            errorMessage = 'The JSON Settings text you entered for the '+settingsName+' Settings was formatted incorrectly, it must be valid JSON.<br /><br />'+
+                           'The failure reason was: '+parseErrorMessage+'<br /><br />'+
+                           'For help with these settings fields use our <a target="_blank" href="./downloads/ZenchimpAppSettingsGenerator.xlsx">Zenchimp App Settings Generator</a> in Microsoft Excel';
+        }
+
+        //More Validation to come in a future version - watch this space!
+
+        if( fieldMappingsJSON !== null )
+        {
+            /* DebugOnlyCode - START */
+            if( debug_mode ) 
+            { 
+                console.log( "Success, returning: %o", fieldMappingsJSON );
+                console.groupEnd();
+            }
+            /* DebugOnlyCode - END */
+            return fieldMappingsJSON;
+        }
+       
+        this.switchToErrorMessage( errorObject, errorMessage );
+       
+        /* DebugOnlyCode - START */
+        if( debug_mode ) 
+        { 
+            console.log( "Failed, returning null" );
+            console.groupEnd();
+        }
+        return null;
+        /* DebugOnlyCode - END */
+    },
+
   };
 
 };

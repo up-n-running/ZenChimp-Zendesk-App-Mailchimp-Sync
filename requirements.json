@@ -3,18 +3,18 @@
   { 
     "mailshot_customer_type": 
     {
-      "key": "mailshot_customer_type",
-      "active" : "true",
-      "type": "dropdown",
-      "title": "Mailchimp Customer Type",
-      "custom_field_options": [{"value":"mailshot_exclude_from_mailshot", "name":"Exclude form Mailchimp"}, {"value":"mailshot_use_default_values", "name":"Sync to mailchimp as single customer"}, {"value":"mailshot_use_organisation_values", "name":"Sync for corporate branded emails"} ]
+        "key": "mailshot_customer_type",
+        "active" : "true",
+        "type": "dropdown",
+        "title": "Mailchimp Customer Type",
+        "custom_field_options": [{"value":"mailshot_exclude_from_mailshot", "name":"Exclude form Mailchimp"}, {"value":"mailshot_use_default_values", "name":"Sync only user fields"}, {"value":"mailshot_use_organisation_values", "name":"Sync user and organisation fields"} ]
     }
   },
   "organization_fields": {
-    "mailshot_customer_display_name": {
+      "mailshot_customer_display_name": {
       "key": "mailshot_customer_display_name",
       "active" : "true",
-      "type": "text",
+      "type": "dropdown",
       "title": "Mailchimp Customer Display Name",
       "description":"Customers beloning to this organisation can be synced down to mailchimp as such. When we make reference to their company name in their emails how should their company name display?"
     }
