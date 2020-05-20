@@ -1,6 +1,6 @@
 var debug_mode = false;
 /* DebugOnlyCode - START */
-debug_mode = true;
+//debug_mode = true;
 /* DebugOnlyCode - END */ 
 
 var thisV2Client = ZAFClient.init();

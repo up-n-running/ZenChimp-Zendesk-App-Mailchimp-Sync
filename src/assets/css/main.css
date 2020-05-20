@@ -10,18 +10,20 @@ html, body
 }
 .sidebar_page
 {
-    padding-bottom: 16px; /* getting footer at right height on sidebar page */
+    /* padding-bottom: 16px; */ /* getting footer at right height on sidebar page */
 }
 footer
 {
+    height: 15px;
+    font-size: 10px;
+    margin-top: 8px;
+}
+footer.user_sync_footer
+{
     position: relative;
     clear: both;
-    height: 15px;
     margin-top: -17px;
-    font-size: 10px;
 }
-
-
 
 /* General Cross Screen Styling */
 #page_content .btn
@@ -58,7 +60,7 @@ footer
 .sidebar_page #page_content .main_content
 {
     background-repeat: no-repeat;
-    min-height: 100px;
+    min-height: 87px;
 }
 
 .sidebar_page #page_content .information-text
@@ -79,6 +81,10 @@ footer
 .sidebar_page #page_content button.standard
 {
     width: 109px;
+}
+.sidebar_page #page_content button.sync-popup
+{
+    margin-top:21px;
 }
 
 .sidebar_page #page_content .information-text div.mc-only-field label

@@ -236,8 +236,8 @@
                 label: this.app.mailshot_only_field_mappings[ i ].field_label,
                 zd_field_location: null,
                 is_image: this.app.mailshot_only_field_mappings[ i ].type === this.app.resources.FIELD_TYPE_IMAGE,
-                is_checkbox: this.extra_user_fields[ i ].field_def.type === this.app.resources.FIELD_TYPE_CHECKBOX,
-                is_checkbox_ticked: this.extra_user_fields[ i ].field_def.type !== this.app.resources.FIELD_TYPE_CHECKBOX ? 
+                is_checkbox: this.app.mailshot_only_field_mappings[ i ].type === this.app.resources.FIELD_TYPE_CHECKBOX,
+                is_checkbox_ticked: this.app.mailshot_only_field_mappings[ i ].type !== this.app.resources.FIELD_TYPE_CHECKBOX ? 
                     null : 
                     tempMcValue === "1" || tempMcValue === 1 ? true : false, 
                 zd_value: null,

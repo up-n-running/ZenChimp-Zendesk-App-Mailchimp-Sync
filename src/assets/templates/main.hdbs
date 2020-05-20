@@ -40,8 +40,8 @@
         {{/if}}
         {{#unless display_params.user_in_sync}}
             <div class="information-text">
-                <p class="warning">{{zendesk_user.name}} is out of sync</p>
-                <a class="btn btn-large sync_popup" onclick="return syncButtonOnclick();">Synchronize</a>
+                <p class="warning">{{zendesk_user.name}} is <a class="sync-popup-link" onclick="return syncButtonOnclick();">out of sync</a></p>
+                <button class="btn btn-danger btn-sm sync-popup" onclick="return syncButtonOnclick();">Synchronize</button>
             </div>
         {{/unless}}
     {{/if}}

@@ -1385,6 +1385,7 @@ statusText: "error"
 
         let syncFields = this.zendesk_user.getFieldSyncInfo( this.mailshot_sync_user );
         let isInSync = this.zendesk_user.isInSync( syncFields );
+        let defaultButtonColourClassInsert = ' ' + ( isInSync || this.zendesk_user.isExcluded() ? 'btn-primary' : 'btn-danger' );
 
         let formData = 
         {
@@ -1402,13 +1403,13 @@ statusText: "error"
                 },
                 'organization'  : { 
                     'show'              : ( this.zendesk_user.belongsToOrganization() ), 
-                    'classNameInsert'   : this.zendesk_user.isOrganization() ? " active" : "", 
+                    'classNameInsert'   : defaultButtonColourClassInsert + ( this.zendesk_user.isOrganization() ? " active" : "" ), 
                     'label'             : this.mailchimp_organisation_button_label, 
                     'onclick'           : 'organizationButtonOnClick()' 
                 },
                 'standard'      : { 
                     'show': true, 
-                    'classNameInsert'   : this.zendesk_user.isDefault() ? " active" : "", 
+                    'classNameInsert'   : defaultButtonColourClassInsert + ( this.zendesk_user.isDefault() ? " active" : "" ), 
                     'label'             : this.mailchimp_standard_button_label, 
                     'onclick'           : 'standardButtonOnClick()'
                 }
