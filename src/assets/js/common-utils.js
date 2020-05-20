@@ -1,15 +1,15 @@
 var debug_mode = false;
 /* DebugOnlyCode - START */
-//debug_mode = true;
+debug_mode = true;
 /* DebugOnlyCode - END */ 
 
 var thisV2Client = ZAFClient.init();
 
-function switchTo(templateUrl, viewData){
+function switchToHdbsFileTemplate(templateUrl, viewData){
     /* DebugOnlyCode - START */
     if( debug_mode ) 
     { 
-        console.groupCollapsed( "COMMON-UTILS.JS: switchTo('%s', viewData) called", templateUrl );
+        console.groupCollapsed( "COMMON-UTILS.JS: switchToHdbsFileTemplate('%s', viewData) called", templateUrl );
         console.log( "ARG1: templateUrl = '%s'", templateUrl );
         console.log( "ARG1: viewData = '%o'", viewData );
     }
@@ -39,6 +39,34 @@ function switchTo(templateUrl, viewData){
     if( debug_mode ) 
     { 
         console.log( "Finished, ive called ajax for template generation, ajax will complete later." );
+        console.groupEnd();
+    }
+    /* DebugOnlyCode - END */ 
+};
+
+function switchToInlineTemplate(templateId, viewData){
+    /* DebugOnlyCode - START */
+    if( debug_mode ) 
+    { 
+        console.groupCollapsed( "COMMON-UTILS.JS: switchToInlineTemplate('%s', viewData) called", templateId );
+        console.log( "ARG1: templateUrl = '%s'", templateId );
+        console.log( "ARG1: viewData = '%o'", viewData );
+    }
+    /* DebugOnlyCode - END */ 
+    
+    let source = $('#'+templateId).html();
+    let template = Handlebars.compile(source);
+    let html = template(viewData);
+    let target = $("#page_content");
+    /* DebugOnlyCode - START */
+    if( debug_mode ) { console.log( "Sending HTML to target element %o:\n\n%o", target, html ); } 
+    /* DebugOnlyCode - END */ 
+    $(target).empty().html(html);
+    
+    /* DebugOnlyCode - START */
+    if( debug_mode ) 
+    { 
+        console.log( "Finished Template '%s' now showing", templateId );
         console.groupEnd();
     }
     /* DebugOnlyCode - END */ 

@@ -26,7 +26,7 @@ var pluginFactory = function( thisV2Client ) {
 
         TEMPLATE_NAME_MAIN: "./templates/main.hdbs",
         TEMPLATE_NAME_MAIN_MODAL_MODE: "./templates/sync-modal.hdbs",
-        TEMPLATE_NAME_LOADING: "./templates/loading_screen.hdbs",
+        TEMPLATE_ID_LOADING: "loading-screen-template",
         TEMPLATE_NAME_SHOWERROR: "./templates/show_error.hdbs",
         
         SETTINGS_HELPER_SPREADSHEET_DOWNLOAD_URL: "https://github.com/up-n-running/ZenChimp-Zendesk-App-Mailchimp-Sync/raw/master/extras/ZenchimpSettingsGenerator.xlsx"
@@ -1371,7 +1371,7 @@ statusText: "error"
     //SWITCH TO HTML TEMPLATE FUNCTIONS
     switchToLoadingScreen: function( optionalMessage ) 
     {
-        switchTo( this.resources.TEMPLATE_NAME_LOADING, { optional_message: optionalMessage } );
+        switchToInlineTemplate( this.resources.TEMPLATE_ID_LOADING, { optional_message: optionalMessage } );
     },
 
     switchToMainTemplate: function() 
@@ -1431,7 +1431,7 @@ statusText: "error"
         /* DebugOnlyCode - START */
         if( debug_mode ) { console.log( "Switching to template '%s' with form data: %o ", ( this.modalMode ? this.resources.TEMPLATE_NAME_MAIN_MODAL_MODE : this.resources.TEMPLATE_NAME_MAIN ), formData); }
         /* DebugOnlyCode - END */
-        switchTo( ( this.modalMode ? this.resources.TEMPLATE_NAME_MAIN_MODAL_MODE : this.resources.TEMPLATE_NAME_MAIN ), formData );
+        switchToHdbsFileTemplate( ( this.modalMode ? this.resources.TEMPLATE_NAME_MAIN_MODAL_MODE : this.resources.TEMPLATE_NAME_MAIN ), formData );
 
         /* DebugOnlyCode - START */
         if( debug_mode ) 
@@ -1476,7 +1476,7 @@ statusText: "error"
           'additionalButtonOnclick' 	: ( typeof( additionalButtonOnclick ) === "undefined" ) ? null : additionalButtonOnclick
         };
 
-        switchTo( this.resources.TEMPLATE_NAME_SHOWERROR, formData );
+        switchToHdbsFileTemplate( this.resources.TEMPLATE_NAME_SHOWERROR, formData );
 
         /* DebugOnlyCode - START */
         if( debug_mode ) 

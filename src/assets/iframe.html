@@ -32,5 +32,18 @@
     <script src="./js/plugin.js"></script>
     <script src="./js/main.js"></script> 
 
+    <script id="loading-screen-template" type="text/x-handlebars-template">
+        {{#if optional_message}}
+        <div class="alert alert-info">
+            {{{optional_message}}}
+        </div>
+        {{/if}}
+        <div class="text-center">
+            <div class="spinner-grow text-primary" role="status">
+                <span class="sr-only">Loading...</span>
+            </div>
+        </div>
+    </script>    
+    
 </body>
 </html>

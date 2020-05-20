@@ -1,6 +1,6 @@
 {{#if optional_message}}
 <div class="alert alert-info">
-	{{{optional_message}}}
+    {{{optional_message}}}
 </div>
 {{/if}}
 <div class="text-center">

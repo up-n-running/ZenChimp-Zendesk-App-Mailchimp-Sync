@@ -38,41 +38,31 @@
         
         //thisV2Client.invoke('resize', { width: '100%', height: '400px' });
         thisV2Client.on('app.registered', init);
-
-        function init(){
-            console.group( "POPUP: init() called" );
-            console.log( "init() called because of popupClient.on('app.registered', init);" );
-            urlParams = parseURLParams(window.location.hash); //We start the modal client, then parse any parameters in the url
-            console.log( "urlParams = %o", urlParams );
-            parentClient = getClientInstanceFromGuid(urlParams.parent_guid); //Hopefully this includes the parent_guid we want to send when creating modals
-            console.log( "parentClient = %o", parentClient );
-            
-            //test
-            parentClient.get('ticket').then(function(ticket_data){console.log('INSIDE MODAL: ticket_data = %o', ticket_data);});  //And like that we now have easy access to the parent ticket modal without guessing which instance the parent is from an array.. Winning!
-            
-            init2( parentClient );
-
-            
-            console.groupEnd();
-        };
         
-        function init2( parentClient ) 
+        function init() 
         {
             /* DebugOnlyCode - START */
             if( debug_mode ) 
             { 
-                console.group( "POPUP:: init2(parentClient) called" );
-                console.log( "ARG1: parentClient = %o", parentClient );
+                console.group( "POPUP:: init() called" );
                 console.log( "init called because of thisV2Client.on('app.registered', init);" );
-                console.log( "Creating plugin instance from PARENT CLIENT: zenChimpPlugin = pluginFactory( parentClient );" );
+                console.log( "Parsing URL Params to get context from patent plugin in sidebar;" );
             }
             /* DebugOnlyCode - END */ 
             
+            urlParams = parseURLParams(window.location.hash);
+             /* DebugOnlyCode - START */
+            if( debug_mode ) { console.log( "urlParams = %o\n\nnow fetiching parent client instance with guid urlParams.parent_guid = %o", urlParams.parent_guid ); } 
+            /* DebugOnlyCode - END */
+            parentClient = getClientInstanceFromGuid(urlParams.parent_guid); //Hopefully this includes the parent_guid we want to send when creating modals
+
+             /* DebugOnlyCode - START */
+            if( debug_mode ) { console.log( "Creating plugin instance from PARENT CLIENT: zenChimpPlugin = pluginFactory( parentClient );" ); } 
+            /* DebugOnlyCode - END */
             zenChimpPlugin = pluginFactory( parentClient );
 
-            var viewData = { optional_message: 'Loading App...' };
-            var templateUrl = "./templates/loading_screen.hdbs";
-            switchTo(templateUrl, viewData);
+            let viewData = { optional_message: 'Loading App...' };
+            switchToInlineTemplate(zenChimpPlugin.resources.TEMPLATE_ID_LOADING, viewData);
 
             /* DebugOnlyCode - START */
             if( debug_mode ) { console.log( "Creating and Initialising plugin.js object:\nzenChimpPlugin.init();" ); } 
@@ -94,5 +84,18 @@
             return false;
         }
     </script>
+    
+    <script id="loading-screen-template" type="text/x-handlebars-template">
+        {{#if optional_message}}
+        <div class="alert alert-info">
+            {{{optional_message}}}
+        </div>
+        {{/if}}
+        <div class="text-center">
+            <div class="spinner-grow text-primary" role="status">
+                <span class="sr-only">Loading...</span>
+            </div>
+        </div>
+    </script>        
 </body>
 </html>

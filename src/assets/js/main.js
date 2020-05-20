@@ -1,4 +1,4 @@
-//NOTE: debug_mode, thisV2Client, switchTo() & modal_createChildFromParent() are declared in common-utils.js
+//NOTE: debug_mode, thisV2Client, switchToHdbsFileTemplate() & modal_createChildFromParent() are declared in common-utils.js
 
 var zenChimpPlugin = pluginFactory( thisV2Client );
 
@@ -16,8 +16,7 @@ function init()
     /* DebugOnlyCode - END */ 
       
     var viewData = { optional_message: 'Loading App...' };
-    var templateUrl = "./templates/loading_screen.hdbs";
-    switchTo(templateUrl, viewData);
+    switchToInlineTemplate(zenChimpPlugin.resources.TEMPLATE_ID_LOADING, viewData);
 
     /* DebugOnlyCode - START */
     if( debug_mode ) { console.log( "Creating and Initialising plugin.js object:\nzenChimpPlugin.init();" ); } 
