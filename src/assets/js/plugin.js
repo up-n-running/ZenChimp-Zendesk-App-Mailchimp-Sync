@@ -650,20 +650,46 @@ var pluginFactory = function( thisV2Client ) {
 
     standardButtonOnClick: function()
     {
-            if(this.context.location === this.resources.APP_LOCATION_USER )
-            {
-                    this.switchToLoadingScreen( "Updating Zendesk User" );
-                    this.user().customField( this.resources.USER_FIELD_NAME_CUSTOMER_TYPE, this.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_USE_DEFAULT );
-                    //this triggers userScreenCustomerTypeFieldChanged to be changed so no need to make any further calls
-            }
-            else 
-            {
-                    let updatedUserToSave = this.zendesk_user.clone();
-                    updatedUserToSave.customer_type = this.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_USE_DEFAULT;
-                    this.switchToLoadingScreen( "Updating Zendesk User" );
-                    this.ajax( 'updateZendeskUser', updatedUserToSave );
-            }
-            return false;
+        /* DebugOnlyCode - START */
+        if( debug_mode ) 
+        { 
+            console.group( "standardButtonOnClick() called" );
+            console.log( "Checking if we're on user screen. this.context.location = '%s' and this.resources.APP_LOCATION_USER = '%s'", this.context.location, this.resources.APP_LOCATION_USER );
+        }
+        /* DebugOnlyCode - END */
+        
+        if(this.context.location === this.resources.APP_LOCATION_USER )
+        {
+            this.switchToLoadingScreen( "Updating Zendesk User..." );
+            this.user().customField( this.resources.USER_FIELD_NAME_CUSTOMER_TYPE, this.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_USE_DEFAULT );
+            //this triggers userScreenCustomerTypeFieldChanged to be changed so no need to make any further calls
+        }
+        else 
+        {
+            let updatedUserToSave = this.zendesk_user.clone();
+            updatedUserToSave.customer_type = this.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_USE_DEFAULT;
+            
+            /* DebugOnlyCode - START */ 
+            if( debug_mode ) { console.log( "We're on ticket screen so i've cloned user and updated it's customer_type now going to call updateZendeskUser ajax (which in turn will trigger changeCustomerType().\n\nthis.zendesk_user = %o\n\ncloned updatedUserToSave = %o", this.zendesk_user, updatedUserToSave); }
+            /* DebugOnlyCode - END */ 
+
+            this.switchToLoadingScreen( "Updating Zendesk User..." );
+            makeAjaxCall(
+                this,
+                this.requests.updateZendeskUser( updatedUserToSave ), 
+                this.updateZendeskUser_Done,  
+                this.switchToErrorMessage 
+            );
+        }
+        
+        /* DebugOnlyCode - START */
+        if( debug_mode ) 
+        { 
+            console.log( "Finished, returning false;" );
+            console.groupEnd();
+        }
+        /* DebugOnlyCode - END */
+        return false;
     },	
 
     //ZENDESK USER AND ORGANIZATION DATA API WRAPPER FUNCTIONS

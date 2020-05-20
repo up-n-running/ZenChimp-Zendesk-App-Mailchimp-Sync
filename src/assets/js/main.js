@@ -43,7 +43,7 @@ function syncButtonOnclick()
     }
     /* DebugOnlyCode - END */
     
-    thisV2Client.context().then(modal_createChildFromParent);
+    thisV2Client.context().then(modal_createChildFromParent, (err) => { console.error( err ); });
     
     /* DebugOnlyCode - START */
     if( debug_mode ) 
