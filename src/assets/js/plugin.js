@@ -501,27 +501,70 @@ var pluginFactory = function( thisV2Client ) {
     //---APP FIELD ONCLICK EVENT
     mailchimpOnlyField_OnClick: function( event ) 
     {
+        /* DebugOnlyCode - START */
+        if( debug_mode ) 
+        { 
+            console.group( "mailchimpOnlyField_OnClick(event) called" );
+            console.log( "ARG1 event = %o)", event );
+            console.log( "Searching through mailchimp user's extra_merge_fields looking for the one with no field_def.zendesk_field that links to event.target.id ('%s')", event.target.id );
+        }
+        console.warn( "SHOULD CLONE MAILCHIMP USER IDEALLY AT THIS POINT AS WE'RE UPDATING FIELD AS IF CHECKBOX UPDATE HAS WORKED BEFORE ACTUALLY UPDATING IT IF UPDATE FAILS COULD END UP OUT OF SYNC BUT ONLY UNTIL NEXT APP REFRESH - UPDATE ACTUALLY IM NOT SURE THATS TRUE BECUASE IF THE MC UPDATE FAILS IT TAKES USER TO AN ERROR MESSAGE WHICH THEN FORCES APP REFRESH SO I THINK THIS IS THE BEST WAY - IN FACT IF WE WORK ON A CLONE THEN WERE GOING TO HAVE TO UPDATE USER OBJECT AFTER APP REFRESH WHICH COULD BE TIME CONSUMING");
+        /* DebugOnlyCode - END */ 
+        
         let tempField = null;
-        console.warn( "NEED TO CLONE MAILCHIMP USER IDEALLY AT THIS POINT");
+        
         for( let i=0; i < this.mailshot_sync_user.extra_merge_fields.length; i++)
         {
             tempField = this.mailshot_sync_user.extra_merge_fields[ i ];
             if( typeof( tempField.field_def.zendesk_field ) === "undefined" && ( "MC_ONLY_" + tempField.field_def.mailchimp_field ) === event.target.id )
             {
+                /* DebugOnlyCode - START */
+                if( debug_mode ) { console.log( "Found it! tempField = %o,\nvalue beofre update: '%s'", tempField, tempField.value); }
+                /* DebugOnlyCode - END */ 
+                
                 if( tempField.field_def.type === this.resources.FIELD_TYPE_CHECKBOX )
                 {
-                        tempField.value = ( tempField.value === "0" || tempField.value === 0 || tempField.value === false ) ? "1" : "0";
+                    tempField.value = ( /* NEEDS MORE WORK BECAUSE  tempField.value COULD BE STRING OR NUMBER WHEREAS value-if-ticked IS ALWAYS A STRING SO HAVE TO CAST BEFORE CHECKING :(
+                 *                         WE ALSO HAVE TO DO THE SAME WORK IN getFieldSyncInfo so maybe split out into seperate function
+                                        tempField.value !== tempField.field_def.value-if-ticked && (
+                                            tempField.value === tempField.field_def.value-if-unticked || */
+                                            tempField.value === null ||    //this one and ones below guess at value as it's neither the specified ticked or unticked value
+                                            tempField.value === false ||
+                                            tempField.value === "0" ||
+                                            tempField.value === 0 ||
+                                            tempField.value === "" ||
+                                            tempField.value.toString().toUpperCase() === "NO" ||
+                                            tempField.value.toString().toUpperCase() === "FALSE" /* ) */
+                                       ) ? "1" : "0";  /* ) ? tempField.field_def.value-if-ticked : tempField.field_def.value-if-unticked; */
                 }
                 else
                 {
-                        console.error( "Unsupported field type: " + tempField.type );
+                    console.error( "Unsupported field type '%s' (only 'checkbox' supported) on mailchimp extra merge field: %o" + tempField.type, tempField );
                 }
+                
+                /* DebugOnlyCode - START */
+                if( debug_mode ) { console.log( "Value after update: '%s'", tempField.value); }
+                console.warn( 'Should implement proper value-if-ticked and value-if-unticked on settings object here rather than just 1 and 0' );
+                /* DebugOnlyCode - END */ 
             }
         }
 
         //now save the updated user in mailchimp
-        this.switchToLoadingScreen( "Updating Mailchimp Member" );
-        this.ajax( "createOrUpadateMailChimpListMember", this.mailshot_sync_user, true );
+        this.switchToLoadingScreen( "Updating Mailchimp Member..." );
+        makeAjaxCall(
+            this,
+            this.requests.createOrUpadateMailChimpListMember( this.mailshot_sync_user, true ), 
+            this.createOrUpadateMailChimpListMember_Done,  
+            this.get_or_createOrUpadateMailChimpListMember_OnFail
+        );
+        
+        /* DebugOnlyCode - START */
+        if( debug_mode ) 
+        { 
+            console.log( "Finished" );
+            console.groupEnd();
+        }
+        /* DebugOnlyCode - END */
     },	
 
     //EXCLUDE/ORGANISATION/STANDARD FIELD ONCLICK FUNCTIONS
@@ -674,11 +717,13 @@ var pluginFactory = function( thisV2Client ) {
 
     createZendeskUserFromAPIReturnData: function( userObjectFromDataAPI )
     {
+        /* DebugOnlyCode - START */ 
         if( debug_mode ) 
         { 
             console.group( "createZendeskUserFromAPIReturnData (userObjectFromDataAPI) called" );
             console.log( "ARG1: userObjectFromDataAPI = %o", userObjectFromDataAPI );
         }
+        /* DebugOnlyCode - END */ 
 
         var zendeskUserObjectToReturn = null;
         if( userObjectFromDataAPI !== null )
@@ -691,20 +736,27 @@ var pluginFactory = function( thisV2Client ) {
                 userObjectFromDataAPI.user.user_fields.mailshot_customer_type,
                 ( typeof( userObjectFromDataAPI.user.organization_id ) !== 'undefined' && userObjectFromDataAPI.user.organization_id !== null ) ? userObjectFromDataAPI.user.organization_id : null //being careful as sometimes users can be set to link through to more than one org depending on admin settings
             );
+            /* DebugOnlyCode - START */ 
             if( debug_mode ) { console.log( "Completed part 1 of 2, basic user: zendeskUserObjectToReturn = %o", zendeskUserObjectToReturn); }
-
+            /* DebugOnlyCode - END */ 
+            
             //now set the optional extra user fields from returned API data
             zendeskUserObjectToReturn.populateExtraFieldsFromUserAPIData( userObjectFromDataAPI.user );
+            /* DebugOnlyCode - START */ 
             if( debug_mode ) { console.log( "Completed part 2 of 2, populateExtraFieldsFromUserAPIData: zendeskUserObjectToReturn = %o", zendeskUserObjectToReturn); }
+            /* DebugOnlyCode - END */
+            
             //we've kept a record of the org id if there is one but now leave org object as null as this info is not available on this API return data
         }
-        else console.warn( "createZendeskUserFromAPIReturnData called but userObjectFromDataAPI = null - this should never happen!");
+        else console.error( "createZendeskUserFromAPIReturnData called but userObjectFromDataAPI = null - this should never happen!");
 
+        /* DebugOnlyCode - START */ 
         if( debug_mode ) 
         { 
             console.log( "Finished, zendeskUserObjectToReturn = %o", this.zendesk_user );
             console.groupEnd();
         }
+        /* DebugOnlyCode - END */ 
         
         return zendeskUserObjectToReturn;
     },
@@ -1493,7 +1545,7 @@ statusText: "error"
                 if( !fieldMap.mailchimp_field ) { errorArray.push( 'Missing Field/Value: mailchimp_field' ); }
                 if( !fieldMap.type ) { errorArray.push( 'Missing Field/Value: type' ); }
                 else if ( !validTypeArray.includes(fieldMap.type)) { errorArray.push( "Invalid type: '"+fieldMap.type+"'. Valid types are: " + validTypeArray.toString() + " (all lower case)" ); }
-                //these values have to exist but dont necessarily havt to have a value
+                //these settings have to exist but dont necessarily have to have a value
                 if( typeof fieldMap.default_value === 'undefined' || fieldMap.default_value === null ) { errorArray.push( 'Missing Field: default_value'); }
                 //this field depends on if its a mailchimp only field
                 if( mailchimpOnlyFields && typeof fieldMap.zendesk_field !== 'undefined' ) { errorArray.push( 'Field: zendesk_field is not allowed on mailchimp-only field lists' ); }

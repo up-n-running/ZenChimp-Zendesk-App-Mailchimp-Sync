@@ -192,6 +192,7 @@
             tempMcValue = mailChimpUser.extra_merge_fields[ arrayIndex ].value;
             tempZdValue = ( tempZdValue === null ) ? "" : tempZdValue; 
             tempMcValue = ( tempMcValue === null ) ? "" : tempMcValue;
+            //add extra conversion here to cast tempMcValue to a string if necessary
             sync_fields[ arrayIndex+3 ] = 
             {
                 label: this.extra_user_fields[ i ].field_def.field_label,
@@ -199,7 +200,7 @@
                 is_image: this.extra_user_fields[ i ].field_def.type === this.app.resources.FIELD_TYPE_IMAGE,
                 zd_value: tempZdValue,
                 mc_value: tempMcValue,
-                in_sync: tempZdValue === tempMcValue
+                in_sync: tempZdValue === tempMcValue //add extra conversion here to cast tempMcValue to a string if necessary
             };
             arrayIndex++;
         }
@@ -211,6 +212,7 @@
             tempMcValue = mailChimpUser.extra_merge_fields[ arrayIndex ].value;
             tempZdValue = ( tempZdValue === null ) ? "" : tempZdValue; 
             tempMcValue = ( tempMcValue === null ) ? "" : tempMcValue;
+            //add extra conversion here to cast tempMcValue to a string if necessary
             sync_fields[ arrayIndex+3 ] = 
             {
                 label: this.app.organization_field_mappings[ i ].field_label,
@@ -218,7 +220,7 @@
                 is_image: this.app.organization_field_mappings[ i ].type === this.app.resources.FIELD_TYPE_IMAGE,
                 zd_value: tempZdValue,
                 mc_value: tempMcValue,
-                in_sync: tempZdValue === tempMcValue
+                in_sync: tempZdValue === tempMcValue //add extra conversion here to cast tempMcValue to a string if necessary
             };
             arrayIndex++;
         }
@@ -228,11 +230,16 @@
         {
             tempMcValue = mailChimpUser.extra_merge_fields[ arrayIndex ].value;
             tempMcValue = ( tempMcValue === null ) ? "" : tempMcValue;
+            //add extra conversion here to cast tempMcValue to a string if necessary
             sync_fields[ arrayIndex+3 ] = 
             {
                 label: this.app.mailshot_only_field_mappings[ i ].field_label,
                 zd_field_location: null,
                 is_image: this.app.mailshot_only_field_mappings[ i ].type === this.app.resources.FIELD_TYPE_IMAGE,
+                is_checkbox: this.extra_user_fields[ i ].field_def.type === this.app.resources.FIELD_TYPE_CHECKBOX,
+                is_checkbox_ticked: this.extra_user_fields[ i ].field_def.type !== this.app.resources.FIELD_TYPE_CHECKBOX ? 
+                    null : 
+                    tempMcValue === "1" || tempMcValue === 1 ? true : false, 
                 zd_value: null,
                 mc_value: tempMcValue,
                 in_sync: true

@@ -31,7 +31,7 @@
                 {{#each mailchimp_user.extra_merge_fields}}
                 {{#unless this.field_def.zendesk_field}}
                     <div class="mc-only-field">
-                        <input class="mc_only_field" id="MC_ONLY_{{this.field_def.mailchimp_field}}" name="MC_ONLY_{{this.field_def.mailchimp_field}}" value="1" type="checkbox" {{#if this.value}}checked="checked" {{/if}}/>
+                        <input class="mc_only_field" id="MC_ONLY_{{this.field_def.mailchimp_field}}" name="MC_ONLY_{{this.field_def.mailchimp_field}}" onclick="return zenChimpPlugin.mailchimpOnlyField_OnClick(event);" value="1" type="checkbox" {{#if this.is_checkbox_ticked}}checked="checked" {{/if}}/>
                         <label for="MC_ONLY_{{this.field_def.mailchimp_field}}">{{this.field_def.field_label}}</label>
                     </div>
                 {{/unless}}

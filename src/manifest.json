@@ -63,7 +63,7 @@
       "type": "text",
       "required": true,
       "secure": false,
-      "default": "Standard"
+      "default": "SME"
     },
     {
       "name": "mailchimp_organisation_button_label",
@@ -77,7 +77,7 @@
       "type": "text",
       "required": true,
       "secure": false,
-      "default": "Standard"
+      "default": "SME / Person"
     },
     {
       "name": "mailchimp_user_field_mappings",
