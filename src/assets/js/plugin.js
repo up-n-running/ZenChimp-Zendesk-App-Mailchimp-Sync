@@ -11,8 +11,8 @@ var pluginFactory = function( thisV2Client ) {
 
     resources: 
     {
-        APP_LOCATION_TICKET: "ticket_sidebar",
-        APP_LOCATION_USER: "user_sidebar",
+        pvt_APP_LOCATION_TICKET: "ticket_sidebar",
+        pvt_APP_LOCATION_USER: "user_sidebar",
 
         FIELD_TYPE_TEXT: "text",
         FIELD_TYPE_IMAGE: "image",
@@ -52,8 +52,9 @@ var pluginFactory = function( thisV2Client ) {
         //'getZendeskOrganizations.done'  : 'getZendeskOrganizations_Done',
         //'getZendeskOrganizations.fail'  : 'switchToErrorMessage',
 
-        'getMailChimpAllListMembers.done'	: 'retrievedMailchimpAllListSubscribers',
-        'getMailChimpAllListMembers.fail'	: 'switchToErrorMessage',	
+        //this one is not used anywhere in the code
+        //'getMailChimpAllListMembers.done'	: 'retrievedMailchimpAllListSubscribers',
+        //'getMailChimpAllListMembers.fail'	: 'switchToErrorMessage',	
 
         //mailchimp v3 api requests
         //'getMailChimpListMember.done'			: 'retrievedMailchimpSubscriber',
@@ -75,7 +76,7 @@ var pluginFactory = function( thisV2Client ) {
         //'click .error_create_new_mailchimp' : 'createOrUpadateMailChimpListMember_Add_New_OnClick',
 
         //mailchimp only fields when in sync
-        'click .mc_only_field' : 'mailchimpOnlyField_OnClick', 
+        //'click .mc_only_field' : 'mailchimpOnlyField_OnClick', 
 
         //modal sync screen events  //show shown hide hidden
         //'hidden #sync_modal'	: 'afterHidden',
@@ -83,7 +84,7 @@ var pluginFactory = function( thisV2Client ) {
         //main screen events
         'user.mailshot_customer_type.changed' : 'userScreenCustomerTypeFieldChanged',
 
-        '*.changed': 'formFieldChanged',
+        '*.changed': 'formFieldChanged'
 
         //debug button
         //'click #debugtest': 'debugButtonOnClick'
@@ -369,7 +370,7 @@ var pluginFactory = function( thisV2Client ) {
         if( debug_mode ) 
         { 
             console.group( "resetAppIfPageFullyLoaded called" );
-            console.log( "this.isFullyInitialized = " + this.isFullyInitialized + " and this.resources.APP_LOCATION_TICKET = " + this.resources.APP_LOCATION_TICKET + " and this.context.location = %s", ( this.context === null ? '[this.context = null]' : this.context.location ) );
+            console.log( "this.isFullyInitialized = " + this.isFullyInitialized + " and this.resources.pvt_APP_LOCATION_TICKET = " + this.resources.pvt_APP_LOCATION_TICKET + " and this.context.location = %s", ( this.context === null ? '[this.context = null]' : this.context.location ) );
         }
         /* DebugOnlyCode - END */
 
@@ -391,7 +392,7 @@ var pluginFactory = function( thisV2Client ) {
         } 
 
         //dont continue if page not fuly loaded yet
-        if( !this.isFullyInitialized && this.context.location === this.resources.APP_LOCATION_TICKET && this.zendesk_user === null )
+        if( !this.isFullyInitialized && this.context.location === this.resources.pvt_APP_LOCATION_TICKET && this.zendesk_user === null )
         {
             /* DebugOnlyCode - START */
             if( debug_mode ) { console.log( "CHECK FAILED: this.zendesk_user === null, running this.v2Client.get('ticket.requester')" ); console.groupEnd();}
@@ -405,7 +406,7 @@ var pluginFactory = function( thisV2Client ) {
             }, ( error ) => { this.switchToErrorMessage(error, "Could not get the ticket info, please check your internet connection and try again");} );
             return;
         }
-        if( !this.isFullyInitialized &&this.context.location === this.resources.APP_LOCATION_USER && ( this.user().id() === null || this.user().email() === null || this.user().name() === null ) )
+        if( !this.isFullyInitialized &&this.context.location === this.resources.pvt_APP_LOCATION_USER && ( this.user().id() === null || this.user().email() === null || this.user().name() === null ) )
         {
             /* DebugOnlyCode - START */
             if( debug_mode ) { console.log( "CHECK FAILED: this.user().id() = " + this.user().id() + " and this.user().email() = " + this.user().email() + " and this.user().name() = " + this.user().name() ); console.groupEnd();}
@@ -420,7 +421,7 @@ var pluginFactory = function( thisV2Client ) {
         this.mailshot_sync_user = null;
 
 
-        if(this.context.location === this.resources.APP_LOCATION_TICKET )
+        if(this.context.location === this.resources.pvt_APP_LOCATION_TICKET )
         {
             this.switchToLoadingScreen( "Loading Ticket Requester..." );
             makeAjaxCall(
@@ -430,7 +431,7 @@ var pluginFactory = function( thisV2Client ) {
                 this.switchToErrorMessage 
             );
         }
-        else if(this.context.location === this.resources.APP_LOCATION_USER )
+        else if(this.context.location === this.resources.pvt_APP_LOCATION_USER )
         {
             //CHECK HERE IF USER WAS UPDATED ELSEWHERE!
             this.switchToLoadingScreen( "Loading Zendesk User..." );
@@ -451,7 +452,7 @@ var pluginFactory = function( thisV2Client ) {
     //MAIN SCREEN UTILITY FUNCTIONS
     hideFieldsIfInUserLocation: function() 
     {
-            if( this.context.location === this.resources.APP_LOCATION_USER )
+            if( this.context.location === this.resources.pvt_APP_LOCATION_USER )
             {
                     _.each([this.resources.USER_FIELD_NAME_CUSTOMER_TYPE], function(f) 
                     {
@@ -469,7 +470,7 @@ var pluginFactory = function( thisV2Client ) {
     formFieldChanged: function( event )
     {
             let matchedZDFieldName = null;
-            if(this.context.location === this.resources.APP_LOCATION_USER )
+            if(this.context.location === this.resources.pvt_APP_LOCATION_USER )
             {
                     let fieldName = event.propertyName;
                     for( let i=0; i < this.user_field_mappings.length; i++)
@@ -574,11 +575,11 @@ var pluginFactory = function( thisV2Client ) {
         if( debug_mode ) 
         { 
             console.group( "excludeButtonOnClick() called" );
-            console.log( "Checking if we're in user screen: answer = %o)", ( this.context.location === this.resources.APP_LOCATION_USER ) );
+            console.log( "Checking if we're in user screen: answer = %o)", ( this.context.location === this.resources.pvt_APP_LOCATION_USER ) );
         }
         /* DebugOnlyCode - END */ 
 
-        if( this.context.location === this.resources.APP_LOCATION_USER )
+        if( this.context.location === this.resources.pvt_APP_LOCATION_USER )
         {
             this.switchToLoadingScreen( "Updating Zendesk User" );
             this.user().customField( this.resources.USER_FIELD_NAME_CUSTOMER_TYPE, this.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_EXCLUDE );
@@ -614,11 +615,11 @@ var pluginFactory = function( thisV2Client ) {
         if( debug_mode ) 
         { 
             console.group( "organizationButtonOnClick() called" );
-            console.log( "Checking if we're in user screen: answer = %o)", ( this.context.location === this.resources.APP_LOCATION_USER ) );
+            console.log( "Checking if we're in user screen: answer = %o)", ( this.context.location === this.resources.pvt_APP_LOCATION_USER ) );
         }
         /* DebugOnlyCode - END */ 
 
-        if(this.context.location === this.resources.APP_LOCATION_USER )
+        if(this.context.location === this.resources.pvt_APP_LOCATION_USER )
         {
             this.switchToLoadingScreen( "Updating Zendesk User" );
             this.user().customField( this.resources.USER_FIELD_NAME_CUSTOMER_TYPE, this.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_USE_ORGANIZATION );
@@ -654,11 +655,11 @@ var pluginFactory = function( thisV2Client ) {
         if( debug_mode ) 
         { 
             console.group( "standardButtonOnClick() called" );
-            console.log( "Checking if we're on user screen. this.context.location = '%s' and this.resources.APP_LOCATION_USER = '%s'", this.context.location, this.resources.APP_LOCATION_USER );
+            console.log( "Checking if we're on user screen. this.context.location = '%s' and this.resources.pvt_APP_LOCATION_USER = '%s'", this.context.location, this.resources.pvt_APP_LOCATION_USER );
         }
         /* DebugOnlyCode - END */
         
-        if(this.context.location === this.resources.APP_LOCATION_USER )
+        if(this.context.location === this.resources.pvt_APP_LOCATION_USER )
         {
             this.switchToLoadingScreen( "Updating Zendesk User..." );
             this.user().customField( this.resources.USER_FIELD_NAME_CUSTOMER_TYPE, this.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_USE_DEFAULT );

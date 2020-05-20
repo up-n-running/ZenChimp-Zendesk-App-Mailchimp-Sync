@@ -11,7 +11,7 @@
                 <br />
                 {{errorResponse.responseText}} {{errorResponse.detail}}<br />
                 <br />
-                Please report a bug at the link below.
+                Is this a bug? Click 'Report bug' below.
             </div>
         {{/unless}}
 
