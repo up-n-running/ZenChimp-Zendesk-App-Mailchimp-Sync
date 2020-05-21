@@ -16,9 +16,9 @@
         this.customer_type = customer_type;
         this.extra_org_fields = [];
 
-        for(var i = 0; i < app.organization_field_mappings.length; i++) 
+        for(var i = 0; i < app.field_maps.organisation.length; i++) 
         {
-            this.extra_org_fields[ i ] = { field_def: app.organization_field_mappings[ i ], value: null };
+            this.extra_org_fields[ i ] = { field_def: app.field_maps.organisation[ i ], value: null };
         }        
     }
     ZendeskOrganization.prototype.populateExtraFieldsFromOrganizationAPIData = function( APIOrgData )
@@ -78,9 +78,9 @@
         this.orgObject = null;  //this will only be instantiated when needed, not now, even if there is an organization id
         this.extra_user_fields = [];
 
-        for(var i = 0; i < app.user_field_mappings.length; i++) 
+        for(var i = 0; i < app.field_maps.user.length; i++) 
         {
-            this.extra_user_fields[ i ] = { field_def: app.user_field_mappings[ i ], value: null };
+            this.extra_user_fields[ i ] = { field_def: app.field_maps.user[ i ], value: null };
         }
     }
     //get name part functions that convert to title case
@@ -130,11 +130,11 @@
         return clonedUser;
     };
 
-    ZendeskUser.prototype.isNotset = function() { return this.customer_type === this.app.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_NOT_SET; };
-    ZendeskUser.prototype.isExcluded = function() { return this.customer_type === this.app.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_EXCLUDE; };
-    ZendeskUser.prototype.isIncluded = function() { return this.customer_type === this.app.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_USE_ORGANIZATION || this.customer_type === this.app.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_USE_DEFAULT; };
-    ZendeskUser.prototype.isOrganization = function() { return this.customer_type === this.app.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_USE_ORGANIZATION; };
-    ZendeskUser.prototype.isDefault = function() { return this.customer_type === this.app.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_USE_DEFAULT; };
+    ZendeskUser.prototype.isNotset = function() { return this.customer_type === this.app.resources.CUSTOMER_TYPE_NOT_SET; };
+    ZendeskUser.prototype.isExcluded = function() { return this.customer_type === this.app.resources.CUSTOMER_TYPE_EXCLUDE; };
+    ZendeskUser.prototype.isIncluded = function() { return this.customer_type === this.app.resources.CUSTOMER_TYPE_USE_ORGANIZATION || this.customer_type === this.app.resources.CUSTOMER_TYPE_USE_DEFAULT; };
+    ZendeskUser.prototype.isOrganization = function() { return this.customer_type === this.app.resources.CUSTOMER_TYPE_USE_ORGANIZATION; };
+    ZendeskUser.prototype.isDefault = function() { return this.customer_type === this.app.resources.CUSTOMER_TYPE_USE_DEFAULT; };
 
     ZendeskUser.prototype.belongsToOrganization = function() { return this.organization_id !== null; };
     ZendeskUser.prototype.orgObjectIsPopulated = function() { return this.orgObject !== null; };
@@ -145,7 +145,7 @@
             console.warn( "ZendeskUser.getMailchimpCustomerType() called with invalid customer_type, this = " );console.dir( this );
             return null;
         }
-        return this.customer_type === this.app.resources.USER_FIELD_NAME_CUSTOMER_TYPE_VALUE_USE_ORGANIZATION ? this.orgObject.customer_type : this.app.customer_type_field_mapping.default_value; 
+        return this.customer_type === this.app.resources.CUSTOMER_TYPE_USE_ORGANIZATION ? this.orgObject.customer_type : this.app.field_maps.cust_type.default_value; 
     };
 
     ZendeskUser.prototype.findExtraFieldByName = function( fieldName, zdNotMcField )
@@ -197,7 +197,7 @@
             {
                 label: this.extra_user_fields[ i ].field_def.field_label,
                 zd_field_location: "user",
-                is_image: this.extra_user_fields[ i ].field_def.type === this.app.resources.FIELD_TYPE_IMAGE,
+                is_image: this.extra_user_fields[ i ].field_def.type === this.app.resources.TYPE_IMAGE,
                 zd_value: tempZdValue,
                 mc_value: tempMcValue,
                 in_sync: tempZdValue === tempMcValue //add extra conversion here to cast tempMcValue to a string if necessary
@@ -206,18 +206,18 @@
         }
         //console.log( "done user fields JSON:" );
         //console.dir( sync_fields ); //console.log( "" );  
-        for( i = 0; i < this.app.organization_field_mappings.length; i++ )
+        for( i = 0; i < this.app.field_maps.organisation.length; i++ )
         {
-            tempZdValue = this.isDefault() ? this.app.organization_field_mappings[ i ].default_value : ( this.isOrganization() ? this.orgObject.extra_org_fields[ i ].value : null );
+            tempZdValue = this.isDefault() ? this.app.field_maps.organisation[ i ].default_value : ( this.isOrganization() ? this.orgObject.extra_org_fields[ i ].value : null );
             tempMcValue = mailChimpUser.extra_merge_fields[ arrayIndex ].value;
             tempZdValue = ( tempZdValue === null ) ? "" : tempZdValue; 
             tempMcValue = ( tempMcValue === null ) ? "" : tempMcValue;
             //add extra conversion here to cast tempMcValue to a string if necessary
             sync_fields[ arrayIndex+3 ] = 
             {
-                label: this.app.organization_field_mappings[ i ].field_label,
+                label: this.app.field_maps.organisation[ i ].field_label,
                 zd_field_location: "organisation",
-                is_image: this.app.organization_field_mappings[ i ].type === this.app.resources.FIELD_TYPE_IMAGE,
+                is_image: this.app.field_maps.organisation[ i ].type === this.app.resources.TYPE_IMAGE,
                 zd_value: tempZdValue,
                 mc_value: tempMcValue,
                 in_sync: tempZdValue === tempMcValue //add extra conversion here to cast tempMcValue to a string if necessary
@@ -225,19 +225,20 @@
             arrayIndex++;
         }
         //console.log( "done org fields JSON:" );
-        //console.dir( sync_fields ); //console.log( "" );  
-        for( i = 0; i < this.app.mailshot_only_field_mappings.length; i++ )
+        //console.dir( sync_fields ); //console.log( "" );
+        
+        for( i = 0; i < this.app.field_maps.mc_only.length; i++ )
         {
             tempMcValue = mailChimpUser.extra_merge_fields[ arrayIndex ].value;
             tempMcValue = ( tempMcValue === null ) ? "" : tempMcValue;
             //add extra conversion here to cast tempMcValue to a string if necessary
             sync_fields[ arrayIndex+3 ] = 
             {
-                label: this.app.mailshot_only_field_mappings[ i ].field_label,
+                label: this.app.field_maps.mc_only[ i ].field_label,
                 zd_field_location: null,
-                is_image: this.app.mailshot_only_field_mappings[ i ].type === this.app.resources.FIELD_TYPE_IMAGE,
-                is_checkbox: this.app.mailshot_only_field_mappings[ i ].type === this.app.resources.FIELD_TYPE_CHECKBOX,
-                is_checkbox_ticked: this.app.mailshot_only_field_mappings[ i ].type !== this.app.resources.FIELD_TYPE_CHECKBOX ? 
+                is_image: this.app.field_maps.mc_only[ i ].type === this.app.resources.TYPE_IMAGE,
+                is_checkbox: this.app.field_maps.mc_only[ i ].type === this.app.resources.TYPE_CHECKBOX,
+                is_checkbox_ticked: this.app.field_maps.mc_only[ i ].type !== this.app.resources.TYPE_CHECKBOX ? 
                     null : 
                     tempMcValue === "1" || tempMcValue === 1 ? true : false, 
                 zd_value: null,

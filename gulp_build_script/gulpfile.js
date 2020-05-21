@@ -14,26 +14,31 @@ using         = require('gulp-using');
 
 
 const paths = {
-  src   : '../src/',
-  dest  : '../build/',
-  js    : 'assets/js/'
+    src   : '../src/',
+    dest  : '../build/',
+    js    : 'assets/js/'
 };
 
 const minifyJsSettings = {
-  src             : paths.src  + paths.js + '**/!(*.min).js',
-  dest            : paths.dest + paths.js,
-  deniedDest      : paths.src  + paths.js,
-  rename          : {
-      basenameFind            : '-4debugging',      //optional
-      basenameReplace         : '',                 //optional
-      newExtension               : '.min.js',       //optional
-      denyDirName             : 'temp',             //optional
-      denyNewExtension        : '.min.temp.js'      //optional
-  },
-  srtipDebug      : {
-    start : 'DebugOnlyCode - START',
-    end   : 'DebugOnlyCode - END'
-  }
+    src             : paths.src  + paths.js + '**/!(*.min).js',
+    dest            : paths.dest + paths.js,
+    deniedDest      : paths.src  + paths.js,
+    rename          : {
+        basenameFind            : '-4debugging',      //optional
+        basenameReplace         : '',                 //optional
+        newExtension               : '.min.js',       //optional
+        denyDirName             : 'temp',             //optional
+        denyNewExtension        : '.min.temp.js'      //optional
+    },
+    srtipDebug      : {
+        start : 'DebugOnlyCode - START',
+        end   : 'DebugOnlyCode - END'
+    },
+    uglifyOptions   : {
+        mangle: {
+            properties: { regex: /^private_/ }
+        }
+    }
 };
 
 function minifyJs( settings ) {
@@ -52,7 +57,7 @@ function minifyJs( settings ) {
     .pipe( babel( { presets: ['@babel/env'] } ) )
     .on( 'error', handleError )
     .on( 'end', function() { log( 'Converted to ES5, now running uglify' ); } )
-    .pipe( uglify() )
+    .pipe( uglify( settings.uglifyOptions ) )
     .on( 'error', handleError )
     .on( 'end', function() { log( 'Uglified' ); } )
     //send .min.temp.js files back to src and all other fiels to dest

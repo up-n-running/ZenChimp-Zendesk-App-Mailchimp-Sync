@@ -56,13 +56,12 @@
             /* DebugOnlyCode - END */
             parentClient = getClientInstanceFromGuid(urlParams.parent_guid); //Hopefully this includes the parent_guid we want to send when creating modals
 
-             /* DebugOnlyCode - START */
+            /* DebugOnlyCode - START */
             if( debug_mode ) { console.log( "Creating plugin instance from PARENT CLIENT: zenChimpPlugin = pluginFactory( parentClient );" ); } 
             /* DebugOnlyCode - END */
             zenChimpPlugin = pluginFactory( parentClient );
 
-            let viewData = { optional_message: 'Loading App...' };
-            switchToInlineTemplate(zenChimpPlugin.resources.TEMPLATE_ID_LOADING, viewData);
+            zenChimpPlugin.switchToLoadingScreen( 'Loading App...' );
 
             /* DebugOnlyCode - START */
             if( debug_mode ) { console.log( "Creating and Initialising plugin.js object:\nzenChimpPlugin.init();" ); } 

@@ -15,8 +15,7 @@ function init()
     }
     /* DebugOnlyCode - END */ 
       
-    var viewData = { optional_message: 'Loading App...' };
-    switchToInlineTemplate(zenChimpPlugin.resources.TEMPLATE_ID_LOADING, viewData);
+    zenChimpPlugin.switchToLoadingScreen( 'Loading App...' );
 
     /* DebugOnlyCode - START */
     if( debug_mode ) { console.log( "Creating and Initialising plugin.js object:\nzenChimpPlugin.init();" ); } 
