@@ -302,6 +302,7 @@ var pluginFactory = function( thisV2Client ) {
     // --- INITIALISATION FUCNTIONS
     init: function( modalMode, existingContext ) 
     {
+            console.log( "Starting app init()");
 
             //housekeeping (functions in this.requests cannot access parent plugin when they in turn reference 'this' so we have a pointer back - it's just a javascript function context thing)
             this.requests.parentPlugin = this;
@@ -321,13 +322,11 @@ var pluginFactory = function( thisV2Client ) {
             this.zendesk_user = null;
             this.isFullyInitialized = false;  //this will only be set to true in resetAppIfPageFullyLoaded once the above ones are set ()
 
-            //get location (which screen we're on). Unless a spoofed context value was passed into init() from outside then we dont need to call this promise cos we can use the spoofed one
+            //get location (which screen we're on) unless a value was passed into init() from outside
             if( this.context === null ) 
             {
                 this.v2Client.context().then( (context) => {
-                    /* DebugOnlyCode - START */
-                    if( debug_mode ) { console.log( "PROMISE RETURNED: this.v2Client.context().then( (context) => {...}       context = %o", context ); }
-                    /* DebugOnlyCode - END */
+                    console.log(context);
                     this.context = context;
                     //hide hidden customer type field if in user screen
                     this.hideFieldsIfInUserLocation();
@@ -337,9 +336,7 @@ var pluginFactory = function( thisV2Client ) {
             
             //Get Settings from manifest.json
             this.v2Client.metadata().then( (metadata) => {
-                /* DebugOnlyCode - START */
-                if( debug_mode ) { console.log( "PROMISE RETURNED: this.v2Client.metadata().then( (metadata) => {...}       metadata = %o", context ); }
-                /* DebugOnlyCode - END */
+                console.log(metadata.settings);
                 this.mailchimp_api_key = metadata.settings.mailchimp_api_key;
                 this.mailchimp_datacentre_prefix = metadata.settings.mailchimp_datacentre_prefix;
                 this.mailchimp_list_id = metadata.settings.mailchimp_list_id;
@@ -933,6 +930,7 @@ var pluginFactory = function( thisV2Client ) {
             /* DebugOnlyCode - START */
             if( debug_mode ) { console.log( "Check Passed, building base object and adding extra fields.    this.customer_type_field_mapping.zendesk_field = %s", this.customer_type_field_mapping.zendesk_field ); }
             /* DebugOnlyCode - END */
+            console.log( "Checking if We need to populate organisation, next comment will be check passed if we actually do");
             organizationObjectToReturn = new this.zendeskObjectsModule.ZendeskOrganization(
                     this,
                     organizationObjectFromDataAPI.organization.id,
@@ -1061,12 +1059,12 @@ var pluginFactory = function( thisV2Client ) {
                 this.mailshot_sync_user.extra_merge_fields[ arrayIndex ] = { field_def: this.user_field_mappings[ i ], value: returnedMailchimpUser.merge_fields[ this.user_field_mappings[ i ].mailchimp_field ]};
                 arrayIndex++;
             }
-            for(let i=0; i < this.organization_field_mappings.length; i++) 
+            for(i=0; i < this.organization_field_mappings.length; i++) 
             {
                 this.mailshot_sync_user.extra_merge_fields[ arrayIndex ] = { field_def: this.organization_field_mappings[ i ], value: returnedMailchimpUser.merge_fields[ this.organization_field_mappings[ i ].mailchimp_field ] };
                 arrayIndex++;
             }
-            for (let i=0; i < this.mailshot_only_field_mappings.length; i++) 
+            for (i=0; i < this.mailshot_only_field_mappings.length; i++) 
             {
                 this.mailshot_sync_user.extra_merge_fields[ arrayIndex ] = { field_def: this.mailshot_only_field_mappings[ i ], value: returnedMailchimpUser.merge_fields[ this.mailshot_only_field_mappings[ i ].mailchimp_field ] };
                 arrayIndex++;

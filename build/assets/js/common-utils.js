@@ -1,4 +1,4 @@
-var debug_mode = true;
+var debug_mode = false;
 /* DebugOnlyCode - START */
 debug_mode = true;
 /* DebugOnlyCode - END */ 
@@ -120,7 +120,7 @@ function parseURLParams(param_string){
     
     let param_obj = {};
     for (let i = 0; i < paramArray.length; ++i) {
-        let kv = paramArray[i].split('=');
+        kv = paramArray[i].split('=');
         param_obj[kv[0]] = kv[1];
     }
     

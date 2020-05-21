@@ -18,7 +18,6 @@
  */
 
 /*global unescape, define, module */
-var md5 = null;
 
 ;(function ($) {
   'use strict';
@@ -255,7 +254,7 @@ var md5 = null;
     return rstr2hex(raw_hmac_md5(k, d));
   }
 
-  function md5_master_function (string, key, raw) {
+  function md5 (string, key, raw) {
     if (!key) {
       if (!raw) {
         return hex_md5(string);
@@ -267,7 +266,7 @@ var md5 = null;
     }
     return raw_hmac_md5(key, string);
   }
-/*
+
   if (typeof define === 'function' && define.amd) {
     define(function () {
       return md5;
@@ -277,7 +276,4 @@ var md5 = null;
   } else {
     $.md5 = md5;
   }
-
- */
-  md5 = md5_master_function;
 }(this));
