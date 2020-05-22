@@ -36,17 +36,17 @@ const minifyJsSettings = {
     },
     uglifyOptions   : {
         mangle: {
-            properties: { regex: /^private_/ }
+            properties: { regex: /^__/ }
         }
     }
 };
 
 function minifyJs( settings ) {
   //build up the source array allowing the user to pass in a non-array
-  aourceArray = Array.isArray(settings.src) ? settings.src : [settings.src];
+  sourceArray = Array.isArray(settings.src) ? settings.src : [settings.src];
 
   //do the magic
-  return gulp.src( aourceArray )
+  return gulp.src( sourceArray )
     .pipe( rename( function ( path ) { renameFn( path, settings.rename ); } ) )
     //.pipe( stripdebug() )
     .pipe( stripcode( {

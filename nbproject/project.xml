@@ -5,5 +5,8 @@
         <data xmlns="http://www.netbeans.org/ns/clientside-project/1">
             <name>mailchimp-mailshot-sync</name>
         </data>
+        <gulp-tasks xmlns="http://www.netbeans.org/ns/build-tool-tasks/1">
+            <workdir path="gulp_build_script" showSimpleTasks="true"/>
+        </gulp-tasks>
     </configuration>
 </project>
