@@ -3,3 +3,4 @@
 .DS_Store
 Zenchimp.code-workspace
 node_modules
+/tmp/

@@ -1,4 +1,4 @@
-//NOTE: debug_mode, thisV2Client, switchToHdbsFileTemplate() & modal_createChildFromParent() are declared in common-utils.js
+//NOTE: debug_mode, thisV2Client & modal_createChildFromParent() are declared in common-utils.js
 
 var zenChimpPlugin = pluginFactory( thisV2Client );
 

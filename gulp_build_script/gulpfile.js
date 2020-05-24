@@ -1,111 +1,164 @@
 // Gulp.js configuration
 
 //Import gulp and its plugins
-const { watch, series } = require('gulp'); 
-gulp          = require('gulp'); 
-stripdebug    = require('gulp-strip-debug');
-stripcode     = require('gulp-strip-code');
-rename        = require('gulp-rename');
-babel         = require('gulp-babel');
-uglify        = require('gulp-uglify');
-log           = require('fancy-log');
-gulpif        = require('gulp-if');
-using         = require('gulp-using');
+const { watch, series, parallel } = require('gulp'); 
+const gulp          = require('gulp'); 
+const filter        = require('gulp-filter');
+const stripcode     = require('gulp-strip-code');
+const rename        = require('gulp-rename');
+const babel         = require('gulp-babel');
+const uglify        = require('gulp-uglify');
+const gulpif        = require('gulp-if');
+const inject        = require('gulp-inject');
+const debug         = require('gulp-debug');
+const naturalSort   = require('gulp-natural-sort');
+//const using         = require('gulp-using');
+//const stripdebug    = require('gulp-strip-debug');
+//const merge         = require('merge-stream');
+
+//node.js modules not specifically gulp
+const log           = require('fancy-log');
+
+//local includes
+const jsUtils       = require('./inc/jsutils');
+const prefixUtils   = require('./inc/prefixutils');
+const fsUtils       = require('./inc/fsutils');
+const commonUtils   = require('./inc/commonutils');
+const concatUtils   = require('./inc/concatutils');
 
 
 const paths = {
-    src   : '../src/',
-    dest  : '../build/',
-    js    : 'assets/js/'
+    src   : '../src/assets/',
+    tmp   : '../tmp/assets/',
+    dest  : '../build/assets/',
+    denyDirName : 'temp',
+    js    : {
+        subPath        : 'js/',
+        glob_js_only   : '**/!(*.min).js',
+        glob_min_js    : '**/!(*.temp).min.js',
+        glob_both      : '**/!(*.temp.min).js'
+    },
+    html  : { 
+        subPath    : '',
+        glob       : '**/*.html',
+        glob_index : '*iframe.html'
+    },
+    css  : { 
+        subPath : 'css/',
+        glob    : '**/*.css'
+    },
+    others : [
+        '*.json',
+        'translations/*.json',
+        'assets/img/*.{png,gif,jpg,jpeg,svg}',
+        'assets/templates/*.hdbs',
+        'assets/templates/logo*.png',
+    ]
 };
 
-const minifyJsSettings = {
-    src             : paths.src  + paths.js + '**/!(*.min).js',
-    dest            : paths.dest + paths.js,
-    deniedDest      : paths.src  + paths.js,
-    rename          : {
-        basenameFind            : '-4debugging',      //optional
-        basenameReplace         : '',                 //optional
-        newExtension               : '.min.js',       //optional
-        denyDirName             : 'temp',             //optional
-        denyNewExtension        : '.min.temp.js'      //optional
-    },
-    srtipDebug      : {
-        start : 'DebugOnlyCode - START',
-        end   : 'DebugOnlyCode - END'
-    },
-    uglifyOptions   : {
-        mangle: {
-            properties: { regex: /^__/ }
-        }
-    }
-};
+function concatenateSrcJs( )
+{
+    return concatUtils.task_concatenateJS ( 
+        paths.src + paths.js.subPath,
+        paths.tmp + paths.js.subPath,
+        paths.js.glob_both,
+        paths.js.glob_both.substr(3),
+        paths.denyDirName
+    ).on( 'error', commonUtils.handleError );
+}
 
-function minifyJs( settings ) {
-  //build up the source array allowing the user to pass in a non-array
-  sourceArray = Array.isArray(settings.src) ? settings.src : [settings.src];
+function minifyTmpJs() {
+    let minifyTmpSettings = jsUtils.getDefaultJsSettings( paths );
+    
+    //convers normal settings to not do any renaming and to also use tmp as the source and dest
+    minifyTmpSettings.src = paths.tmp  + paths.js.subPath + paths.js.glob_js_only;
+    minifyTmpSettings.rename = { newExtension: minifyTmpSettings.rename.newExtension }; //remove other rename settings, thhey're not needed in tmp directory
+    minifyTmpSettings.deleteSrcFilesFromThisDirAfterProcessing_USE_WITH_CAUTION = paths.tmp + paths.js.subPath;
+    //log( minifyTmpSettings );
+    return jsUtils.minifyJs_FromSettings( minifyTmpSettings );
+}
 
-  //do the magic
-  return gulp.src( sourceArray )
-    .pipe( rename( function ( path ) { renameFn( path, settings.rename ); } ) )
-    //.pipe( stripdebug() )
-    .pipe( stripcode( {
-      start_comment: settings.srtipDebug.start,
-      end_comment: settings.srtipDebug.end
-    } ) )
-    .on( 'end', function() { log( 'Stripped Debug, now running babel to convert to ES5' ); } )
-    .pipe( babel( { presets: ['@babel/env'] } ) )
-    .on( 'error', handleError )
-    .on( 'end', function() { log( 'Converted to ES5, now running uglify' ); } )
-    .pipe( uglify( settings.uglifyOptions ) )
-    .on( 'error', handleError )
-    .on( 'end', function() { log( 'Uglified' ); } )
-    //send .min.temp.js files back to src and all other fiels to dest
-    .pipe(gulpif(['**/*', '!**/*'+settings.rename.newExtension],
-      gulp.dest(settings.deniedDest)
-    ) )
-    .pipe(gulpif('**/*'+settings.rename.newExtension, 
-      gulp.dest(settings.dest)
-    ) )
-    .on( 'end', function(){ log('Finished'); } );
+function deleteJsOnlyFromTmp()
+{
+    return fsUtils.rm( paths.tmp + paths.js.subPath + paths.js.glob_js_only, false, true, false );
+}
+
+function minifySrcJs() {
+    let minifyTmpSettings = jsUtils.getDefaultJsSettings( paths );
+    minifyTmpSettings.filterFunction = concatUtils.filterFunction_NoConcatFiles; //dont process filed to be concatted
+    return jsUtils.minifyJs_FromSettings( minifyTmpSettings );
+}
+
+function copySrcMinJs(cb) {
+    gulp.src ( paths.src + paths.js.subPath + paths.js.glob_min_js )
+    .pipe( filter( filterFunction_DeniedDir, {restore: false, passthrough: false} ) )
+    .pipe( gulp.dest( paths.tmp + paths.js.subPath ) )
+    .on( 'end', function() { cb(); } );
+}
+
+function html(cb) {
+    gulp.src(paths.src + paths.html.subPath + paths.html.glob)
+        .pipe( filter( filterFunction_DeniedDir, {restore: false, passthrough: false} ) )
+        .pipe(gulp.dest(paths.tmp + paths.html.subPath))
+        .on('end', function() { cb(); });
+}
+
+function css(cb) {
+    gulp.src(paths.src + paths.css.subPath + paths.css.glob)
+        .pipe( filter( filterFunction_DeniedDir, {restore: false, passthrough: false} ) )
+        .pipe(gulp.dest(paths.tmp + paths.css.subPath))
+        .on('end', function() { cb(); });
+}
+
+function injectHTML(cb) {
+    var targetHtmlFiles = gulp.src( paths.tmp + paths.html.subPath + paths.html.glob_index );
+    var cssFilesToInject = gulp.src( paths.tmp + paths.css.glob, {read: false} ).pipe( naturalSort() ); //dont need to see contents
+    var jsFilesToInject  = gulp.src( paths.tmp + paths.js.glob_both, {read: false} ).pipe( naturalSort() );  //dont need to see contents
+
+    return targetHtmlFiles
+      .pipe( inject( cssFilesToInject, { relative:true } ) )
+      .pipe( inject( jsFilesToInject, { relative:true } ) )
+      .pipe( gulp.dest( paths.tmp ) )
+      .on('end', function() { cb(); });
 }
 
 
-// JavaScript processing
-gulp.task('minifyJs', () => {
-  return minifyJs( minifyJsSettings );
+gulp.task('watch', () => {
+  watch(minifyJsSettings.src, { ignoreInitial: false }, gulp.series('minifyJs') );
 });
 
+gulp.task('clean', function () {
+  return fsUtils.rm( paths.tmp + '/**/*', false, true );
+});
 
+/* exports */
+exports.concatenateSrcJs = concatenateSrcJs;
+exports.minifyTmpJs = minifySrcJs;
+exports.deleteJsOnlyFromTmp = deleteJsOnlyFromTmp;
+exports.minifySrcJs = minifySrcJs;
+exports.copySrcMinJs = copySrcMinJs;
+exports.js = series( concatenateSrcJs, minifyTmpJs, deleteJsOnlyFromTmp, parallel( minifySrcJs, copySrcMinJs ) );
+exports.testJs = series( 'clean', concatenateSrcJs, minifyTmpJs, deleteJsOnlyFromTmp, parallel( minifySrcJs, copySrcMinJs ) );
+
+
+exports.html = html;
+exports.css = css;
+exports.injectHTML = injectHTML;
+exports.build = series( 'clean', concatenateSrcJs, minifyTmpJs, deleteJsOnlyFromTmp, parallel( minifySrcJs, copySrcMinJs, html, css), injectHTML );
 exports.default = function() {
-  // You can use a single task
-  watch(minifyJsSettings.src, { ignoreInitial: false }, gulp.series('minifyJs') );
+  return gulp.series('build');
 };
 
 
-
-
-
-/* Util Functions */
-function renameFn( path, settings ) {
-  //do a search and replace on basename and change file extension if the file path contains a 'denied' directory like ..../temp/....
-  oldFileName = path.dirname+'/'+path.basename+path.extname;
-  if( settings.basenameFind && settings.basenameReplace ) {
-    path.basename = path.basename.replace( settings.basenameFind, settings.basenameReplace );
-  }
-  if( settings.newExtension ) {
-    path.extname = settings.newExtension;
-  }
-  if( settings.denyDirName && settings.denyNewExtension && ( '/'+path.dirname+'/' ).includes( '/'+settings.denyDirName+'/' ) )  {
-    path.extname = settings.denyNewExtension;
-  }
-  log( 'Renaming: '+oldFileName+' --> '+path.dirname+'/'+path.basename+path.extname );
+function deleteTmpDeniedDirs() {
+    return fsUtils.deleteDeniedDirs( paths.tmp, denyDirNameOnlyNoPath );
 }
 
-function handleError(error) {
-    console.log(error.toString());
-    this.emit('end');
+function filterFunction_DeniedDir( vinylFile ) {
+    return commonUtils.filterFunction_DenyDir_FromSettings( vinylFile, paths.denyDirName );
 }
+
+
 
 
 
@@ -117,21 +170,11 @@ function handleError(error) {
   imagemin      = require('gulp-imagemin'),
   sass          = require('gulp-sass'),
   postcss       = require('gulp-postcss'),
-  deporder      = require('gulp-deporder'),
+  deporder      = require('gulp-deporder'),  //LOOKS AMAZINs
   concat        = require('gulp-concat'),
   stripdebug    = require('gulp-strip-debug'),
   uglify        = require('gulp-uglify')
 ;
-
-// Browser-sync
-var browsersync = false;
-
-
-// PHP settings
-const php = {
-  src           : dir.src + 'template/** [SLASH] *.php',
-  build         : dir.build
-};
 
 // copy PHP files
 gulp.task('php', () => {
