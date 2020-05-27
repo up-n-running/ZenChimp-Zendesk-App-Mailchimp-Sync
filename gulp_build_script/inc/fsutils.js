@@ -6,6 +6,7 @@ const log           = require('fancy-log');
 
 //local includes
 const commonUtils   = require('./commonutils');
+const removeEmptyDirsLib   = require('./lib/remove-empty-dirs');
 
 /*
  * Scans a directory and returns the top-level folders within in it
@@ -21,7 +22,7 @@ function getTopLevelSubFolders(dir) {
 
 /**
  * Recursively traverse a directory structure starting at rootdir and look for matches and return an array of matched dirs (and/or files)
- * @param {string} rootDir - dir to start traversal from - will not check this dir for a match but will check everything inside it (except any potential exclusions applied in subsequent args)
+ * @param {string} startingDir - dir to start traversal from - will not check this dir for a match but will check everything inside it (except any potential exclusions applied in subsequent args)
  * @param {boolean} dirsOnly - only walk the directories and ignore the files (runs a quicker but matches will all be dirs, no file details at all)
  * @param {Function} matchIfFunction - (OPTIONAL) function that takes 2 params ( string path, boolean isDir ) and returns true it it should be returned in array of matches or false if not. If omitted then will list every dir (and file too if !dirsOnly) it touches
  * @param {boolean} traverseMatchedDirs - (OPTIONAL) if a dir match is found do we go on to return all matches inside the directory or not (quicker if not). ture if omitted
@@ -29,10 +30,10 @@ function getTopLevelSubFolders(dir) {
  * @param {string} logPrefix (OPTIONAL) - if you want to log the recurside dir traversal pass in empty string here, otherwise pass in null or omit completely} logPrefix
  * @returns {Array|nm$_fsutils.dirWalkAndSearch.results|dirWalkAndSearch.results}
  */
-function dirWalkAndSearch(rootDir, dirsOnly, matchIfFunction, traverseMatchedDirs, deniedDirName, logPrefix) {
+function dirWalkAndSearch(startingDir, dirsOnly, matchIfFunction, traverseMatchedDirs, deniedDirName, logPrefix) {
     
     //tidy input params
-    rootDir = commonUtils.addSlashIfMissing( rootDir, false, true );
+    startingDir = commonUtils.addSlashIfMissing( startingDir, false, true );
     dirsOnly = ( typeof dirsOnly === 'undefined' ) ? false : dirsOnly;
     matchIfFunction = (typeof matchIfFunction === 'undefined') ? null : matchIfFunction;
     traverseMatchedDirs = (typeof traverseMatchedDirs === 'undefined') ? true : traverseMatchedDirs;
@@ -40,17 +41,17 @@ function dirWalkAndSearch(rootDir, dirsOnly, matchIfFunction, traverseMatchedDir
     logPrefix = ( typeof logPrefix === 'undefined' ) ? false : logPrefix;
     
     
-    if( logPrefix!==false ) { log( logPrefix + 'walkDirsOnly( "'+ rootDir +'", dirsOnly='+dirsOnly+', '+ ((matchIfFunction === null)?'matchAllMode':matchIfFunction.name+'()') +', traverseMatchedDirs='+traverseMatchedDirs+', deniedDirName="'+deniedDirName+'", "'+ logPrefix + '") called'); }
+    if( logPrefix!==false ) { log( logPrefix + 'walkDirsOnly( "'+ startingDir +'", dirsOnly='+dirsOnly+', '+ ((matchIfFunction === null)?'matchAllMode':matchIfFunction.name+'()') +', traverseMatchedDirs='+traverseMatchedDirs+', deniedDirName="'+deniedDirName+'", "'+ logPrefix + '") called'); }
     
     //get array to store the dir contents at this level (and sublevels)
     var results = [];
     
     //find all the (files and) dirs at this level
-    var list = fs.readdirSync(rootDir).filter( function(file) {
-        //ANONYMOUS INLINE FILTER FUNCTION
+    var list = fs.readdirSync(startingDir).filter( function(file) {
+        //ANONYMOUS INLINE FILTER FUNCTION - can filter by dirs only and by not-denied dirs
         if( deniedDirName !== null || dirsOnly )
         {
-            let fullPath = path.join(rootDir, file);
+            let fullPath = path.join(startingDir, file);
             let isDir = fs.statSync(fullPath).isDirectory();
             if( deniedDirName === null || !isDir || !( '/'+fullPath+'/' ).includes( '/'+deniedDirName+'/' ) )
             {
@@ -66,7 +67,7 @@ function dirWalkAndSearch(rootDir, dirsOnly, matchIfFunction, traverseMatchedDir
     list.forEach(function(subdir) {
         
         //is it a file or a folder
-        subDirOrFile = rootDir + subdir;
+        subDirOrFile = startingDir + subdir;
         let isDir = dirsOnly;
         if( !isDir )
         {
@@ -123,14 +124,7 @@ function rm( globOrGlobArray, dryRun, force, megaForceUseWithCaution ) {
     if( typeof megaForceUseWithCaution === 'undefined' || megaForceUseWithCaution !== true )
     {
         globOrGlobArray.forEach(function(glob) {
-            if( commonUtils.countMatchesInString( '../..', glob ) > 0 )
-            {
-                return handleError( 'WONT DELETE AS THERE IS A "../.." IN THE PATH TO BE DELETED ('+globOrGlobArray+'). ONLY ONE LEVEL ABOVE ROOT DIR ALLOWED. USE megaForceUseWithCaution TO OVERRIDE');
-            }
-            if( commonUtils.countMatchesInString( '../src', glob ) > 0 )
-            {
-                return handleError( 'WONT DELETE AS THERE IS A "../src" IN THE PATH TO BE DELETED ('+globOrGlobArray+'). LOOKS SCARY TO ME. USE megaForceUseWithCaution TO OVERRIDE');
-            }
+            sanityCheckBeforeDelete(glob, megaForceUseWithCaution);
         });
     }
     let options = {
@@ -140,13 +134,36 @@ function rm( globOrGlobArray, dryRun, force, megaForceUseWithCaution ) {
     
     if( options.dryRun )
     {
-        log( 'Simulating Delete of following globs: ' + globOrGlobArray );
+        log( 'Simulating delete of following globs: ' + globOrGlobArray );
         log( 'With options: ' );
         log( options );
         log( 'Current working directory is: ' + process.cwd() );
     }
     
     return del( globOrGlobArray, options );
+}
+
+function sanityCheckBeforeDelete( globOrPathSingularOrArray, megaForceUseWithCaution )
+{
+    if( typeof megaForceUseWithCaution === 'undefined' || megaForceUseWithCaution !== true )
+    {
+        globOrPathSingularOrArray = Array.isArray(globOrPathSingularOrArray) ? globOrPathSingularOrArray : [globOrPathSingularOrArray];
+        
+        globOrPathSingularOrArray.forEach(function(glob) {
+            if( commonUtils.countMatchesInString( '../..', glob ) > 0 )
+            {
+                return commonUtils.handleError( 'WONT DELETE AS THERE IS A "../.." IN THE PATH TO BE DELETED ('+globOrPathSingularOrArray+'). ONLY ONE LEVEL ABOVE ROOT DIR ALLOWED. USE megaForceUseWithCaution TO OVERRIDE');
+            }
+            if( commonUtils.countMatchesInString( '../src', glob ) > 0 )
+            {
+                return commonUtils.handleError( 'WONT DELETE AS THERE IS A "../src" IN THE PATH TO BE DELETED ('+globOrPathSingularOrArray+'). LOOKS SCARY TO ME. USE megaForceUseWithCaution TO OVERRIDE');
+            }
+            if( glob.startsWith( '/src' ) )
+            {
+                return commonUtils.handleError( 'WONT DELETE AS THE PATH TO BE DELETED BEGINS "/src" ('+globOrPathSingularOrArray+'). LOOKS SCARY TO ME. USE megaForceUseWithCaution TO OVERRIDE');
+            }
+        });
+    }
 }
 
 function deleteDeniedDirs( rmRootDir, denyDirNameOnlyNoPath ) {
@@ -158,4 +175,6 @@ exports.getTopLevelSubFolders = getTopLevelSubFolders;
 exports.rm = rm;
 exports.deleteDeniedDirs = deleteDeniedDirs;
 exports.dirWalkAndSearch = dirWalkAndSearch;
+exports.sanityCheckBeforeDelete = sanityCheckBeforeDelete;
+exports.removeEmptyDirectories = removeEmptyDirsLib.removeEmptyDirectories;
 

@@ -2,9 +2,13 @@
 const log           = require('fancy-log');  
 
 function filterFunction_DenyDir_FromSettings( vinylFile, deniedDirName ) {
+    //log( "filterFunction_DenyDir_FromSettings( vinylFile, deniedDirName ) called" );
+    //log( "ARG1: vinylFile = " + vinylFile.relative );
+    //log( "ARG2: deniedDirName = " + deniedDirName );
+    
     if( deniedDirName && ( '/'+vinylFile.relative+'/' ).includes( '/'+deniedDirName+'/' ) )
     {
-        log( 'Filtered Out: ' + vinylFile.relative );
+        log( 'Filtered Out file in demied dir: ' + vinylFile.relative );
         return false;
     }
     return true;

@@ -2,18 +2,18 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <link href="./css/main.css" rel="stylesheet">
     <!-- inject:css -->
+    <link rel="stylesheet" href="css/main.css">
     <!-- endinject -->
-  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" crossorigin="anonymous">
-  <title>upnrunning ZenChimp Sidebar App</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" crossorigin="anonymous">
+    <title>upnrunning ZenChimp Sidebar App</title>
 </head>
 <body>
     
     <div class="sidebar_page">
         <div id="page_content"></div>
     </div>
-    
+
     <footer>
       <a href="https://github.com/up-n-running/ZenChimp-Zendesk-App-Mailchimp-Sync/issues?q=is%3Aissue+label%3Aquestion" target="_blank">Get Help</a> | 
       <a href="https://github.com/up-n-running/ZenChimp-Zendesk-App-Mailchimp-Sync/issues?q=is%3Aopen+is%3Aissue" target="_blank">Report bug</a> | 
@@ -22,20 +22,20 @@
 
     <script src="https://static.zdassets.com/zendesk_app_framework_sdk/2.0/zaf_sdk.min.js"></script>
     
-    <script src="/js/__010__lib/__020__handlebars-v4.7.6.min.js"></script>
-    <script src="/js/__010__lib/__010__jquery-3.5.1.min.js"></script>
-
-    <script src="/js/__020_concat_zenchimp/__010__lib/__010__md5.js"></script>
-    <script src="/js/__020_concat_zenchimp/__010__lib/__020__parse-names.js"></script>
-    <script src="/js/__020_concat_zenchimp/__020__ZendeskObjects.js"></script>
-    <script src="/js/__020_concat_zenchimp/__030__common-utils.js"></script>
-    <script src="/js/__020_concat_zenchimp/__040__plugin.js"></script>
-    <script src="/js/__020_concat_zenchimp/__050__3rd-party-sync.js"></script>
-
     <!-- inject:js -->
-    <!-- endinject -->    
+    <script src="js/__010__lib/__010__jquery-3.5.1.min.js"></script>
+    <script src="js/__020concat__zenchimp/__010__lib/__010__md5.js"></script>
+    <script src="js/__010__lib/__020__handlebars-v4.7.6.min.js"></script>
+    <script src="js/__020concat__zenchimp/__010__lib/__020__parse-names.js"></script>
+    <script src="js/__020concat__zenchimp/__020__ZendeskObjects.js"></script>
+    <script src="js/__020concat__zenchimp/__030__common-utils.js"></script>
+    <script src="js/__020concat__zenchimp/__040__plugin.js"></script>
+    <script src="js/__020concat__zenchimp/__050__3rd-party-sync.js"></script>
+    <!-- endinject -->
     
-    <script src="/js/__030__main-iframe.js"></script> 
+    <!-- mainonly:js -->
+    <script src="js/__030_mainonly_main-iframe.js"></script>
+    <!-- endinject -->
     
     <script id="loading-screen-template" type="text/x-handlebars-template">
         {{#if optional_message}}

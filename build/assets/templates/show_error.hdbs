@@ -1,0 +1,25 @@
+<div class="error_page">
+    <div class="page_content">
+        {{#if overrideMessage}}
+            <div class="alert alert-warning">
+                    {{{overrideMessage}}}
+            </div>
+        {{/if}}
+        {{#unless overrideMessage}}
+            <div class="alert alert-danger">
+                <strong>{{errorResponse.status}} - {{errorResponse.statusText}} - {{errorResponse.title}}</strong><br />
+                <br />
+                {{errorResponse.responseText}} {{errorResponse.detail}}<br />
+                <br />
+                Is this a bug? Click 'Report bug' below.
+            </div>
+        {{/unless}}
+
+        <div class="page_control">
+            <button class="btn error_go_back" onclick="zenChimpPlugin.resetAppIfPageFullyLoaded(); return false;">Go Back</button>
+            {{#if additionalButtonHandle}}
+                <button class="btn {{additionalButtonHandle}}" onclick="return zenChimpPlugin.{{additionalButtonOnclick}};">{{#if additionalButtonText}}{{additionalButtonText}}{{/if}}{{#unless additionalButtonText}}OK{{/unless}}</button>
+            {{/if}}
+        </div>
+    </div>
+</div>

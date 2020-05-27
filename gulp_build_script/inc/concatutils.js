@@ -22,7 +22,7 @@ function task_concatenateJS( srcDir, destDir, concatDirSrcGlob, individualDirSrc
     let concatDirs = [];
     let individualDirs = [];
     let streamArray = [];
-    for (const fileOrDir of concatFilesAndDirs) {
+    for (let fileOrDir of concatFilesAndDirs) {
         if( ( fileOrDir.isDir && concatDirs.includes( fileOrDir.nameAndPath ) === false ) ) {
             concatDirs.push( fileOrDir.nameAndPath );
             streamArray.push( subtask_concatAConcatDir( 
@@ -127,7 +127,7 @@ function isAConcatDirOrFile( dirOrFilePath, isDir )
     if( result.firstConcatDirInstance !== null ) {
         return true;
     }
-    else if( !isDir && result.fileInstance !== null && result.fileInstance.isConcat ) {
+    else if( !isDir && result.fileInstance !== null && prefixUtils.utils.isConcat( result.fileInstance ) ) {
         return true;
     }
     return false;

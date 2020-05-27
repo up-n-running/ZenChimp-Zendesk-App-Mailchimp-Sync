@@ -669,7 +669,7 @@ var pluginFactory = function( thisV2Client ) {
     organizationButtonOnClick: function()
     {
         /* DebugOnlyCode - START */
-        if( debug_mode ) 
+        if( debug_mode )
         { 
             console.group( "organizationButtonOnClick() called" );
             console.log( "Checking if we're in user screen: answer = %o)", ( this.__context.location === this.__resources.__APP_LOCATION_USER ) );
@@ -1574,7 +1574,6 @@ statusText: "error"
             console.log( "ARG3: additionalButtonText = %o", additionalButtonText );
             console.log( "ARG4: additionalButtonHandle = %o", additionalButtonHandle );
             console.log( "ARG5: additionalButtonOnclick = %o", additionalButtonOnclick );
-
         }
         /* DebugOnlyCode - END */
 
@@ -1583,7 +1582,7 @@ statusText: "error"
         {
             if( errorResponse.status === 0 && typeof( overrideMessage ) === "undefined" || overrideMessage === null || overrideMessage === "error" )
             {
-                    overrideMessage = "Could not connect to API, Please check your internet connection";
+                overrideMessage = "Could not connect to API, Please check your internet connection";
             }
         }
         catch(e2) { }
