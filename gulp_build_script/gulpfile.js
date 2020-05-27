@@ -199,7 +199,7 @@ function zipSource()
         .pipe(gulp.dest(paths.dist));
 }
 
-function zipBuild()
+function zipTmp()
 {
     return gulp.src(paths.tmp+'**/*')
         .pipe(zip('ZenchimpApp_'+version+'-Production.zip'))
@@ -251,7 +251,7 @@ const build = series(
         injectTmpCss, 
         parallel( removeTmpPrefixesJs, removeTmpPrefixesCss ), 
         removeTmpEmptyDirs, 
-        parallel( cleanBuild, zipSource, zipBuild ), 
+        parallel( cleanBuild, zipSource, zipTmp ), 
         moveTmpToBuild, 
         cleanTmp 
       );
