@@ -18,7 +18,8 @@ const commonUtils   = require('./inc/commonutils');
 const concatUtils   = require('./inc/concatutils');
 const injectUtils   = require('./inc/injectutils');
 
-const version = "v2_0_1"
+const version = "v2_0_1";
+
 const paths = {
     src   : '../src/',
     tmp   : '../tmp/',
@@ -45,22 +46,11 @@ const paths = {
         'translations/*.json',
         'assets/img/**/*.{png,gif,jpg,jpeg,svg}',
         'assets/templates/**/*.hdbs',
-        'assets/templates/logo*.png'
+        'assets/logo*.png'
     ]
 };
 
-function concatenateSrcJs( )
-{
-    return concatUtils.task_concatenateJS ( 
-        paths.src + paths.js.subPath,
-        paths.tmp + paths.js.subPath,
-        paths.js.glob_both,
-        paths.js.glob_both.substr(3),
-        paths.denyDirName
-    ).on( 'error', commonUtils.handleError );
-}
-
-function refreshSrcJs() {
+function refreshSrcInjectJs() {
     return injectUtils.task_InjectIntoHtml_FromSettings( 
                 paths.src + paths.html.subPath + paths.html.glob_index,
                 paths.src + paths.html.subPath,
@@ -72,7 +62,7 @@ function refreshSrcJs() {
            );
 }
 
-function refreshSrcCss() {
+function refreshSrcInjectCss() {
     return injectUtils.task_InjectIntoHtml_FromSettings( 
                 paths.src + paths.html.subPath + paths.html.glob_index,
                 paths.src + paths.html.subPath,
@@ -84,15 +74,27 @@ function refreshSrcCss() {
            );
 }
 
+function concatenateSrcJsToTmp( )
+{
+    return concatUtils.task_concatenateJS ( 
+        paths.src + paths.js.subPath,
+        paths.tmp + paths.js.subPath,
+        paths.js.glob_both,
+        paths.js.glob_both.substr(3),
+        paths.denyDirName
+    ).on( 'error', commonUtils.handleError );
+}
+
 function minifyTmpJs() {
+    //Get normal default settings then convert them to:
+    // - not do any file renaming and 
+    // - use tmp as both the source and dest
     let minifyTmpSettings = jsUtils.getDefaultJsSettings( paths );
-    
-    //convers normal settings to not do any renaming and to also use tmp as the source and dest
     minifyTmpSettings.src = paths.tmp  + paths.js.subPath + paths.js.glob_js_only;
     minifyTmpSettings.rename = { newExtension: minifyTmpSettings.rename.newExtension }; //remove other rename settings, thhey're not needed in tmp directory
-    minifyTmpSettings.deleteSrcFilesFromThisDirAfterProcessing_USE_WITH_CAUTION = paths.tmp + paths.js.subPath;
-    //log( minifyTmpSettings );
+
     return jsUtils.minifyJs_FromSettings( minifyTmpSettings );
+    //this leaves orig .js files alongside the new .min.js so is normally followed by a call to deleteJsOnlyFromTmp
 }
 
 function deleteJsOnlyFromTmp()
@@ -100,20 +102,26 @@ function deleteJsOnlyFromTmp()
     return fsUtils.rm( paths.tmp + paths.js.subPath + paths.js.glob_js_only, false, true, false );
 }
 
-function minifySrcJs() {
+function minifySrcJsToTmp() {
+    //Get normal default settings then convert them to:
+    // - not minify any files or folders flagged for concatenation (these are handled already by concatenateSrcJsToTmp and it's following functions
     let minifyTmpSettings = jsUtils.getDefaultJsSettings( paths );
     minifyTmpSettings.filterFunction = concatUtils.filterFunction_NoConcatFiles; //dont process filed to be concatted
+    
     return jsUtils.minifyJs_FromSettings( minifyTmpSettings );
 }
 
-function copySrcMinJs(cb) {
+function copySrcMinJsToTmp(cb) {
+    //any files that are already minified in src need copying manually as they are not 
+    //copied over by the minification and routines above
     gulp.src ( paths.src + paths.js.subPath + paths.js.glob_min_js )
     .pipe( filter( filterFunction_DeniedDir, {restore: false, passthrough: false} ) )
     .pipe( gulp.dest( paths.tmp + paths.js.subPath ) )
     .on( 'end', function() { cb(); } );
 }
 
-function html(cb) {
+function copySrcHtmlToTmp(cb) {
+    //manually copy HTML files from src to tmp
     gulp.src(paths.src + paths.html.subPath + paths.html.glob)
         .pipe( filter( filterFunction_DeniedDir, {restore: false, passthrough: false} ) )
         .pipe(gulp.dest(paths.tmp + paths.html.subPath))
@@ -121,6 +129,7 @@ function html(cb) {
 }
 
 function css(cb) {
+    //manually copy CSS files from src to tmp
     gulp.src(paths.src + paths.css.subPath + paths.css.glob)
         .pipe( filter( filterFunction_DeniedDir, {restore: false, passthrough: false} ) )
         .pipe(gulp.dest(paths.tmp + paths.css.subPath))
@@ -128,6 +137,7 @@ function css(cb) {
 }
 
 function copyStaticFiles(cb) {
+    //copy all other files needed from src to tmp
     gulp.src( paths.copy_files.map( glob => paths.src + glob ), { base: paths.src } )
         .pipe( filter( filterFunction_DeniedDir, {restore: false, passthrough: false } ) )
         .pipe( gulp.dest( paths.tmp ) )
@@ -196,10 +206,6 @@ function zipBuild()
         .pipe(gulp.dest(paths.dist));
 }
 
-gulp.task('watch', () => {
-  watch(minifyJsSettings.src, { ignoreInitial: false }, gulp.series('minifyJs') );
-});
-
 function cleanTmp() {
   return fsUtils.rm( paths.tmp + '/**/*', false, true );
 }
@@ -211,7 +217,12 @@ function cleanBuild() {
 
 function moveTmpToBuild () {
     return gulp.src(paths.tmp + '**/*')
-        .pipe( gulp.dest( paths.build ) )
+        .pipe( gulp.dest( paths.build ) );
+}
+
+/* Common util functions */
+function filterFunction_DeniedDir( vinylFile ) {
+    return commonUtils.filterFunction_DenyDir_FromSettings( vinylFile, paths.denyDirName );
 }
 
 function TEST(cb) {
@@ -219,53 +230,55 @@ function TEST(cb) {
     cb();
 }
 
-exports.TEST = series( zipSource, zipBuild );
-exports.TEST2 = copyStaticFiles;
+/* combination tasks */
+const refreshSrcHtmlInject = series( 
+        refreshSrcInjectJs, 
+        refreshSrcInjectCss 
+      );
 
-/* exports */
-exports.concatenateSrcJs = concatenateSrcJs;
-exports.minifyTmpJs = minifySrcJs;
-exports.deleteJsOnlyFromTmp = deleteJsOnlyFromTmp;
-exports.minifySrcJs = minifySrcJs;
-exports.copySrcMinJs = copySrcMinJs;
-exports.js = series( concatenateSrcJs, minifyTmpJs, deleteJsOnlyFromTmp, parallel( minifySrcJs, copySrcMinJs ) );
-exports.testJs = series( cleanTmp, concatenateSrcJs, minifyTmpJs, deleteJsOnlyFromTmp, parallel( minifySrcJs, copySrcMinJs ) );
-
-exports.html = html;
-exports.css = css;
-exports.refreshSrcHtml = series( refreshSrcJs, refreshSrcCss );
-exports.injectTmp = series( injectTmpJs, injectTmpCss );
-exports.build = series( 
-        cleanTmp, 
-        concatenateSrcJs, 
+const srcJsToTmp = series( 
+        concatenateSrcJsToTmp, 
         minifyTmpJs, 
         deleteJsOnlyFromTmp, 
-        parallel( minifySrcJs, copySrcMinJs, html, css, copyStaticFiles), 
+        gulp.parallel( minifySrcJsToTmp, copySrcMinJsToTmp ) 
+      );
+
+const build = series( 
+        cleanTmp, 
+        srcJsToTmp,
+        parallel( copySrcHtmlToTmp, css, copyStaticFiles), 
         injectTmpJs, 
         injectTmpCss, 
         parallel( removeTmpPrefixesJs, removeTmpPrefixesCss ), 
         removeTmpEmptyDirs, 
         parallel( cleanBuild, zipSource, zipBuild ), 
         moveTmpToBuild, 
-        cleanTmp );
+        cleanTmp 
+      );
 
-exports.default = function() {
-  return gulp.series('build');
-};
+gulp.task('watch', () => {
+  watch( paths.src + paths.js.subPath + paths.js.glob_both, 
+         { ignoreInitial: false }, 
+         refreshSrcHtmlInject );
+});
+
+/* exports */
+
+exports.TEST = TEST;
+exports.srcJsToTmp = srcJsToTmp;
+exports.refreshSrcHtmlInject = refreshSrcHtmlInject;
+exports.build = build;
+
+exports.default = build;
 
 
+
+
+
+/* not used but might be useful in future */
 function deleteTmpDeniedDirs() {
     return fsUtils.deleteDeniedDirs( paths.tmp, paths.denyDirName );
 }
-
-
-function filterFunction_DeniedDir( vinylFile ) {
-    return commonUtils.filterFunction_DenyDir_FromSettings( vinylFile, paths.denyDirName );
-}
-
-
-
-
 
 /*
   // Gulp and plugins
