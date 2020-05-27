@@ -5,7 +5,10 @@ Just install and configure to map the zendesk fields to the mailchimp fields and
 It used to work really well and I used it commercially over a year. - A fully working V2 will be released soon.
 
 # Screenshots
-**Mac Screenshot 1               Mac Screenshot 2**\
+<img src="https://raw.githubusercontent.com/up-n-running/ZenChimp-Zendesk-App-Mailchimp-Sync/master/extras/screenshots/fullscreen-nomodal.png">\
+<img src="https://raw.githubusercontent.com/up-n-running/ZenChimp-Zendesk-App-Mailchimp-Sync/master/extras/screenshots/fullscreen-modal.png">\
+\
+**Sync Popup Window (out of sync)              Sync Popup Window (in sync)**\
 <img src="https://raw.githubusercontent.com/up-n-running/ZenChimp-Zendesk-App-Mailchimp-Sync/master/extras/screenshots/modal-notinsync.png" height="300">    <img src="https://raw.githubusercontent.com/up-n-running/ZenChimp-Zendesk-App-Mailchimp-Sync/master/extras/screenshots/modal-insync.png" height="300">\
 \
 
