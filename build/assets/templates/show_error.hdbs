@@ -16,9 +16,9 @@
         {{/unless}}
 
         <div class="page_control">
-            <button class="btn error_go_back" onclick="zenChimpPlugin.resetAppIfPageFullyLoaded(); return false;">Go Back</button>
-            {{#if additionalButtonHandle}}
-                <button class="btn {{additionalButtonHandle}}" onclick="return zenChimpPlugin.{{additionalButtonOnclick}};">{{#if additionalButtonText}}{{additionalButtonText}}{{/if}}{{#unless additionalButtonText}}OK{{/unless}}</button>
+            <button class="btn {{mainButtonClass}}" onclick="zenChimpPlugin.resetAppIfPageFullyLoaded(); return false;">Go Back</button>
+            {{#if additionalButtonText}}
+                <button class="btn {{additionalButtonClass}}" onclick="return zenChimpPlugin.{{additionalButtonOnclick}};">{{#if additionalButtonText}}{{additionalButtonText}}{{/if}}{{#unless additionalButtonText}}OK{{/unless}}</button>
             {{/if}}
         </div>
     </div>

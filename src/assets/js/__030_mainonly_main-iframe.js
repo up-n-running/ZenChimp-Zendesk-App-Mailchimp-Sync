@@ -4,6 +4,7 @@ var zenChimpPlugin = pluginFactory( thisV2Client );
 
 thisV2Client.invoke('resize', { width: '100%', height: '200px' });
 thisV2Client.on('app.registered', init);
+thisV2Client.on('modalClosedAfterSync', () => { zenChimpPlugin.resetAppIfPageFullyLoaded(); } );
 
 function init() 
 {

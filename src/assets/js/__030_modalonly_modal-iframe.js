@@ -44,7 +44,13 @@ function init()
     /* DebugOnlyCode - END */ 
 }
 
+thisV2Client.on('modal.close', () => { closeButtonOnClick(); });
+
 function closeButtonOnClick() {
     thisV2Client.invoke('destroy');
+    if( typeof( thisV2Client.syncButtonPressed ) !== 'undefined' && thisV2Client.syncButtonPressed )
+    {
+        parentClient.trigger('modalClosedAfterSync');
+    }
     return false;
 }

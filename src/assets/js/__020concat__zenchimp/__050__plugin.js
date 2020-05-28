@@ -39,11 +39,7 @@ var pluginFactory = function( thisV2Client ) {
 
     __events: 
     {
-        'ticket.requester.id.changed'   : 'resetAppIfPageFullyLoaded',
-        'user.email.changed'            : 'resetAppIfPageFullyLoaded',
-        'user.id.changed'               : 'resetAppIfPageFullyLoaded',
-        'user.name.changed'             : 'resetAppIfPageFullyLoaded',
-        'user.organizations.changed'    : 'resetAppIfPageFullyLoaded',
+        'user.id.changed'               : 'resetAppIfPageFullyLoaded', //dont think this is a real one!
 
         //main screen events
         'user.mailshot_customer_type.changed' : '__userScreenCustomerTypeFieldChanged',
@@ -284,6 +280,14 @@ var pluginFactory = function( thisV2Client ) {
         if( debug_mode ) { console.log( "Made public facing copy of __resources: this.resources = %o", this.resources ); }
         /* DebugOnlyCode - END */
         
+        //wire up event listeners
+        thisV2Client.on('ticket.requester.id.changed'   , () => { this.resetAppIfPageFullyLoaded(); } );
+        thisV2Client.on('user.email.changed'            , () => { this.resetAppIfPageFullyLoaded(); } );
+        thisV2Client.on('user.name.changed'             , () => { this.resetAppIfPageFullyLoaded(); } );
+        thisV2Client.on('user.organizations.changed'    , () => { this.resetAppIfPageFullyLoaded(); } );
+        thisV2Client.on('*.changed'              , ( event ) => { this.__formFieldChanged( event ); } );
+        
+        
         //housekeeping (functions in this.__requests cannot access parent plugin when they in turn reference 'this' so we have a pointer back - it's just a javascript function context thing)
         this.__requests.__parentPlugin = this;
         this.__modalMode = ( typeof modalMode === 'undefined' || modalMode === null ) ? false : modalMode;
@@ -413,12 +417,13 @@ var pluginFactory = function( thisV2Client ) {
         /* DebugOnlyCode - END */
     },
 
-    resetAppIfPageFullyLoaded: function() 
+    resetAppIfPageFullyLoaded: function()
     {
         /* DebugOnlyCode - START */
         if( debug_mode ) 
         { 
             console.group( "resetAppIfPageFullyLoaded called" );
+            console.dir( this );
             console.log( "this.__isFullyInitialized = " + this.__isFullyInitialized + " and this.__resources.__APP_LOCATION_TICKET = " + this.__resources.__APP_LOCATION_TICKET + " and this.__context.location = %s", ( this.__context === null ? '[this.__context = null]' : this.__context.location ) );
         }
         /* DebugOnlyCode - END */
@@ -440,26 +445,22 @@ var pluginFactory = function( thisV2Client ) {
             return;
         } 
 
-        //dont continue if page not fuly loaded yet
-        if( !this.__isFullyInitialized && this.__context.location === this.__resources.__APP_LOCATION_TICKET && this.__zendesk_user === null )
+        //dont continue if we havent fetched the user id from the ticket sidebar OR user sidebar yet
+        if( !this.__isFullyInitialized && this.__zendesk_user === null )
         {
+            let clientUserPropertyToFetch = this.__context.location === this.__resources.__APP_LOCATION_TICKET ? 'ticket.requester' : 'user';
             /* DebugOnlyCode - START */
-            if( debug_mode ) { console.log( "CHECK FAILED: this.__zendesk_user === null, running this.__v2Client.get('ticket.requester')" ); console.groupEnd();}
+            if( debug_mode ) { console.log( "CHECK FAILED: this.__zendesk_user === null, running this.__v2Client.get('" + clientUserPropertyToFetch + "')" ); console.groupEnd();}
             /* DebugOnlyCode - END */
-            this.__v2Client.get('ticket.requester').then( (ticketRequester) => {
-                this.__zendesk_user = ticketRequester['ticket.requester'];
+            this.__v2Client.get( clientUserPropertyToFetch ).then( (onScreenUserOrTicketRequesterUser) => {
+                let clientUserPropertyToFetch = this.__context.location === this.__resources.__APP_LOCATION_TICKET ? 'ticket.requester' : 'user';
+
+                this.__zendesk_user = onScreenUserOrTicketRequesterUser[clientUserPropertyToFetch];
                 /* DebugOnlyCode - START */
-                if( debug_mode ) { console.log( "SET this.__zendesk_user = ticketRequester['ticket.requester'] EVEN THOUGH TICKETREQUESTER IS NOT A PROPER ZENDEDK USER OBJECT, ITS A ZENDESK API RETURN OBJECT BUT IT DOES STORE THE USERS ID AND WE'LL USE THIS VERY VERY SOON TO LOAD THE PROPER ZENDESKUSER OBJECT AND REPLACE IT WITH THAT SO NO HARM DONE: this.__zendesk_user = %o", this.__zendesk_user ); }
+                if( debug_mode ) { console.log( "SET this.__zendesk_user = ticketRequester['" + clientUserPropertyToFetch + "'] EVEN THOUGH TICKETREQUESTER IS NOT A PROPER ZENDEDK USER OBJECT, ITS A ZENDESK API RETURN OBJECT BUT IT DOES STORE THE USERS ID AND WE'LL USE THIS VERY VERY SOON TO LOAD THE PROPER ZENDESKUSER OBJECT AND REPLACE IT WITH THAT SO NO HARM DONE: this.__zendesk_user = %o", this.__zendesk_user ); }
                 /* DebugOnlyCode - END */
                 this.resetAppIfPageFullyLoaded();
             }, ( error ) => { this.__switchToErrorMessage(error, "Could not get the ticket info, please check your internet connection and try again");} );
-            return;
-        }
-        if( !this.__isFullyInitialized &&this.__context.location === this.__resources.__APP_LOCATION_USER && ( this.user().id() === null || this.user().email() === null || this.user().name() === null ) )
-        {
-            /* DebugOnlyCode - START */
-            if( debug_mode ) { console.log( "CHECK FAILED: this.user().id() = " + this.user().id() + " and this.user().email() = " + this.user().email() + " and this.user().name() = " + this.user().name() ); console.groupEnd();}
-            /* DebugOnlyCode - END */
             return;
         }
 
@@ -473,19 +474,21 @@ var pluginFactory = function( thisV2Client ) {
         if(this.__context.location === this.__resources.__APP_LOCATION_TICKET )
         {
             this.switchToLoadingScreen( "Loading Ticket Requester..." );
-            makeAjaxCall(
-                this,
-                this.__requests.__getZendeskUser( this.__zendesk_user.id ), 
-                this.__getZendeskUser_Done,  
-                this.__switchToErrorMessage 
-            );
         }
         else if(this.__context.location === this.__resources.__APP_LOCATION_USER )
         {
             //CHECK HERE IF USER WAS UPDATED ELSEWHERE!
             this.switchToLoadingScreen( "Loading Zendesk User..." );
-            this.getUserFromFrameworkInUserSidebarLocation();
+            console.warn( "MAYBE NEED TO REPLACE THIS CODE WITH A CALL TO this.getUserFromFrameworkInUserSidebarLocation(); IN WHICH WE MIGHT BE ABLE TO CREATE THE ZENDESK USER OJBECT FROM THE EXISTING TEMP ZENDESK USER OBJECT (this.__zendesk_user) RETURNED FROM ResetAppIfNotFullyLoaded()" );
         }
+
+        makeAjaxCall(
+            this,
+            this.__requests.__getZendeskUser( this.__zendesk_user.id ), 
+            this.__getZendeskUser_Done,  
+            this.__switchToErrorMessage 
+        );
+
         this.__isFullyInitialized = true;
 
         /* DebugOnlyCode - START */
@@ -499,61 +502,156 @@ var pluginFactory = function( thisV2Client ) {
     },
     // </editor-fold>
 
-    //MAIN SCREEN UTILITY FUNCTIONS
+    // <editor-fold defaultstate="collapsed" desc="User Screen Event Handlers">
     __hideFieldsIfInUserLocation: function() 
     {
-            if( this.__context.location === this.__resources.__APP_LOCATION_USER )
-            {
-                    _.each([this.__resources.__USER_FIELD_HANDLE_CUSTOMER_TYPE], function(f) 
-                    {
-                    var field = this.userFields(f);
+        //a lot of work just to hide the 'mailshot customer type' drop down from the user sidebar 
+        /* DebugOnlyCode - START */
+        if( debug_mode ) 
+        { 
+            console.group( "__hideFieldsIfInUserLocation() called" );
+            console.log( "this.__context.location = " + this.__context.location + " and this.__resources.__APP_LOCATION_USER = " + this.__resources.__APP_LOCATION_USER );
+        }
+        /* DebugOnlyCode - END */
 
-                            if (field && field.isVisible()) 
-                            {
-                              field.hide();
-                            }
-                    }, this);
-            }	
+        /* DebugOnlyCode - START */
+        if( debug_mode ) { console.log( "CALLING this.__v2Client.get( 'userFields:" + this.__resources.__USER_FIELD_HANDLE_CUSTOMER_TYPE + ".isVisible' ) PROMISE to hide field if it is" ); }
+        /* DebugOnlyCode - END */   
+
+        if( this.__context.location === this.__resources.__APP_LOCATION_USER )
+        {
+            this.__v2Client.get( 'userFields:' + this.__resources.__USER_FIELD_HANDLE_CUSTOMER_TYPE + '.isVisible' ).then( (isVisibleResult) => {
+                /* DebugOnlyCode - START */
+                if( debug_mode ) { console.group( "PROMISE RETURNED: get( 'userFields:...' )().then" ); console.log( "PROMISE RETURNED: this.__v2Client.get( 'userFields:...' ).then( (isVisibleResult) => {...}       isVisibleResult = %o", isVisibleResult ); }
+                /* DebugOnlyCode - END */
+                
+                if( isVisibleResult[ 'userFields:' + this.__resources.__USER_FIELD_HANDLE_CUSTOMER_TYPE + '.isVisible' ] )
+                {
+                    /* DebugOnlyCode - START */
+                    if( debug_mode ) {  console.log( "HIDING USER FIELD: Calling client.invoke( 'userFields:" + this.__resources.__USER_FIELD_HANDLE_CUSTOMER_TYPE + ".hide' );" ); }
+                    /* DebugOnlyCode - END */
+                    this.__v2Client.invoke( 'userFields:' + this.__resources.__USER_FIELD_HANDLE_CUSTOMER_TYPE + '.hide' );
+                }
+                
+                /* DebugOnlyCode - START */
+                if( debug_mode ) { console.groupEnd(); }
+                /* DebugOnlyCode - END */
+            }, ( error ) => { this.__switchToErrorMessage(error, "Could access a Zendesk User Field with a Field Key of '" + this.__resources.__USER_FIELD_HANDLE_CUSTOMER_TYPE + "' Please check your internet connection or reinstall the app if this issue persists;");} );
+        }
+       
+        /* DebugOnlyCode - START */
+        if( debug_mode ) 
+        { 
+            console.log( "Finished" );
+            console.groupEnd();
+        }
+        /* DebugOnlyCode - END */
     },
 
     //---EXTERNAL FIELD SCREEN CHANGE EVENTS
     __formFieldChanged: function( event )
     {
-            let matchedZDFieldName = null;
-            if(this.__context.location === this.__resources.__APP_LOCATION_USER )
-            {
-                    let fieldName = event.propertyName;
-                    for( let i=0; i < this.__field_maps.__user.length; i++)
-                    {
-                            if( fieldName === "user."+this.__field_maps.__user[i].zendesk_field )
-                            {
-                                    matchedZDFieldName = this.__field_maps.__user[i].zendesk_field;
-                                    break;
-                            }
-                    }
-            }
+        /* DebugOnlyCode - START */
+        if( debug_mode ) 
+        { 
+            console.group( "__formFieldChanged( event ) called" );
+            console.log( "ARG1: event = %o", event );
+            console.log( "Checking if in user location: %o" + this.__context.location === this.__resources.__APP_LOCATION_USER )
+        }
+        /* DebugOnlyCode - END */
+        
+        let matchedZDFieldName = null;
+        if(this.__context.location === this.__resources.__APP_LOCATION_USER )
+        {
+            let fieldName = event.propertyName;
 
-            //if it's a dependant 'extra' field
-            if( matchedZDFieldName!==null && typeof( this.__zendesk_user ) !== "undefined" && this.__zendesk_user !== null )
+            //first check if its the big field: user.mailshot_customer_type
+            if( fieldName === "user."+this.__resources.__USER_FIELD_HANDLE_CUSTOMER_TYPE )
             {
-                    this.__zendesk_user.findExtraFieldByName( matchedZDFieldName, true ).value = event.newValue;
-                    this.switchToMainTemplate();
+                /* DebugOnlyCode - START */
+                if( debug_mode ) { console.log( "MAPPED FIELD FOUND: CUSTOMER TYPE. Calling __userScreenCustomerTypeFieldChanged( '%s' );", event.newValue ); }
+                /* DebugOnlyCode - END */
+                this.__userScreenCustomerTypeFieldChanged( event.newValue );
             }
+            else
+            {
+                for( let i=0; i < this.__field_maps.__user.length; i++)
+                {
+                    if( fieldName === "user."+this.__field_maps.__user[i].zendesk_field )
+                    {
+                        matchedZDFieldName = this.__field_maps.__user[i].zendesk_field;
+                        /* DebugOnlyCode - START */
+                        if( debug_mode ) { console.log( "MAPPED FIELD FOUND: matchedZDFieldName = '%s'", matchedZDFieldName ); }
+                        /* DebugOnlyCode - END */
+                        break;
+                    }
+                }
+            }
+        }
+
+        //if it's a dependant 'extra' field
+        if( matchedZDFieldName!==null && typeof( this.__zendesk_user ) !== "undefined" && this.__zendesk_user !== null )
+        {
+                this.__zendesk_user.findExtraFieldByName( matchedZDFieldName, true ).value = event.newValue;
+                /* DebugOnlyCode - START */
+                if( debug_mode ) { console.log( "Updated correcponding value in this.__zendesk_user = %o", this.__zendesk_user ); }
+                /* DebugOnlyCode - END */
+                this.switchToMainTemplate();
+        }
+        
+        /* DebugOnlyCode - START */
+        if( debug_mode ) 
+        { 
+            console.log( "Finished" );
+            console.groupEnd();
+        }
+        /* DebugOnlyCode - END */
     },	
 
-    __userScreenCustomerTypeFieldChanged: function(evt)
+    __userScreenCustomerTypeFieldChanged: function( newValue )
     {
-            //fetch new value from field and old value from user
-            let oldCustomerType = this.__zendesk_user.customer_type;
-            let newCustomerTypeSelected = this.user().customField( this.__resources.__USER_FIELD_HANDLE_CUSTOMER_TYPE );
-            this.__changeCustomerType( oldCustomerType, newCustomerTypeSelected );
+        /* DebugOnlyCode - START */
+        if( debug_mode ) 
+        { 
+            console.group( "__userScreenCustomerTypeFieldChanged( newValue ) called" );
+            console.log( "ARG1: newValue = %o", newValue );
+        }
+        /* DebugOnlyCode - END */
+        
+        let oldCustomerType = this.__zendesk_user.customer_type;
+        this.__zendesk_user.customer_type = newValue;
+        this.__changeCustomerType( oldCustomerType, newValue );
+        
+        /* DebugOnlyCode - START */
+        if( debug_mode ) 
+        { 
+            console.log( "Finished" );
+            console.groupEnd();
+        }
+        /* DebugOnlyCode - END */
     },
+    // </editor-fold>
 
-    //---APP FIELD ONCLICK EVENT FUNCTIONS
     // <editor-fold defaultstate="collapsed" desc="OnClick Functions">
     syncButtonFromModalOnClick: function() 
     {
+        /* DebugOnlyCode - START */
+        if( debug_mode ) 
+        { 
+            console.group( "syncButtonFromModalOnClick() called" );
+        }
+        /* DebugOnlyCode - END */
+        
+        this.syncButtonPressed = true; //We use this when we close modal window so we know to remind parent instance to refresh
         this.__syncExistingUserToMailchimp( this.__zendesk_user, true );
+           
+        /* DebugOnlyCode - START */
+        if( debug_mode ) 
+        { 
+            console.log( "Finished, returning false;" );
+            console.groupEnd();
+        }
+        /* DebugOnlyCode - END */
         return false;
     },    
     
@@ -613,7 +711,7 @@ var pluginFactory = function( thisV2Client ) {
             this,
             this.__requests.__createOrUpadateMailChimpListMember( this.__mailshot_sync_user, true ), 
             this.__createOrUpadateMailChimpListMember_Done,  
-            this.__get_or_createOrUpadateMailChimpListMember_OnFail
+            this.__get_or_createOrUpadate3rdPartyMember_OnFail
         );
         
         /* DebugOnlyCode - START */
@@ -632,29 +730,20 @@ var pluginFactory = function( thisV2Client ) {
         if( debug_mode ) 
         { 
             console.group( "excludeButtonOnClick() called" );
-            console.log( "Checking if we're in user screen: answer = %o)", ( this.__context.location === this.__resources.__APP_LOCATION_USER ) );
+            console.log( "Cloning this.__zendesk_user, setting .customer_type to '"+this.__resources.__CUSTOMER_TYPE_EXCLUDE+"' then making __updateZendeskUser AJAX Call");
         }
         /* DebugOnlyCode - END */ 
 
-        if( this.__context.location === this.__resources.__APP_LOCATION_USER )
-        {
-            this.switchToLoadingScreen( "Updating Zendesk User" );
-            this.user().customField( this.__resources.__USER_FIELD_HANDLE_CUSTOMER_TYPE, this.__resources.__CUSTOMER_TYPE_EXCLUDE );
-            //this triggers __userScreenCustomerTypeFieldChanged
-        }
-        else 
-        {
-            //update via zendesk apis
-            let updatedUserToSave = this.__zendesk_user.clone();
-            updatedUserToSave.customer_type = this.__resources.__CUSTOMER_TYPE_EXCLUDE;
-            this.switchToLoadingScreen( "Updating Zendesk User..." );
-            makeAjaxCall(
-                this,
-                this.__requests.__updateZendeskUser( updatedUserToSave ), 
-                this.__updateZendeskUser_Done,
-                this.__switchToErrorMessage 
-            );
-        }
+        //update via zendesk apis
+        let updatedUserToSave = this.__zendesk_user.clone();
+        updatedUserToSave.customer_type = this.__resources.__CUSTOMER_TYPE_EXCLUDE;
+        this.switchToLoadingScreen( "Updating Zendesk User..." );
+        makeAjaxCall(
+            this,
+            this.__requests.__updateZendeskUser( updatedUserToSave ), 
+            this.__updateZendeskUser_Done,
+            this.__switchToErrorMessage 
+        );
 
         /* DebugOnlyCode - START */
         if( debug_mode ) 
@@ -672,29 +761,20 @@ var pluginFactory = function( thisV2Client ) {
         if( debug_mode )
         { 
             console.group( "organizationButtonOnClick() called" );
-            console.log( "Checking if we're in user screen: answer = %o)", ( this.__context.location === this.__resources.__APP_LOCATION_USER ) );
+            console.log( "Cloning this.__zendesk_user, setting .customer_type to '"+this.__resources.__CUSTOMER_TYPE_USE_ORGANIZATION+"' then making __updateZendeskUser AJAX Call");
         }
         /* DebugOnlyCode - END */ 
 
-        if(this.__context.location === this.__resources.__APP_LOCATION_USER )
-        {
-            this.switchToLoadingScreen( "Updating Zendesk User" );
-            this.user().customField( this.__resources.__USER_FIELD_HANDLE_CUSTOMER_TYPE, this.__resources.__CUSTOMER_TYPE_USE_ORGANIZATION );
-            //this triggers __userScreenCustomerTypeFieldChanged
-        }
-        else 
-        {
-            //update via apis
-            let updatedUserToSave = this.__zendesk_user.clone();
-            updatedUserToSave.customer_type = this.__resources.__CUSTOMER_TYPE_USE_ORGANIZATION;
-            this.switchToLoadingScreen( "Updating Zendesk User..." );
-            makeAjaxCall(
-                this,
-                this.__requests.__updateZendeskUser( updatedUserToSave ), 
-                this.__updateZendeskUser_Done,  
-                this.__switchToErrorMessage 
-            );
-        }
+        //update via apis
+        let updatedUserToSave = this.__zendesk_user.clone();
+        updatedUserToSave.customer_type = this.__resources.__CUSTOMER_TYPE_USE_ORGANIZATION;
+        this.switchToLoadingScreen( "Updating Zendesk User..." );
+        makeAjaxCall(
+            this,
+            this.__requests.__updateZendeskUser( updatedUserToSave ), 
+            this.__updateZendeskUser_Done,  
+            this.__switchToErrorMessage 
+        );
 
         /* DebugOnlyCode - START */
         if( debug_mode ) 
@@ -709,36 +789,23 @@ var pluginFactory = function( thisV2Client ) {
     standardButtonOnClick: function()
     {
         /* DebugOnlyCode - START */
-        if( debug_mode ) 
+        if( debug_mode )
         { 
             console.group( "standardButtonOnClick() called" );
-            console.log( "Checking if we're on user screen. this.__context.location = '%s' and this.__resources.__APP_LOCATION_USER = '%s'", this.__context.location, this.__resources.__APP_LOCATION_USER );
+            console.log( "Cloning this.__zendesk_user, setting .customer_type to '"+this.__resources.__CUSTOMER_TYPE_USE_DEFAULT+"' then making __updateZendeskUser AJAX Call");
         }
-        /* DebugOnlyCode - END */
+        /* DebugOnlyCode - END */ 
         
-        if(this.__context.location === this.__resources.__APP_LOCATION_USER )
-        {
-            this.switchToLoadingScreen( "Updating Zendesk User..." );
-            this.user().customField( this.__resources.__USER_FIELD_HANDLE_CUSTOMER_TYPE, this.__resources.__CUSTOMER_TYPE_USE_DEFAULT );
-            //this triggers __userScreenCustomerTypeFieldChanged to be changed so no need to make any further calls
-        }
-        else 
-        {
-            let updatedUserToSave = this.__zendesk_user.clone();
-            updatedUserToSave.customer_type = this.__resources.__CUSTOMER_TYPE_USE_DEFAULT;
-            
-            /* DebugOnlyCode - START */ 
-            if( debug_mode ) { console.log( "We're on ticket screen so i've cloned user and updated it's customer_type now going to call __updateZendeskUser ajax (which in turn will trigger __changeCustomerType().\n\nthis.__zendesk_user = %o\n\ncloned updatedUserToSave = %o", this.__zendesk_user, updatedUserToSave); }
-            /* DebugOnlyCode - END */ 
+        let updatedUserToSave = this.__zendesk_user.clone();
+        updatedUserToSave.customer_type = this.__resources.__CUSTOMER_TYPE_USE_DEFAULT;
 
-            this.switchToLoadingScreen( "Updating Zendesk User..." );
-            makeAjaxCall(
-                this,
-                this.__requests.__updateZendeskUser( updatedUserToSave ), 
-                this.__updateZendeskUser_Done,  
-                this.__switchToErrorMessage 
-            );
-        }
+        this.switchToLoadingScreen( "Updating Zendesk User..." );
+        makeAjaxCall(
+            this,
+            this.__requests.__updateZendeskUser( updatedUserToSave ), 
+            this.__updateZendeskUser_Done,  
+            this.__switchToErrorMessage 
+        );
         
         /* DebugOnlyCode - START */
         if( debug_mode ) 
@@ -787,7 +854,7 @@ var pluginFactory = function( thisV2Client ) {
         //otherwise we've finished getting the user object
         else
         {
-            this.fetchMailchimpObjectIfNecessary();
+            this.__fetchMailchimpObjectIfNecessary();
         }
 
         this.__zendesk_user = this.__createZendeskUserFromAPIReturnData( userObjectFromDataAPI );
@@ -932,7 +999,7 @@ var pluginFactory = function( thisV2Client ) {
         else
         {
             //we now have full populated user object to save complete with org object and no more changes so continue to load form
-            this.fetchMailchimpObjectIfNecessary();
+            this.__fetchMailchimpObjectIfNecessary();
         }
 
         /* DebugOnlyCode - START */
@@ -971,8 +1038,6 @@ var pluginFactory = function( thisV2Client ) {
         }
         else console.warn( "createZendeskOrganizationFromAPIReturnData called but organizationObjectFromDataAPI = null or doesnt contain a organization property - this should never happen!");
 
-
-
         /* DebugOnlyCode - START */
         if( debug_mode ) 
         { 
@@ -984,7 +1049,8 @@ var pluginFactory = function( thisV2Client ) {
     },
     // </editor-fold>
     
-    getUserFromFrameworkInUserSidebarLocation: function()
+    //DEPRECATED FUNCTION _ NO LONGER USED
+    __getUserFromFrameworkInUserSidebarLocation: function()
     {
             //console.log( 'Starting getUserFromFrameworkInUserSidebarLocation' );
 
@@ -1012,15 +1078,15 @@ var pluginFactory = function( thisV2Client ) {
             }
 
             //console.log( "Finished getUserFromFrameworkInUserSidebarLocation, this.__zendesk_user = " );console.dir( this.__zendesk_user );
-            this.fetchMailchimpObjectIfNecessary();
+            this.__fetchMailchimpObjectIfNecessary();
     },    
     
-    fetchMailchimpObjectIfNecessary: function()
+    __fetchMailchimpObjectIfNecessary: function()
     {
         /* DebugOnlyCode - START */
         if( debug_mode ) 
         { 
-            console.group( "fetchMailchimpObjectIfNecessary() called" );
+            console.group( "__fetchMailchimpObjectIfNecessary() called" );
             console.log( "If included, Check if __mailshot_sync_user already loaded? \nthis.__zendesk_user.isIncluded() = %o \nthis.__mailshot_sync_user = %o",  this.__zendesk_user.isIncluded(), this.__mailshot_sync_user );
         }
         /* DebugOnlyCode - END */
@@ -1033,7 +1099,7 @@ var pluginFactory = function( thisV2Client ) {
                 this,
                 this.__requests.__getMailChimpListMember( this.__zendesk_user.email, this ), 
                 this.retrievedMailchimpSubscriber,  
-                this.__get_or_createOrUpadateMailChimpListMember_OnFail 
+                this.__get_or_createOrUpadate3rdPartyMember_OnFail 
             );
         }
         else
@@ -1102,25 +1168,26 @@ var pluginFactory = function( thisV2Client ) {
             }
         }
 
-            //if ORGANIZATION or STANDARD was selected
-            if( newType === this.__resources.__CUSTOMER_TYPE_USE_ORGANIZATION || newType === this.__resources.__CUSTOMER_TYPE_USE_DEFAULT  )
-            {
-                    //if ORGANIZATION or STANDARD  were selected AND it was previously set to EXCLUDE or NOT SET
-                    if( oldType === this.__resources.__CUSTOMER_TYPE_EXCLUDE || oldType === this.__resources.__CUSTOMER_TYPE_NOT_SET )
-                    {
-                            this.syncNewUserToMailchimp( this.__zendesk_user );
-                    }
-                    //if ORGANIZATION or STANDARD were selected AND it was previously set to the other one
-                    else if( oldType !== newType )
-                    {
-                            this.__syncExistingUserToMailchimp( this.__zendesk_user, true );
-                    }
-                    else
-                    {
-                            //value hasnt actually changed so just go back to form
-                            this.switchToMainTemplate();
-                    }
-            }
+        //if ORGANIZATION or STANDARD was selected
+        //TO DO: PUT DEBUGGING INTO THIS SECTION
+        if( newType === this.__resources.__CUSTOMER_TYPE_USE_ORGANIZATION || newType === this.__resources.__CUSTOMER_TYPE_USE_DEFAULT  )
+        {
+                //if ORGANIZATION or STANDARD  were selected AND it was previously set to EXCLUDE or NOT SET
+                if( oldType === this.__resources.__CUSTOMER_TYPE_EXCLUDE || oldType === this.__resources.__CUSTOMER_TYPE_NOT_SET )
+                {
+                        this.syncNewUserToMailchimp( this.__zendesk_user );
+                }
+                //if ORGANIZATION or STANDARD were selected AND it was previously set to the other one
+                else if( oldType !== newType )
+                {
+                        this.__syncExistingUserToMailchimp( this.__zendesk_user, true );
+                }
+                else
+                {
+                        //value hasnt actually changed so just go back to form
+                        this.switchToMainTemplate();
+                }
+        }
             
         /* DebugOnlyCode - START */
         if( debug_mode ) 
@@ -1133,6 +1200,7 @@ var pluginFactory = function( thisV2Client ) {
 
 
     //MAILCHIMP SYNCING WRAPPER FUNCTIONS
+    //TO DO: PUT DEBUGGING INTO THIS SECTION AND MOVE TO mailchimp-connector.js
     retrievedMailchimpSubscriber: function( returnedMailchimpUser ) 
     {
             //console.log( "started retrievedMailchimpSubscriber, returnedMailchimpUser = returnedMailchimpUser" );console.dir( returnedMailchimpUser ); ////console.log( "" );
@@ -1185,7 +1253,7 @@ var pluginFactory = function( thisV2Client ) {
             this,
             this.__requests.__createOrUpadateMailChimpListMember( newMailChimpUserToSave, false ), 
             this.__createOrUpadateMailChimpListMember_Done,  
-            this.__get_or_createOrUpadateMailChimpListMember_OnFail 
+            this.__get_or_createOrUpadate3rdPartyMember_OnFail 
         );
 
         /* DebugOnlyCode - START */
@@ -1230,7 +1298,7 @@ var pluginFactory = function( thisV2Client ) {
             this,
             this.__requests.__createOrUpadateMailChimpListMember( newMailChimpUserToSave, true ), 
             this.__createOrUpadateMailChimpListMember_Done,  
-            this.__get_or_createOrUpadateMailChimpListMember_OnFail
+            this.__get_or_createOrUpadate3rdPartyMember_OnFail
         );
 
         /* DebugOnlyCode - START */
@@ -1251,17 +1319,13 @@ var pluginFactory = function( thisV2Client ) {
             console.log( "ARG1: mailchimpUser = %o", mailchimpUser );
         }
         /* DebugOnlyCode - END */
-        
-        //OLD CODE - no Pass or fail functojns were configured in events!!!!
-        //this.switchToLoadingScreen( "Deleting Mailchimp Member" );
-        //this.ajax( "__deleteMailChimpListMember", mailchimpUser );
             
         this.switchToLoadingScreen( "Deleting Mailchimp Member..." );
         makeAjaxCall(
             this,
             this.__requests.__deleteMailChimpListMember( mailchimpUser ), 
             null,  
-            null, //this shoudl call __get_or_createOrUpadateMailChimpListMember_OnFail ONLY 404 MESSAGE SHOUD BE DIFFERENT FOR DELETES!
+            null, //this shoudl call __get_or_createOrUpadate3rdPartyMember_OnFail ONLY 404 MESSAGE SHOUD BE DIFFERENT FOR DELETES!
             true
         );
 
@@ -1274,100 +1338,21 @@ var pluginFactory = function( thisV2Client ) {
         /* DebugOnlyCode - END */
     },
 
-    __get_or_createOrUpadateMailChimpListMember_OnFail: function( errorResponse ) 
+    __get_or_createOrUpadate3rdPartyMember_OnFail: function( errorResponse ) 
     {
         /* DebugOnlyCode - START */
         if( debug_mode ) 
         { 
-            console.group( "__get_or_createOrUpadateMailChimpListMember_OnFail(errorResponse) called" );
+            console.group( "__get_or_createOrUpadate3rdPartyMember_OnFail(errorResponse) called" );
             console.log( "ARG1: errorResponse = %o", errorResponse );
         }
-        /* DebugOnlyCode - END */
         
-        //check to see if we were in create only mode but the users email address was already found.
-        let redirectedToBespokeErrorPage = false;
-        try
-        {
-            /* DebugOnlyCode - START */
-            if( debug_mode ) { console.log( "PEEKING AT ERROR MESSAGE: running: let responseTextJSON = JSON.parse( errorResponse.responseText );"); }
-            /* DebugOnlyCode - END */
-            let responseTextJSON = JSON.parse( errorResponse.responseText );
-            /* DebugOnlyCode - START */
-            if( debug_mode ) { console.log( "now responseTextJSON = %o", responseTextJSON ); }
-            /* DebugOnlyCode - END */
-            
-            if( errorResponse.status === 400 && responseTextJSON.title === "Member Exists" )
-            {
-                this.__switchToErrorMessage( errorResponse, this.__zendesk_user.email + " already exists in mailchimp.<br /><br/>Do you want to override his/her details?", "Override", "error_override_mailchimp", "__createOrUpadateMailChimpListMember_Override_OnClick()" );
-                redirectedToBespokeErrorPage = true;
-            }
-            if( errorResponse.status === 404 /* && responseTextJSON.title === "Resource Not Found" */ ) //the old code commetned out stopped working when zendesk helpfully started overriding the 404 page with its own data thereby losing the returned error information!!!
-            { //need to alter this if this is ever called on delete as 404 should be handled differently on delete
-                this.__switchToErrorMessage( errorResponse, this.__zendesk_user.email + " doesn't exist in mailchimp.<br /><br/>Do you want to create a new record for him/her?", "Create New", "error_create_new_mailchimp", "__createOrUpadateMailChimpListMember_Add_New_OnClick()" );
-                redirectedToBespokeErrorPage = true;
-            }
-            
-            
-/*
-HERES AN EXAMPLE 405 ERROR FROM CONSOLE.LOG WHEN I TRIED TO DELETE A MAILCHIMP MEMBER THAT SHOULDNT BE DELETED:
-            
-AJAX FAIL: calling failure function 'null(response)', response = 
-{readyState: 4, responseJSON: {…}, responseText: "{"type":"http://developer.mailchimp.com/documentat…instance":"9bbc42cf-84b1-4f03-ba89-ae01e89304ad"}", status: 405, statusText: "error"}
-readyState: 4
-responseJSON:
-detail: "This list member cannot be removed.  Please contact support."
-instance: "9bbc42cf-84b1-4f03-ba89-ae01e89304ad"
-status: 405
-title: "Method Not Allowed"
-type: "http://developer.mailchimp.com/documentation/mailchimp/guides/error-glossary/"
-__proto__: Object
-responseText: "{"type":"http://developer.mailchimp.com/documentation/mailchimp/guides/error-glossary/","title":"Method Not Allowed","status":405,"detail":"This list member cannot be removed.  Please contact support.","instance":"9bbc42cf-84b1-4f03-ba89-ae01e89304ad"}"
-status: 405
-statusText: "error"
-__proto__: Object            
-
-
-
-
-HERES AN EXAMPLE 400 ERROR FROM CONSOLE.LOG WHEN I TRIED TO CREATE A MAILCHIMP MEMBER WITH INCOMPATIBLE DATA TYPES IM MERGE FIELDS:
-
-readyState: 4
-responseJSON:
-detail: "Your merge fields were invalid."
-errors: Array(1)
-0:
-field: "SEND_MAINT"
-message: "Value must be one of: Yes,  (not 1)"
-__proto__: Object
-length: 1
-__proto__: Array(0)
-instance: "77644a9d-0b09-44d1-aa3e-6bd55fc70eed"
-status: 400
-title: "Invalid Resource"
-type: "http://developer.mailchimp.com/documentation/mailchimp/guides/error-glossary/"
-__proto__: Object
-responseText: "{"type":"http://developer.mailchimp.com/documentation/mailchimp/guides/error-glossary/","title":"Invalid Resource","status":400,"detail":"Your merge fields were invalid.","instance":"77644a9d-0b09-44d1-aa3e-6bd55fc70eed","errors":[{"field":"SEND_MAINT","message":"Value must be one of: Yes,  (not 1)"}]}"
-status: 400
-statusText: "error"  
-*/             
-            
-            
-            
-        }
-        catch(e)
-        {
-            console.warn( "Could not JSON Parse errorResponse.responseText from get_or___createOrUpadateMailChimpListMember. errorResponse = %o\n\nparse exception: %o", errorResponse, e );
-        }
-
-        if( !redirectedToBespokeErrorPage )
-        {
-                this.__switchToErrorMessage( errorResponse );
-        }
+        __3rdParty_get_or_createOrUpadate3rdPartyMember_OnFail( this, errorResponse );
     
         /* DebugOnlyCode - START */
         if( debug_mode ) 
         { 
-            console.log( "Finished, redirectedToBespokeErrorPage = %o", redirectedToBespokeErrorPage );
+            console.log( "Finished" );
             console.groupEnd();
         }
         /* DebugOnlyCode - END */
@@ -1563,16 +1548,16 @@ statusText: "error"
         /* DebugOnlyCode - END */
     },
 
-    __switchToErrorMessage: function( errorResponse, overrideMessage, additionalButtonText, additionalButtonHandle, additionalButtonOnclick ) 
+    __switchToErrorMessage: function( errorResponse, overrideMessage, additionalButtonText, additionalButtonClass, additionalButtonOnclick ) 
     {
        /* DebugOnlyCode - START */
         if( debug_mode ) 
         { 
-            console.group( "__switchToErrorMessage ( errorResponse, overrideMessage, additionalButtonText, additionalButtonHandle ) called" );
+            console.group( "__switchToErrorMessage ( errorResponse, overrideMessage, additionalButtonText, additionalButtonClass ) called" );
             console.log( "ARG1: errorResponse = %o", errorResponse );
             console.log( "ARG2: overrideMessage = %o", overrideMessage );
             console.log( "ARG3: additionalButtonText = %o", additionalButtonText );
-            console.log( "ARG4: additionalButtonHandle = %o", additionalButtonHandle );
+            console.log( "ARG4: additionalButtonClass = %o", additionalButtonClass );
             console.log( "ARG5: additionalButtonOnclick = %o", additionalButtonOnclick );
         }
         /* DebugOnlyCode - END */
@@ -1591,8 +1576,9 @@ statusText: "error"
         {
           'errorResponse'		: errorResponse,
           'overrideMessage' 		: ( typeof( overrideMessage ) === "undefined" || overrideMessage === "error") ? null:  overrideMessage, /* sometimes just the string error is passed as the 2nd param!) */
+          'mainButtonClass'      : ( typeof( overrideMessage ) === "undefined" || overrideMessage === "error") ? 'btn-danger' : 'btn-warning',
           'additionalButtonText' 	: ( typeof( additionalButtonText ) === "undefined" ) ? null : additionalButtonText,
-          'additionalButtonHandle' 	: ( typeof( additionalButtonHandle ) === "undefined" ) ? null : additionalButtonHandle,
+          'additionalButtonClass' 	: ( typeof( additionalButtonClass ) === "undefined" ) ? null : additionalButtonClass,
           'additionalButtonOnclick' 	: ( typeof( additionalButtonOnclick ) === "undefined" ) ? null : additionalButtonOnclick
         };
 
@@ -1619,7 +1605,7 @@ statusText: "error"
        /* DebugOnlyCode - START */
         if( debug_mode ) 
         { 
-            console.group( "__validateFieldMappingsJSON( fieldMappingsJSONText, settingsName ) called" );
+            console.groupCollapsed( "__validateFieldMappingsJSON( fieldMappingsJSONText, settingsName ) called" );
             console.log( "ARG1: fieldMappingsJSONText = %o", fieldMappingsJSONText );
             console.log( "ARG2: settingsName = %o", settingsName );
             console.log( "Attempting to parse..." );

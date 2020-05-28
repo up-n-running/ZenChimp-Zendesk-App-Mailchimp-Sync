@@ -21,7 +21,8 @@ const fsUtils       = require('./fsutils');
  * @param {String} destHtmlDir
  * @param {String} startingDir
  * @param {Glob} globToMatch
- * @param {boolean} removePrefixes
+ * @param {boolean} removePrefixes Use this if it't the last time youre injecting and next step is to copy to build dir
+ * @param {boolean} removeTags Use this if it't the last time youre injecting and next step is to copy to build dir
  * @param {string} deniedDirName
  * @returns {unresolved}
  */
@@ -37,7 +38,7 @@ function task_InjectIntoHtml_FromSettings( targetHtmlGlob, destHtmlDir, starting
     log( "ARG7: deniedDirName = " + deniedDirName ); */
     
     //the isInjectableFile means it only returns files, no dirs, and only flies that arent flagged for 'noinject'
-    let dirWalkMatchFunction = function ( path, isDir ) { return isInjectableFileMatchingGlob( path, isDir, globToMatch ); }
+    let dirWalkMatchFunction = function ( path, isDir ) { return isInjectableFileMatchingGlob( path, isDir, globToMatch ); };
     //log( "dirWalkMatchFunction = " + dirWalkMatchFunction.toString()); 
 
     //walk filesystem to pick up array of files we need to inject, no noinject files will be returned and only files matchig globs will be returned and no tiles from a denied dir (eg temp) will be returned
@@ -68,7 +69,7 @@ function task_InjectIntoHtml_FromSettings( targetHtmlGlob, destHtmlDir, starting
         log( 'INJECT MODES: Files with Inject Mode "' + injectMode + '": ' + filesPerInjectMode[ injectMode ].length );
     }
     
-    let targetHtmlFileStream  = gulp.src( targetHtmlGlob ).pipe( debug() );
+    let targetHtmlFileStream  = gulp.src( targetHtmlGlob );
     targetHtmlFileStream = subtask_injectByInjectMode( 
         targetHtmlFileStream, 
         destHtmlDir, 
@@ -131,13 +132,15 @@ function subtask_injectByInjectMode( targetHtmlFileStream, destHtmlDir, injectMo
         //log( 'adding rename function to remove prefixes');
         filesToInjectFileStream  = gulp.src( injectedFileNameArray, {read: false, base: injectedFileBaseDir, cwdbase: true } )
                                            .pipe( naturalSort() )
-                                           .pipe( rename( prefixUtils.renameFunction_RemovePrefixes ) );                
+                                           .pipe( rename( prefixUtils.renameFunction_RemovePrefixes ) )
+                                           .pipe( debug() );
     }
     else
     {
         //log( ' NOT adding rename function to remove prefixes' );
         filesToInjectFileStream  = gulp.src( injectedFileNameArray, {read: false} )
-                                       .pipe( naturalSort() );
+                                       .pipe( naturalSort() )
+                                       .pipe( debug() );
     }
     return targetHtmlFileStream
         .pipe( inject( filesToInjectFileStream, injectTagOptions ) );

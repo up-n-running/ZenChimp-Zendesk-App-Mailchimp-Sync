@@ -111,6 +111,7 @@ footer.user_sync_footer
     padding-top: 4px;
     padding-left: 5px;
     height: 24px;
+    line-height: 1;
     overflow: hidden;
     text-overflow: ellipsis;
     display: inline-block;
@@ -150,7 +151,7 @@ footer.user_sync_footer
     background-color: #06A684;
     /* background-color: #03363D; */
     font-weight: bold;
-    
+    max-width: 274px;
     width: 40%;
 }
 
@@ -160,6 +161,7 @@ footer.user_sync_footer
     color: #484848;
     background-color: #42bdd3;
     font-weight: bold;
+    max-width: 274px;
     width: 40%;
 }
 
@@ -168,6 +170,7 @@ footer.user_sync_footer
     color: #484848;
     border-top-color: white;
     font-size: 12px;
+    max-width: 274px;
     width: 40%;
 }
 
@@ -194,6 +197,7 @@ footer.user_sync_footer
     border-top-color: white;
     border-bottom-color: white;
     border-right: #DB9595 solid 1px;
+    max-width: 274px;
     width: 40%;
 }
 
@@ -229,6 +233,7 @@ footer.user_sync_footer
 .user_sync_page #page_content .fixed tr.button-row td.sync-button-cell
 {
     width: 40%;
+    max-width: 274px;
 }
 
 .user_sync_page #page_content .fixed tr.button-row td button

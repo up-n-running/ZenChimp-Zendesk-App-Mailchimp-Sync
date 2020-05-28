@@ -91,7 +91,10 @@ function modal_createChildFromParent(context)
         url: 'assets/modal-iframe.html#parent_guid=' + encodeURIComponent( context.instanceGuid ) +
              '&parent_location=' + encodeURIComponent( context.location )
     };
-    thisV2Client.invoke('instances.create', options);
+    thisV2Client.invoke('instances.create', options).then( 
+        (success)=>{ console.log("SUCCESS CREATING MODAL, success = %o", success ); },
+        (error)=>{ console.error("FAILURE CREATING MODAL, success = %o", error ); }
+    );
     
     /* DebugOnlyCode - START */
     if( debug_mode ) 
