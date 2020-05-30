@@ -16,7 +16,7 @@
       "active" : "true",
       "type": "dropdown",
       "title": "Mailchimp Customer Display Name",
-      "description":"Customers beloning to this organisation can be synced down to mailchimp as such. When we make reference to their company name in their emails how should their company name display?"
+      "description":"Customers beloning to this organisation can be synced down to mailchimp as such. You may have different email templates in Mailchimp for some of your bigger clients place a value here that can be used in Mailchimp to determing the email template to use"
     }
   }
 }
