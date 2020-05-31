@@ -11,7 +11,7 @@
         </tr>
         {{#each sync_fields}}
         <tr{{#unless this.in_sync}} class="out-of-sync"{{/unless}}>
-            <td class="field_heading">{{this.label}}</td>
+            <td class="field_heading" title="{{this.label}}&#10;&#10;{{#if this.zd_field_key}}Zendesk {{this.zd_field_location}} field key: '{{this.zd_field_key}}'&#10;&#10;{{/if}}Mailchimp merge tag: *|{{this.mc_field_key}}|*">{{this.label}}</td>
             <td class="zd{{#unless this.zd_field_location}}_disabled{{/unless}} value">{{#if this.is_image}}{{#if this.zd_value}}<img style="margin-top: -7px" height="30" alt="Image Field Image Preview" src="{{this.zd_value}}" />{{else}}-{{/if}}{{else}}{{this.zd_value}}{{/if}}</td>
             <td class="mc value">{{#if this.is_image}}{{#if this.mc_value}}<img style="margin-top: -7px" height="30" alt="Image Field Image Preview" src="{{this.mc_value}}" />{{else}}-{{/if}}{{else}}{{this.mc_value}}{{/if}}</td> 
         </tr>
@@ -28,10 +28,8 @@
 </table>
 
 
-
-
 <script>
-$('.user_sync_page #page_content .fixed td').bind('mouseenter', function(){
+$('.user_sync_page #page_content .fixed td.value').bind('mouseenter', function(){
     var $this = $(this);
     $this.attr('title', $this.text() === '' ? '<No Value>' : $this.text() );
 });

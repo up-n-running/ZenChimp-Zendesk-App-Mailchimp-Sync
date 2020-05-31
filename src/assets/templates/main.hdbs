@@ -28,13 +28,13 @@
         {{#if display_params.user_in_sync}}
             <div class="information-text">
                 <p class="success" style="padding-bottom: 3px">{{zendesk_user.name}} is <a class="sync-popup-link" onclick="return syncButtonOnclick();">in sync</a></p>
-                {{#each mailchimp_user.extra_merge_fields}}
-                {{#unless this.field_def.zendesk_field}}
+                {{#each sync_fields}}
+                {{#if this.is_checkbox}}
                     <div class="mc-only-field">
-                        <input class="mc_only_field" id="MC_ONLY_{{this.field_def.mailchimp_field}}" name="MC_ONLY_{{this.field_def.mailchimp_field}}" onclick="return zenChimpPlugin.mailchimpOnlyField_OnClick(event);" value="1" type="checkbox" {{#if this.is_checkbox_ticked}}checked="checked" {{/if}}/>
-                        <label for="MC_ONLY_{{this.field_def.mailchimp_field}}">{{this.field_def.field_label}}</label>
+                        <input class="mc_only_field" id="{{this.checkbox_html_id}}" name="{{this.checkbox_html_id}}" onclick="return zenChimpPlugin.mailchimpOnlyField_OnClick(event);" value="1" type="checkbox" {{#if this.is_checkbox_ticked}}checked="checked" {{/if}}/>
+                        <label for="{{this.checkbox_html_id}}">{{this.label}}</label>
                     </div>
-                {{/unless}}
+                {{/if}}
                 {{/each}}
             </div>
         {{/if}}

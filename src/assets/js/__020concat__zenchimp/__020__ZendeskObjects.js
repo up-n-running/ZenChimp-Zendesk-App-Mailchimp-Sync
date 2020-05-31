@@ -1,38 +1,59 @@
-/* global Function, app */
+/* global Function, __app */
 
-/**
- *  * Constructor to create a new ZendeskOrganization
- * @param {Object} app The Zendesk App That is being used to call this constructor 
- * @param {int} id The Zendesk ID of organization
- * @param {string} name The Zendesk name of organization
- * @param {string} customer_type (value of organization's default customer_type field to assign to this user's org)
- * @returns {nm$_ZendeskUser.createZendeskOrganizationObject.zendeskOrgToReturn}
- */
+    /**
+     *  * Constructor to create a new ZendeskOrganization
+     * @param {Object} __app The Zendesk App That is being used to call this constructor 
+     * @param {int} id The Zendesk ID of organization
+     * @param {string} name The Zendesk name of organization
+     * @param {string} customer_type (value of organization's default customer_type field to assign to this user's org)
+     * @returns {ZendeskOrganization} Instantiated Object
+     */
     function ZendeskOrganization( app, id, name, customer_type )
     {
-        this.app = app;
-        this.id = id;
-        this.name = name;
-        this.customer_type = customer_type;
-        this.extra_org_fields = [];
+        this.__app = app;
+        this.id = id;        //probably could be minified but we keep in case we ever want to use a spoodef org object to speed up app
+        this.name = name;    //cant be minified without we use it in main hdbs template
+        this.__customer_type = customer_type;
+        this.__extra_org_fields = [];
 
-        for(var i = 0; i < app.field_maps.organisation.length; i++) 
+        for(var i = 0; i < app.__field_maps.__organisation.length; i++) 
         {
-            this.extra_org_fields[ i ] = { field_def: app.field_maps.organisation[ i ], value: null };
+            this.__extra_org_fields[ i ] = { __field_def: app.__field_maps.__organisation[ i ], __value: null };
         }        
     }
     ZendeskOrganization.prototype.populateExtraFieldsFromOrganizationAPIData = function( APIOrgData )
     {
-        for(var i = 0; i < this.extra_org_fields.length; i++) 
-        {
-            this.extra_org_fields[ i ].value = APIOrgData.organization_fields[ this.extra_org_fields[ i ].field_def.zendesk_field ];
+        /* DebugOnlyCode - START */ 
+        if( debug_mode ) 
+        { 
+            console.group( "new populateExtraFieldsFromOrganizationAPIData(APIOrgData) called" );
+            console.log( "ARG1: APIOrgData = %o", APIOrgData );
         }
+        /* DebugOnlyCode - END */
+        
+        for(var i = 0; i < this.__extra_org_fields.length; i++) 
+        {
+            let valueFromAPI = APIOrgData.organization_fields[ this.__extra_org_fields[ i ].__field_def.zendesk_field ];
+            if( typeof( valueFromAPI ) === 'undefined' )
+            {
+                throw new ReferenceError( "The Zendesk 'Organisation Field' with key '" + this.__extra_org_fields[ i ].__field_def.zendesk_field + '\' which you specified in your Field Mapping settings doesnt seem to exist in Zendesk yet.<br /><br />For help with your field mappings use our <a target="_blank" href="'+this.__app.__resources.__SETTINGS_HELPER_SPREADSHEET_DOWNLOAD_URL+'">Zenchimp App Settings Generator</a> spreadsheet.' );
+            }
+            this.__extra_org_fields[ i ].__value = APIOrgData.organization_fields[ this.__extra_org_fields[ i ].__field_def.zendesk_field ];
+        }
+        
+        /* DebugOnlyCode - START */ 
+        if( debug_mode ) 
+        { 
+            console.log( "Finished. this.__extra_org_fields = %o", this.__extra_org_fields );
+            console.groupEnd();
+        }
+        /* DebugOnlyCode - END */
     };
     ZendeskOrganization.prototype.populateExtraFieldsFromFrameworkOrgObject = function( frameworkOrgObject )
     {
-        for(var i = 0; i < this.extra_org_fields.length; i++) 
+        for(var i = 0; i < this.__extra_org_fields.length; i++) 
         {
-            this.extra_org_fields[ i ].value = frameworkOrgObject.customField( this.extra_org_fields[ i ].field_def.zendesk_field );
+            this.__extra_org_fields[ i ].__value = frameworkOrgObject.customField( this.__extra_org_fields[ i ].__field_def.zendesk_field );
         }
     };
     /**
@@ -41,12 +62,12 @@
      */
     ZendeskOrganization.prototype.clone = function()
     {
-        var clonedOrganization = new ZendeskOrganization( this.app, this.id, this.name, this.customer_type );
+        var clonedOrganization = new ZendeskOrganization( this.__app, this.id, this.name, this.__customer_type );
         //console.log( "cloning Org, this.name = '" + this.name + "', new ZendeskOrganization = ");
         //console.dir( clonedOrganization );
-        for(var i = 0; i < this.extra_org_fields.length; i++) 
+        for(var i = 0; i < this.__extra_org_fields.length; i++) 
         {
-            clonedOrganization.extra_org_fields[ i ] = { field_def: this.extra_org_fields[ i ].field_def, value: this.extra_org_fields[ i ].value };
+            clonedOrganization.__extra_org_fields[ i ] = { __field_def: this.__extra_org_fields[ i ].__field_def, __value: this.__extra_org_fields[ i ].__value };
         }
         //console.log( "finished cloning Org, clonedOrganization = ");
         //console.dir( clonedOrganization );
@@ -54,58 +75,123 @@
     };
 
 
-/**
- * Constructor to create a new ZendeskUser
- * @param {Object} app The Zendesk App That is being used to call this constructor 
- * @param {int} id The Zendesk ID of user
- * @param {string} name The Zendesk name of user (full name in 1 field for some reason)
- * @param {string} email (primary email address of user)
- * @param {string} customer_type (value of user's customer_type field defined in requirements.json)
- * @param {int} organization_id for this users primary organization
- * @returns {nm$_ZendeskUser.ZendeskUser.ZendeskUserAnonym$0} Instantiated Object but organization subobject remains null
- */
-    function ZendeskUser(app, id, name, email, customer_type, organization_id)
+    /**
+     * Constructor to either create from scratch or clone a new ZendeskUser from: EITHER a Zendesk User API return data object OR an existing ZendeskUser object to clone
+     * @param {Object} __app The Zendesk App That is being used to call this constructor 
+     * @param {Object} userObjectFromDataAPI the Zendesk User API return data object OR 
+     * @param {ZendeskUser} existing ZendeskUser object to clone (IF YOU ARE USING THIS ARGUMENT YOU MUST PASS IN null FOR userObjectFromDataAPI)
+     * * @returns {ZendeskUser} Instantiated Object with field mappings set up but organization subobject remains null to be populated as and when needed
+     */
+    function ZendeskUser( app, userObjectFromDataAPI, userObjectToClone )
     {
-        ////console.log( "Started ZendeskUser constructor with id=" + id + ", name = " + name + ", email = " + email +  ", customer_type = " + customer_type + ", app = ...");
-        ////console.dir( app );
-        this.app = app;
-        this.id = id;
-        this.name = name;
-        this.name_parts = null;
-        this.email = email;
-        this.customer_type = customer_type;
-        this.organization_id = ( typeof( organization_id ) === "undefined" ) ? null : organization_id; //this is underd to store the org id even though this info if available inside the attached org object.
-        this.orgObject = null;  //this will only be instantiated when needed, not now, even if there is an organization id
-        this.extra_user_fields = [];
+        /* DebugOnlyCode - START */ 
+        if( debug_mode ) 
+        { 
+            console.group( "new ZendeskUser (app, userObjectToClone) constructor called" );
+            console.log( "ARG1: app = %o", app );
+            console.log( "ARG2: userObjectToClone (of type '%s') = %o", typeof( userObjectToClone ), userObjectToClone );
+        }
+        /* DebugOnlyCode - END */ 
+        
+        if( userObjectFromDataAPI === null && userObjectToClone )
+        {            
+            /* DebugOnlyCode - START */ 
+            if( debug_mode ) { console.log( "CLONING existing ZendeskUser"); }
+            /* DebugOnlyCode - END */
+            
+            this.__app = app;
+            this.id = userObjectToClone.id;       //Cant be minified as we sometimes use a spoofed user object with id property
+            this.name = userObjectToClone.name;   //cant be minified without we use it in main hdbs template
+            this.__name_parts = null;
+            this.email = userObjectToClone.email; //TO DO: Can be minified
+            this.customer_type = userObjectToClone.customer_type;  //cant be minified we use it in main hdbs template
+            this.__organization_id = userObjectToClone.__organization_id;
+            this.__orgObject = ( userObjectToClone.__orgObject === null) ? null : userObjectToClone.__orgObject.clone();
+            this.__extra_user_fields = [];
+            
+            for(var i = 0; i < userObjectToClone.__extra_user_fields.length; i++) 
+            {
+                this.__extra_user_fields[ i ] = { field_def: userObjectToClone.__extra_user_fields[ i ].field_def, value: userObjectToClone.__extra_user_fields[ i ].value };
+            }
+        }
+        else
+        {
+            if( !userObjectFromDataAPI || !userObjectFromDataAPI.user )
+            {
+                throw new TypeError( "The Zendesk API used to get the user details returned no user information." );
+            }
 
-        for(var i = 0; i < app.field_maps.user.length; i++) 
-        {
-            this.extra_user_fields[ i ] = { field_def: app.field_maps.user[ i ], value: null };
+            if( typeof( userObjectFromDataAPI.user.user_fields.mailshot_customer_type ) === 'undefined' )
+            {
+                throw new ReferenceError( "The required Zendesk field with key mailshot_customer_type is missing. This should have been created during installation. Please reinstall or raise a bug using the link below" );
+            }
+
+            this.__app = app;
+            this.id = userObjectFromDataAPI.user.id;
+            this.name = userObjectFromDataAPI.user.name;
+            this.__name_parts = null;
+            this.email = userObjectFromDataAPI.user.email;
+            this.customer_type = userObjectFromDataAPI.user.user_fields.mailshot_customer_type;
+            this.__organization_id = ( typeof( userObjectFromDataAPI.user.organization_id ) !== 'undefined' && userObjectFromDataAPI.user.organization_id !== null ) ? userObjectFromDataAPI.user.organization_id : null; //being careful as sometimes users can be set to link through to more than one org depending on admin settings
+            this.__orgObject = null;  //this will only be instantiated when needed, not now, even if there is an organization id
+            this.__extra_user_fields = [];
+
+            for(var i = 0; i < app.__field_maps.__user.length; i++) 
+            {
+                this.__extra_user_fields[ i ] = { field_def: app.__field_maps.__user[ i ], value: null };
+            }
+
+            /* DebugOnlyCode - START */ 
+            if( debug_mode ) { console.log( "Completed part 1 of 2, basic user: this = %o", this); }
+            /* DebugOnlyCode - END */ 
+
+            //now set the optional extra user fields from returned API data
+            this.populateExtraFieldsFromUserAPIData( userObjectFromDataAPI.user );
+            
+            /* DebugOnlyCode - START */ 
+            if( debug_mode ) {  console.log( "Completed part 2 of 2, after populateExtraFieldsFromUserAPIData(...)"); }
+            /* DebugOnlyCode - END */
         }
+        
+        /* DebugOnlyCode - START */ 
+        if( debug_mode ) 
+        { 
+            console.log( "Finished constructor. this = %o", this);
+            console.groupEnd();
+        }
+        /* DebugOnlyCode - END */
     }
-    //get name part functions that convert to title case
-    ZendeskUser.prototype.getSalutation = function(){ this.populateNamePartsIfNecessary(); return ( this.name_parts.salutation === null ) ? "" : this.name_parts.salutation.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();}); }; //makes not null title case value
-    ZendeskUser.prototype.getForeName   = function(){ this.populateNamePartsIfNecessary(); return ( this.name_parts.firstName === null ) ? "" : this.name_parts.firstName.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();}); }; //makes not null title case value
-    ZendeskUser.prototype.getSurname    = function(){ this.populateNamePartsIfNecessary(); return  ( this.name_parts.lastName === null ) ? "" : this.name_parts.lastName.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();}); }; //makes not null title case value
-    ZendeskUser.prototype.populateNamePartsIfNecessary = function() 
-    { 
-        if( this.name_parts === null && this.name !== null  )
-        {
-            this.name_parts = this.app.parseNamesModule.parse( this.name.replace( "/", " " ).replace( ".", " " ).split(",").reverse().map(Function.prototype.call, String.prototype.trim).join(" ") );
-        }
-    };
+    
     ZendeskUser.prototype.populateExtraFieldsFromUserAPIData = function( APIUserData )
     {
-        for(var i = 0; i < this.extra_user_fields.length; i++) 
+        for(var i = 0; i < this.__extra_user_fields.length; i++) 
         {
-            this.extra_user_fields[ i ].value = APIUserData.user_fields[ this.extra_user_fields[ i ].field_def.zendesk_field ];
+            let valueFromAPI = APIUserData.user_fields[ this.__extra_user_fields[ i ].field_def.zendesk_field ];
+            if( typeof( valueFromAPI ) === 'undefined' )
+            {
+                throw new ReferenceError( "The Zendesk 'User Field' with key '" + this.__extra_user_fields[ i ].field_def.zendesk_field + '\' which you specified in your Field Mapping settings doesnt seem to exist in Zendesk yet.<br /><br />For help with your field mappings use our <a target="_blank" href="'+this.__app.__resources.__SETTINGS_HELPER_SPREADSHEET_DOWNLOAD_URL+'">Zenchimp App Settings Generator</a> spreadsheet.' );
+            }
+            this.__extra_user_fields[ i ].value = APIUserData.user_fields[ this.__extra_user_fields[ i ].field_def.zendesk_field ];
+        }
+    };
+
+
+    //get name part functions that convert to title case
+    ZendeskUser.prototype.getSalutation = function(){ this.populateNamePartsIfNecessary(); return ( this.__name_parts.salutation === null ) ? "" : this.__name_parts.salutation.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();}); }; //makes not null title case value
+    ZendeskUser.prototype.getForeName   = function(){ this.populateNamePartsIfNecessary(); return ( this.__name_parts.firstName === null ) ? "" : this.__name_parts.firstName.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();}); }; //makes not null title case value
+    ZendeskUser.prototype.getSurname    = function(){ this.populateNamePartsIfNecessary(); return  ( this.__name_parts.lastName === null ) ? "" : this.__name_parts.lastName.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();}); }; //makes not null title case value
+    ZendeskUser.prototype.populateNamePartsIfNecessary = function() 
+    { 
+        if( this.__name_parts === null && this.name !== null  )
+        {
+            this.__name_parts = this.__app.parseNamesModule.parse( this.name.replace( "/", " " ).replace( ".", " " ).split(",").reverse().map(Function.prototype.call, String.prototype.trim).join(" ") );
         }
     };
     ZendeskUser.prototype.populateExtraFieldsFromFrameworkUserObject = function( frameworkUserObject )
     {
-        for(var i = 0; i < this.extra_user_fields.length; i++) 
+        for(var i = 0; i < this.__extra_user_fields.length; i++) 
         {
-            this.extra_user_fields[ i ].value = frameworkUserObject.customField( this.extra_user_fields[ i ].field_def.zendesk_field );
+            this.__extra_user_fields[ i ].value = frameworkUserObject.customField( this.__extra_user_fields[ i ].field_def.zendesk_field );
         }
     };
     
@@ -115,160 +201,54 @@
      */  
     ZendeskUser.prototype.clone = function()
     {
-        //console.log( "Started ZendeskUser.prototype.clone with this=");
-        //console.dir( this );
-        //console.log( "and this.orgObject = ");
-        //console.dir( this.orgObject );
-        //var clonedUser = new this.app.ZendeskObjects.ZendeskUser( this.app, this.id, this.name, this.email, this.customer_type, this.organization_id );
-        var clonedUser = new ZendeskUser( this.app, this.id, this.name, this.email, this.customer_type, this.organization_id );
-        clonedUser.orgObject = ( this.orgObject === null) ? null : this.orgObject.clone();
-        for(var i = 0; i < this.extra_user_fields.length; i++) 
-        {
-            clonedUser.extra_user_fields[ i ] = { field_def: this.extra_user_fields[ i ].field_def, value: this.extra_user_fields[ i ].value };
-        }
-        //console.log( "Finished ZendeskUser.prototype.clone, returning:");
-        return clonedUser;
+        return new ZendeskUser( this.__app, null, this );
     };
 
-    ZendeskUser.prototype.isNotset = function() { return this.customer_type === this.app.resources.CUSTOMER_TYPE_NOT_SET; };
-    ZendeskUser.prototype.isExcluded = function() { return this.customer_type === this.app.resources.CUSTOMER_TYPE_EXCLUDE; };
-    ZendeskUser.prototype.isIncluded = function() { return this.customer_type === this.app.resources.CUSTOMER_TYPE_USE_ORGANIZATION || this.customer_type === this.app.resources.CUSTOMER_TYPE_USE_DEFAULT; };
-    ZendeskUser.prototype.isOrganization = function() { return this.customer_type === this.app.resources.CUSTOMER_TYPE_USE_ORGANIZATION; };
-    ZendeskUser.prototype.isDefault = function() { return this.customer_type === this.app.resources.CUSTOMER_TYPE_USE_DEFAULT; };
+    ZendeskUser.prototype.isNotset = function() { return this.customer_type === this.__app.resources.CUSTOMER_TYPE_NOT_SET; };
+    ZendeskUser.prototype.isExcluded = function() { return this.customer_type === this.__app.resources.CUSTOMER_TYPE_EXCLUDE; };
+    ZendeskUser.prototype.isIncluded = function() { return this.customer_type === this.__app.resources.CUSTOMER_TYPE_USE_ORGANIZATION || this.customer_type === this.__app.resources.CUSTOMER_TYPE_USE_DEFAULT; };
+    ZendeskUser.prototype.isOrganization = function() { return this.customer_type === this.__app.resources.CUSTOMER_TYPE_USE_ORGANIZATION; };
+    ZendeskUser.prototype.isDefault = function() { return this.customer_type === this.__app.resources.CUSTOMER_TYPE_USE_DEFAULT; };
 
-    ZendeskUser.prototype.belongsToOrganization = function() { return this.organization_id !== null; };
-    ZendeskUser.prototype.orgObjectIsPopulated = function() { return this.orgObject !== null; };
+    ZendeskUser.prototype.belongsToOrganization = function() { return this.__organization_id !== null; };
+    ZendeskUser.prototype.__orgObjectIsPopulated = function() { return this.__orgObject !== null; };
     ZendeskUser.prototype.getMailchimpCustomerType = function() 
     { 
+        /* DebugOnlyCode - START */ 
+        if( debug_mode ) 
+        { 
+            console.groupCollapsed( "new getMailchimpCustomerType() called" );
+            console.log( "this.customer_type = '%s'", this.customer_type );
+            console.log( "this.__app.__resources.__CUSTOMER_TYPE_USE_ORGANIZATION = '%s'", this.__app.__resources.__CUSTOMER_TYPE_USE_ORGANIZATION );
+            console.log( "this = %o", this );
+        }
+        /* DebugOnlyCode - END */
+
         if( typeof( this.customer_type ) === "undefined" || this.customer_type === null )
         {
             console.warn( "ZendeskUser.getMailchimpCustomerType() called with invalid customer_type, this = " );console.dir( this );
             return null;
         }
-        return this.customer_type === this.app.resources.CUSTOMER_TYPE_USE_ORGANIZATION ? this.orgObject.customer_type : this.app.field_maps.cust_type.default_value; 
+        
+        let custTypeToReturn = this.customer_type === this.__app.__resources.__CUSTOMER_TYPE_USE_ORGANIZATION ? this.__orgObject.__customer_type : this.__app.__field_maps.__cust_type.default_value; 
+        
+        /* DebugOnlyCode - START */ 
+        if( debug_mode ) 
+        { 
+            console.log( "Finished. custTypeToReturn = '%s'", custTypeToReturn );
+            console.groupEnd();
+        }
+        /* DebugOnlyCode - END */
+        return custTypeToReturn
     };
 
     ZendeskUser.prototype.findExtraFieldByName = function( fieldName, zdNotMcField )
     {
-        for(var i = 0; i < this.extra_user_fields.length; i++) 
+        for(var i = 0; i < this.__extra_user_fields.length; i++) 
         {
-            if( ( zdNotMcField && this.extra_user_fields[i].field_def.zendesk_field  === fieldName ) || ( !zdNotMcField && this.extra_user_fields[i].field_def.mailchimp_field === fieldName ) )
+            if( ( zdNotMcField && this.__extra_user_fields[i].field_def.zendesk_field  === fieldName ) || ( !zdNotMcField && this.__extra_user_fields[i].field_def.mailchimp_field === fieldName ) )
             {
-                return this.extra_user_fields[i];
+                return this.__extra_user_fields[i];
             }
         }
-    };
-
-    ZendeskUser.prototype.getFieldSyncInfo = function( mailChimpUser )
-    {
-        //console.log( "starting getFieldSyncInfo with the following 2 user objects" );
-        //console.dir( this ); //console.log( "" );
-        //console.dir( mailChimpUser ); //console.log( "" ); 
-        if( typeof( mailChimpUser ) === "undefined" || mailChimpUser === null )
-        {
-            return null;
-        }
-        if( typeof( this.customer_type ) === "undefined" || this.customer_type === null || this.isNotset() )
-        {
-            console.warn( "ZendeskUser.getFieldSyncInfo() called with invalid customer_type, this = " );console.dir( this );
-            return null;
-        }
-
-        //get the mandatory fields that are non-negotiable
-        var sync_fields = [
-            { label: "Email", mc_only: false, zd_field_location: "user", is_image: false, zd_value: this.email, mc_value: mailChimpUser.email_address, in_sync: ( this.email.toLowerCase() === mailChimpUser.email_address.toLowerCase() ) },
-            { label: "Name", mc_only: false, zd_field_location: "user", is_image: false, zd_value: this.name, mc_value: "[" + mailChimpUser.forename + "] [" + mailChimpUser.surname + "]", in_sync: ( mailChimpUser.forename.toLowerCase() === this.getForeName().toLowerCase() && mailChimpUser.surname.toLowerCase() === this.getSurname().toLowerCase() ) },
-            { label: "Customer Type", mc_only:false, zd_field_location: "user", is_image: false, zd_value: this.getMailchimpCustomerType(), mc_value: mailChimpUser.customer_type, in_sync: ( this.getMailchimpCustomerType() === mailChimpUser.customer_type ) } 
-        ];
-
-        var tempZdValue = null;
-        var tempMcValue = null;
-        var arrayIndex = 0;
-        //console.log( "about to start user fields, JSON:" );
-        //console.dir( sync_fields ); //console.log( "" );  
-        for( var i = 0; i < this.extra_user_fields.length; i++ )
-        {
-            tempZdValue = this.extra_user_fields[ i ].value;
-            tempMcValue = mailChimpUser.extra_merge_fields[ arrayIndex ].value;
-            tempZdValue = ( tempZdValue === null ) ? "" : tempZdValue; 
-            tempMcValue = ( tempMcValue === null ) ? "" : tempMcValue;
-            //add extra conversion here to cast tempMcValue to a string if necessary
-            sync_fields[ arrayIndex+3 ] = 
-            {
-                label: this.extra_user_fields[ i ].field_def.field_label,
-                zd_field_location: "user",
-                is_image: this.extra_user_fields[ i ].field_def.type === this.app.resources.TYPE_IMAGE,
-                zd_value: tempZdValue,
-                mc_value: tempMcValue,
-                in_sync: tempZdValue === tempMcValue //add extra conversion here to cast tempMcValue to a string if necessary
-            };
-            arrayIndex++;
-        }
-        //console.log( "done user fields JSON:" );
-        //console.dir( sync_fields ); //console.log( "" );  
-        for( i = 0; i < this.app.field_maps.organisation.length; i++ )
-        {
-            tempZdValue = this.isDefault() ? this.app.field_maps.organisation[ i ].default_value : ( this.isOrganization() ? this.orgObject.extra_org_fields[ i ].value : null );
-            tempMcValue = mailChimpUser.extra_merge_fields[ arrayIndex ].value;
-            tempZdValue = ( tempZdValue === null ) ? "" : tempZdValue; 
-            tempMcValue = ( tempMcValue === null ) ? "" : tempMcValue;
-            //add extra conversion here to cast tempMcValue to a string if necessary
-            sync_fields[ arrayIndex+3 ] = 
-            {
-                label: this.app.field_maps.organisation[ i ].field_label,
-                zd_field_location: "organisation",
-                is_image: this.app.field_maps.organisation[ i ].type === this.app.resources.TYPE_IMAGE,
-                zd_value: tempZdValue,
-                mc_value: tempMcValue,
-                in_sync: tempZdValue === tempMcValue //add extra conversion here to cast tempMcValue to a string if necessary
-            };
-            arrayIndex++;
-        }
-        //console.log( "done org fields JSON:" );
-        //console.dir( sync_fields ); //console.log( "" );
-        
-        for( i = 0; i < this.app.field_maps.mc_only.length; i++ )
-        {
-            tempMcValue = mailChimpUser.extra_merge_fields[ arrayIndex ].value;
-            tempMcValue = ( tempMcValue === null ) ? "" : tempMcValue;
-            //add extra conversion here to cast tempMcValue to a string if necessary
-            sync_fields[ arrayIndex+3 ] = 
-            {
-                label: this.app.field_maps.mc_only[ i ].field_label,
-                zd_field_location: null,
-                is_image: this.app.field_maps.mc_only[ i ].type === this.app.resources.TYPE_IMAGE,
-                is_checkbox: this.app.field_maps.mc_only[ i ].type === this.app.resources.TYPE_CHECKBOX,
-                is_checkbox_ticked: this.app.field_maps.mc_only[ i ].type !== this.app.resources.TYPE_CHECKBOX ? 
-                    null : 
-                    tempMcValue === "1" || tempMcValue === 1 ? true : false, 
-                zd_value: null,
-                mc_value: tempMcValue,
-                in_sync: true
-            };
-            arrayIndex++;
-        }   
-
-        return sync_fields;
-    };
-
-    ZendeskUser.prototype.isInSync = function( syncFields, mailChimpUser )
-    {
-        if( typeof( syncFields ) === "undefined" || syncFields === null )
-        {
-           syncFields = this.getFieldSyncInfo( mailChimpUser );
-        }
-
-        if( syncFields === null )
-        {
-            return false;
-        }
-
-        for(var i=0; i < syncFields.length; i++ )
-        {
-            if( !syncFields[ i ].in_sync )
-            {
-                return false;
-            }
-        }
-        return true;
     };

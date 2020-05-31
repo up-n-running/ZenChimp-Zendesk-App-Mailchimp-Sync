@@ -1,7 +1,14 @@
+
 var parentClient = null;
 var zenChimpPlugin = null;
-var urlParams = 
+var urlParams = null;
 
+if( debug_mode ) 
+{ 
+    console.log( "MODAL IFRAME.JS: ADDING EVENT HANDLER: thisV2Client.on('app.registered', init);" );
+}
+
+//thisV2Client = ZAFClient.init();
 //thisV2Client.invoke('resize', { width: '100%', height: '400px' });
 thisV2Client.on('app.registered', init);
 
@@ -46,11 +53,29 @@ function init()
 
 thisV2Client.on('modal.close', () => { closeButtonOnClick(); });
 
-function closeButtonOnClick() {
+function closeButtonOnClick() 
+{
+    /* DebugOnlyCode - START */
+    if( debug_mode ) 
+    { 
+        console.group( "POPUP:: closeButtonOnClick() called" );
+        console.log( "zenChimpPlugin.syncButtonPressed = %o", thisV2Client.syncButtonPressed );
+        console.log( "parentClient = %o", parentClient );
+    }
+    /* DebugOnlyCode - END */ 
+    
     thisV2Client.invoke('destroy');
-    if( typeof( thisV2Client.syncButtonPressed ) !== 'undefined' && thisV2Client.syncButtonPressed )
+    if( typeof( zenChimpPlugin.syncButtonPressed ) !== 'undefined' && zenChimpPlugin.syncButtonPressed )
     {
         parentClient.trigger('modalClosedAfterSync');
     }
+
+    /* DebugOnlyCode - START */  
+    if( debug_mode ) 
+    { 
+        console.log( "Finished closeButtonOnClick, returning false;" );
+        console.groupEnd();
+    }
+    /* DebugOnlyCode - END */
     return false;
 }

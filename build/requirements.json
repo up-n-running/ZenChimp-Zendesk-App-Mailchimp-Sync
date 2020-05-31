@@ -14,9 +14,9 @@
       "mailshot_customer_display_name": {
       "key": "mailshot_customer_display_name",
       "active" : "true",
-      "type": "dropdown",
-      "title": "Mailchimp Customer Display Name",
-      "description":"Customers beloning to this organisation can be synced down to mailchimp as such. When we make reference to their company name in their emails how should their company name display?"
+      "type": "text",
+      "title": "Mailchimp Organisation Display Name",
+      "description":"Customers beloning to this organisation can be synced down to mailchimp as such. You may have different email templates in Mailchimp for some of your bigger clients depending on their 'Organisation Name'"
     }
   }
 }

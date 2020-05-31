@@ -2,7 +2,7 @@
   "name": "Zenchimp Mailchimp Sync",
   "author": {
     "name": "John Milner",
-    "email": "john@upnruning.co.uk",
+    "email": "john@upnrunning.co.uk",
     "url": "www.upnrunning.co.uk"
   },
   "defaultLocale": "en",
@@ -13,7 +13,7 @@
       "user_sidebar": "assets/iframe.html"
     }
   },
-  "version": "2.0.0",
+  "version": "2.0.1",
   "frameworkVersion": "2.0",
   "parameters": [
     {
@@ -98,7 +98,7 @@
       "type": "multiline",
       "required": true,
       "secure": false,
-      "default": "[\r\n  { \"field_label\":\"Maintenance Emails\", \"mailchimp_field\": \"SEND_MAINT\", \"type\": \"checkbox\", \"default_value\": \"Yes\" },\r\n  { \"field_label\":\"VIP Promotion Emails\", \"mailchimp_field\": \"SEND_PROMO\", \"type\": \"checkbox\", \"default_value\":\"1\" },\r\n  { \"field_label\":\"Monthly Scorecards\", \"mailchimp_field\": \"SEND_SC\", \"type\": \"checkbox\", \"default_value\":\"0\" }\r\n]"
+      "default": "[\r\n  {\r\n    \"field_label\" : \"Maintenance Emails\",\r\n    \"mailchimp_field\" : \"SEND_MAINT\",\r\n    \"type\" : \"checkbox\",\r\n    \"value_if_ticked\" : \"Yes\",\r\n    \"value_if_unticked\" : \"\"\r\n  },\r\n  {\r\n    \"field_label\" : \"VIP Promotion Emails\",\r\n    \"mailchimp_field\" : \"SEND_PROMO\",\r\n    \"type\" : \"checkbox\",\r\n    \"value_if_ticked\" : \"1\",\r\n    \"value_if_unticked\" : \"0\"\r\n  },\r\n  {\r\n    \"field_label\" : \"Monthly Scorecard Emails\",\r\n    \"mailchimp_field\" : \"SEND_SC\",\r\n    \"type\" : \"checkbox\",\r\n    \"value_if_ticked\" : \"0\",\r\n    \"value_if_unticked\" : \"\"\r\n  }\r\n]"
     }
   ]
 }

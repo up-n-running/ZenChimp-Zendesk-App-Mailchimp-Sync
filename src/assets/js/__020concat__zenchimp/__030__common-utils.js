@@ -1,9 +1,10 @@
-var debug_mode = true;
+var debug_mode = false;
 /* DebugOnlyCode - START */
 debug_mode = true;
 /* DebugOnlyCode - END */ 
 
-var thisV2Client = ZAFClient.init();
+var thisV2Client = null;
+thisV2Client= ZAFClient.init();
 
 function switchToHdbsFileTemplate(templateUrl, viewData){
     /* DebugOnlyCode - START */
@@ -172,12 +173,12 @@ function makeAjaxCall( promiseFunctionContext, ajaxSettings, successFunction, fa
         },
         (response) => {
             /* DebugOnlyCode - START */
-            if( debug_mode ) { console.log( "AJAX FAIL: calling failure function '%s(response)', response = %o", (failFunction)?failFunction.name:failFunction, response ); }
+            if( debug_mode ) { console.log( "AJAX FAIL: NOT CALLING '%s(data)', CALLING failure function '%s(response)' INSTEAD, response = %o",  (successFunction)?successFunction.name:successFunction, (failFunction)?failFunction.name:failFunction, response ); }
             /* DebugOnlyCode - END */
             
             if( typeof failFunction === 'undefined' || failFunction === null )
             {
-                console.warn( "AJAX FAIL: and no failFunction was defined so no futher action can be taken to handle the error. error response = %o", response );
+                console.warn( "AJAX FAIL: NOT CALLING '%s(data)' AND NO failFunction WAS DEFINED so no futher action can be taken to handle the error. error response = %o",  (successFunction)?successFunction.name:successFunction, response );
             }
             else
             {

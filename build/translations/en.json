@@ -1,7 +1,9 @@
 {
   "app": {
-    "description": "Welcome Zenchimp Mailchimp Sync - No need to have the customer lists feature installed. Sync each customer on a user-by-user basis from the ticket or user screen whenever you're viewing his/her tickets or user screen. FOr each customer you can choose to sync to mailchimp account as a standalone user, sync user and selected organisation fields for a user linked to an organisation, or mark them as excluded from the sync.",
-    "name": "Mailchimp Mailshot Sync",
+    "short_description" : "Zenchimp - Sync users to Mailchimp, even without the 'Customer Lists' feature",
+    "long_description": "Welcome Zenchimp Mailchimp Sync - Map chosen Zendesk fields to your Mailchimp fields. Then whenever you viewing a user or one of their tickets in Zendesk this app will show you whether their details are in sync. Wee which fields have changed and synchronise the data at the click of a button. Select which mailshots the user is eligable for at the click of a button too. This app appears on the user screen and also the ticket screen. This app is designed for people who do not have the 'Customer Lists' feature in Zendesk as the official Mailchimp app does require this.",
+    "name": "Zenchimp",
+    "installation_instructions" : "Once installed you will be taken to the settings screen. Enter the details of your Mailchimp account to allow Zenchimp access to call the Mailchimp APIs. For the rest of the options you can choose the default options to get you started. Once you;re ready to get the most out of Zenchimp you can set up additional field mappings for your Zendesk User fields, Organisation fields, and even your Mailchimp only fields that do not have a corresponding field in Zendesk. There is a Zenchimp Setting Generator SPreadsheet packaged alongside this app to help you set this up with confidence.",
     "parameters": {
       "mailchimp_api_key" : { "label": "Mailchimp API Key", "helpText": "Login to Mailchimp --> Click your name at the top --> Account --> Extras --> API Keys --> Your API Keys --> Create a key if you dont alreaady have one" },
       "mailchimp_datacentre_prefix" : { "label": "Mailchimp Datacentre Prefix", "helpText": "Login to Mailchimp -->\r\nlook for the subdomain in the url after login: XXXX.admin.mailchimp.com" },
@@ -17,7 +19,7 @@
       "mailchimp_mailshot_only_field_mappings" : { "label": "Field Definitions for Mailchimp only fields", "helpText": "Define the Mailchimp only fields that dont exist in Zendesk\r\nFORMAT: JS array of JSON objects. eg:\r\n[ {field 1 mapping}, {field 2 mapping}, {field 3 mapping} ]" }
     }
   },
-  "loading": "Welcome Zenchimp Mailchimp Sync",
+  "loading": "Welcome to Zenchimp",
   "fetch": {
     "done": "Good",
     "fail": "Failed to fetch information from the server"

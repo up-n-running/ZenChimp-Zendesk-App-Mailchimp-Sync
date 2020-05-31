@@ -56,7 +56,7 @@ var pluginFactory = function( thisV2Client ) {
         {
             let userApiCallSettings = 
             {       
-                    url: 'https://upnrunning.zendesk.com/api/v2/users/'+encodeURIComponent(id)+'.json',
+                    url: '/api/v2/users/'+encodeURIComponent(id)+'.json',
                     type:'GET',
                     dataType: 'json'
             };
@@ -180,9 +180,15 @@ var pluginFactory = function( thisV2Client ) {
             mergeFields[ this.__parentPlugin.__settings.__mailchimp_merge_field_forename ] = mailchimpSyncUser.forename;
             mergeFields[ this.__parentPlugin.__settings.__mailchimp_merge_field_surname ] = mailchimpSyncUser.surname;
             mergeFields[ this.__parentPlugin.__settings.__mailchimp_list_field_customer_type_name ] = mailchimpSyncUser.customer_type;
+            let tempFieldDef = null;
+            let tempValue = null;
             for (let i=0; i < mailchimpSyncUser.extra_merge_fields.length; i++) 
             {
-                mergeFields[ mailchimpSyncUser.extra_merge_fields[ i ].field_def.mailchimp_field ] = mailchimpSyncUser.extra_merge_fields[ i ].value;
+                tempFieldDef = mailchimpSyncUser.extra_merge_fields[ i ].field_def;
+                tempValue = mailchimpSyncUser.extra_merge_fields[ i ].value;
+                //zendesk returns null for any field that's blank so while we may store them as null behind the scenes we need to convert this to empty string as mailchimp treats null as 'ignore this value'
+                tempValue = ( tempValue === null && tempFieldDef.type === this.__parentPlugin.__resources.__TYPE_TEXT ) ? "" : tempValue;
+                mergeFields[ tempFieldDef.mailchimp_field ] = tempValue;
             }
 
             let dataJSON = 				
@@ -293,7 +299,7 @@ var pluginFactory = function( thisV2Client ) {
         this.__modalMode = ( typeof modalMode === 'undefined' || modalMode === null ) ? false : modalMode;
             
         //get Common JS Modules (not sure if we need this - it's a bit extra doing it this way
-        this.zendeskObjectsModule = {ZendeskOrganization, ZendeskUser};
+        this.zendeskObjectsModule = {ZendeskOrganization};
         this.parseNamesModule = NameParse;
 
         //delcare other instance variables
@@ -369,7 +375,7 @@ var pluginFactory = function( thisV2Client ) {
 
             //setup private field mappings object (gets minified)
             this.__field_maps = {
-                __cust_type    : { zendesk_field: this.__resources.__ORG_FIELD_HANDLE_CUSTOMER_TYPE, mailchimp_field: this.__settings.__mailchimp_list_field_customer_type_name, type: this.__resources.__FIELD_TYPE_TEXT, default_value: this.__settings.__mailchimp_list_field_customer_type_default_value },
+                __cust_type    : { zendesk_field: this.__resources.__ORG_FIELD_HANDLE_CUSTOMER_TYPE, mailchimp_field: this.__settings.__mailchimp_list_field_customer_type_name, type: this.__resources.__TYPE_TEXT, default_value: this.__settings.__mailchimp_list_field_customer_type_default_value },
                 __organisation : this.__validateFieldMappingsJSON( returnedSettings.mailchimp_organization_field_mappings, 'Organisation Field Mapping', false ),
                 __user         : this.__validateFieldMappingsJSON( returnedSettings.mailchimp_user_field_mappings, 'User Field Mapping', false ),
                 __mc_only      : this.__validateFieldMappingsJSON( returnedSettings.mailchimp_mailshot_only_field_mappings, 'Mailchimp Only Field Mapping', true )
@@ -479,7 +485,6 @@ var pluginFactory = function( thisV2Client ) {
         {
             //CHECK HERE IF USER WAS UPDATED ELSEWHERE!
             this.switchToLoadingScreen( "Loading Zendesk User..." );
-            console.warn( "MAYBE NEED TO REPLACE THIS CODE WITH A CALL TO this.getUserFromFrameworkInUserSidebarLocation(); IN WHICH WE MIGHT BE ABLE TO CREATE THE ZENDESK USER OJBECT FROM THE EXISTING TEMP ZENDESK USER OBJECT (this.__zendesk_user) RETURNED FROM ResetAppIfNotFullyLoaded()" );
         }
 
         makeAjaxCall(
@@ -536,7 +541,7 @@ var pluginFactory = function( thisV2Client ) {
                 /* DebugOnlyCode - START */
                 if( debug_mode ) { console.groupEnd(); }
                 /* DebugOnlyCode - END */
-            }, ( error ) => { this.__switchToErrorMessage(error, "Could access a Zendesk User Field with a Field Key of '" + this.__resources.__USER_FIELD_HANDLE_CUSTOMER_TYPE + "' Please check your internet connection or reinstall the app if this issue persists;");} );
+            }, ( error ) => { this.__switchToErrorMessage(error, "Could not access a Zendesk User Field with a Field Key of '" + this.__resources.__USER_FIELD_HANDLE_CUSTOMER_TYPE + "' Please check your internet connection or reinstall the app. If this issue persists please raise a bug report below");} );
         }
        
         /* DebugOnlyCode - START */
@@ -648,7 +653,7 @@ var pluginFactory = function( thisV2Client ) {
         /* DebugOnlyCode - START */
         if( debug_mode ) 
         { 
-            console.log( "Finished, returning false;" );
+            console.log( "Finished, this.syncButtonPressed = %o, returning false;", this.syncButtonPressed );
             console.groupEnd();
         }
         /* DebugOnlyCode - END */
@@ -664,7 +669,6 @@ var pluginFactory = function( thisV2Client ) {
             console.log( "ARG1 event = %o)", event );
             console.log( "Searching through mailchimp user's extra_merge_fields looking for the one with no field_def.zendesk_field that links to event.target.id ('%s')", event.target.id );
         }
-        console.warn( "SHOULD CLONE MAILCHIMP USER IDEALLY AT THIS POINT AS WE'RE UPDATING FIELD AS IF CHECKBOX UPDATE HAS WORKED BEFORE ACTUALLY UPDATING IT IF UPDATE FAILS COULD END UP OUT OF SYNC BUT ONLY UNTIL NEXT APP REFRESH - UPDATE ACTUALLY IM NOT SURE THATS TRUE BECUASE IF THE MC UPDATE FAILS IT TAKES USER TO AN ERROR MESSAGE WHICH THEN FORCES APP REFRESH SO I THINK THIS IS THE BEST WAY - IN FACT IF WE WORK ON A CLONE THEN WERE GOING TO HAVE TO UPDATE USER OBJECT AFTER APP REFRESH WHICH COULD BE TIME CONSUMING");
         /* DebugOnlyCode - END */ 
         
         let tempField = null;
@@ -675,44 +679,32 @@ var pluginFactory = function( thisV2Client ) {
             if( typeof( tempField.field_def.zendesk_field ) === "undefined" && ( "MC_ONLY_" + tempField.field_def.mailchimp_field ) === event.target.id )
             {
                 /* DebugOnlyCode - START */
-                if( debug_mode ) { console.log( "Found it! tempField = %o,\nvalue beofre update: '%s'", tempField, tempField.value); }
+                if( debug_mode ) { console.log( "Found it! tempField = %o,\nvalue before update: '%s'", tempField, tempField.value); }
                 /* DebugOnlyCode - END */ 
                 
-                if( tempField.field_def.type === this.__resources.__TYPE_CHECKBOX )
-                {
-                    tempField.value = ( /* NEEDS MORE WORK BECAUSE  tempField.value COULD BE STRING OR NUMBER WHEREAS value-if-ticked IS ALWAYS A STRING SO HAVE TO CAST BEFORE CHECKING :(
-                 *                         WE ALSO HAVE TO DO THE SAME WORK IN getFieldSyncInfo so maybe split out into seperate function
-                                        tempField.value !== tempField.field_def.value-if-ticked && (
-                                            tempField.value === tempField.field_def.value-if-unticked || */
-                                            tempField.value === null ||    //this one and ones below guess at value as it's neither the specified ticked or unticked value
-                                            tempField.value === false ||
-                                            tempField.value === "0" ||
-                                            tempField.value === 0 ||
-                                            tempField.value === "" ||
-                                            tempField.value.toString().toUpperCase() === "NO" ||
-                                            tempField.value.toString().toUpperCase() === "FALSE" /* ) */
-                                       ) ? "1" : "0";  /* ) ? tempField.field_def.value-if-ticked : tempField.field_def.value-if-unticked; */
-                }
-                else
-                {
-                    console.error( "Unsupported field type '%s' (only 'checkbox' supported) on mailchimp extra merge field: %o" + tempField.type, tempField );
-                }
+                connector.__toggle3rdPartyOnlyCheckboxField( this, tempField );
                 
                 /* DebugOnlyCode - START */
                 if( debug_mode ) { console.log( "Value after update: '%s'", tempField.value); }
-                console.warn( 'Should implement proper value-if-ticked and value-if-unticked on settings object here rather than just 1 and 0' );
                 /* DebugOnlyCode - END */ 
             }
         }
 
         //now save the updated user in mailchimp
-        this.switchToLoadingScreen( "Updating Mailchimp Member..." );
-        makeAjaxCall(
-            this,
-            this.__requests.__createOrUpadateMailChimpListMember( this.__mailshot_sync_user, true ), 
-            this.__createOrUpadateMailChimpListMember_Done,  
-            this.__get_or_createOrUpadate3rdPartyMember_OnFail
-        );
+        if( tempField !== null )
+        {
+            this.switchToLoadingScreen( "Updating Mailchimp Member..." );
+            makeAjaxCall(
+                this,
+                this.__requests.__createOrUpadateMailChimpListMember( this.__mailshot_sync_user, true ), 
+                this.__createOrUpadateMailChimpListMember_Done,  
+                this.__get_or_createOrUpadate3rdPartyMember_OnFail
+            );
+        }
+        else
+        {
+            console.error( "Could not find merge tag on Mailchimp user whose merge field coresponds to the checkbox just clicked: '%s'. Mailchimp user this.__mailshot_sync_user = %o", event.target.id, this.__mailshot_sync_user );
+        }
         
         /* DebugOnlyCode - START */
         if( debug_mode ) 
@@ -846,7 +838,7 @@ var pluginFactory = function( thisV2Client ) {
             this.switchToLoadingScreen( "Loading Organization..." );
             makeAjaxCall(
                 this,
-                this.__requests.__getZendeskOrganizations( this.__zendesk_user.id, this.__zendesk_user.organization_id ), 
+                this.__requests.__getZendeskOrganizations( this.__zendesk_user.id, this.__zendesk_user.__organization_id ), 
                 this.__getZendeskOrganizations_Done,  
                 this.__switchToErrorMessage 
             );
@@ -873,40 +865,23 @@ var pluginFactory = function( thisV2Client ) {
         /* DebugOnlyCode - START */ 
         if( debug_mode ) 
         { 
-            console.group( "__createZendeskUserFromAPIReturnData (userObjectFromDataAPI) called" );
+            console.group( "__createZendeskUserFromAPIReturnData(userObjectFromDataAPI) called" );
             console.log( "ARG1: userObjectFromDataAPI = %o", userObjectFromDataAPI );
         }
         /* DebugOnlyCode - END */ 
-
-        var zendeskUserObjectToReturn = null;
-        if( userObjectFromDataAPI !== null )
-        {
-            zendeskUserObjectToReturn = new this.zendeskObjectsModule.ZendeskUser(
-                this, 
-                userObjectFromDataAPI.user.id,
-                userObjectFromDataAPI.user.name,
-                userObjectFromDataAPI.user.email,
-                userObjectFromDataAPI.user.user_fields.mailshot_customer_type,
-                ( typeof( userObjectFromDataAPI.user.organization_id ) !== 'undefined' && userObjectFromDataAPI.user.organization_id !== null ) ? userObjectFromDataAPI.user.organization_id : null //being careful as sometimes users can be set to link through to more than one org depending on admin settings
-            );
-            /* DebugOnlyCode - START */ 
-            if( debug_mode ) { console.log( "Completed part 1 of 2, basic user: zendeskUserObjectToReturn = %o", zendeskUserObjectToReturn); }
-            /* DebugOnlyCode - END */ 
-            
-            //now set the optional extra user fields from returned API data
-            zendeskUserObjectToReturn.populateExtraFieldsFromUserAPIData( userObjectFromDataAPI.user );
-            /* DebugOnlyCode - START */ 
-            if( debug_mode ) { console.log( "Completed part 2 of 2, populateExtraFieldsFromUserAPIData: zendeskUserObjectToReturn = %o", zendeskUserObjectToReturn); }
-            /* DebugOnlyCode - END */
-            
-            //we've kept a record of the org id if there is one but now leave org object as null as this info is not available on this API return data
+        
+        let zendeskUserObjectToReturn = null;
+        try{
+            zendeskUserObjectToReturn = new ZendeskUser( this, userObjectFromDataAPI );
+        } catch( e ) {   
+            console.warn( e );
+            this.__switchToErrorMessage( e, e.message ); 
         }
-        else console.error( "__createZendeskUserFromAPIReturnData called but userObjectFromDataAPI = null - this should never happen!");
 
         /* DebugOnlyCode - START */ 
         if( debug_mode ) 
         { 
-            console.log( "Finished, zendeskUserObjectToReturn = %o", this.__zendesk_user );
+            console.log( "Finished, zendeskUserObjectToReturn = %o", zendeskUserObjectToReturn );
             console.groupEnd();
         }
         /* DebugOnlyCode - END */ 
@@ -921,12 +896,23 @@ var pluginFactory = function( thisV2Client ) {
         { 
             console.group( "__updateZendeskUser_Done(userObjectFromDataAPI) called" );
             console.log( "ARG1: userObjectFromDataAPI = %o", userObjectFromDataAPI );
-            console.log( "Creating Zendesk User from API Return data, copying old orgObject onto it (as org remains unchanged), updating customer type and keeping track of old type", userObjectFromDataAPI );
+            console.log( "Creating Zendesk User from API Return data, copying old __orgObject onto it (as org remains unchanged), updating customer type and keeping track of old type", userObjectFromDataAPI );
         }
         /* DebugOnlyCode - END */
         
-        let returnedUser = this.__createZendeskUserFromAPIReturnData( userObjectFromDataAPI );
-        returnedUser.orgObject = this.__zendesk_user.orgObject;  //user object was updated but the org object wasn't so copy the proper org object from org API call on init for this basic one created by the above method
+        //create new user from update API call and copy across the org object onto it 
+        //(which is unchanged by update user API Call) 
+        //and also remember old customer type
+        let returnedUser = null;
+        try
+        {
+            returnedUser = new ZendeskUser( this, userObjectFromDataAPI );
+        }
+        catch( e )
+        {   
+            this.__switchToErrorMessage( e, e.message ); 
+        }
+        returnedUser.__orgObject = this.__zendesk_user.__orgObject;  //user object was updated but the org object wasn't so copy the proper org object from org API call on init for this basic one created by the above method
         let oldCustomerType = this.__zendesk_user.customer_type;
         this.__zendesk_user = returnedUser;
 
@@ -934,15 +920,15 @@ var pluginFactory = function( thisV2Client ) {
         if( debug_mode ) 
         { 
             console.log( "Done oldCustomerType = '%s' and the newly updated this.__zendesk_user is now: %o", oldCustomerType, this.__zendesk_user );
-            console.log( "If we just switched to Organisation customer type then this.__zendesk_user.orgObject MAY need populating. Checking..." );
+            console.log( "If we just switched to Organisation customer type then this.__zendesk_user.__orgObject MAY need populating. Checking..." );
             console.log( "    Are we syncing as an 'organisation' user? (this.__zendesk_user.isOrganization()) = %o", this.__zendesk_user.isOrganization());
             console.log( "    Does the user belong to an organisation? (this.__zendesk_user.belongsToOrganization()) = %o", this.__zendesk_user.belongsToOrganization() );
-            console.log( "    Is the org object already populated on the user? (this.__zendesk_user.orgObjectIsPopulated()) = %o", this.__zendesk_user.orgObjectIsPopulated() );
+            console.log( "    Is the org object already populated on the user? (this.__zendesk_user.__orgObjectIsPopulated()) = %o", this.__zendesk_user.__orgObjectIsPopulated() );
         }
         /* DebugOnlyCode - END */
 
         //now populate the users arganization object through another API call but only if we need it (user type = organization )
-        if( this.__zendesk_user.isOrganization() && this.__zendesk_user.belongsToOrganization() && !this.__zendesk_user.orgObjectIsPopulated())
+        if( this.__zendesk_user.isOrganization() && this.__zendesk_user.belongsToOrganization() && !this.__zendesk_user.__orgObjectIsPopulated())
         {
             this.__zendesk_user.callChangeCustomerTypeAfterFullyLoaded_OldCustTypeIs = ( oldCustomerType === null ) ? 'NOTSET' : oldCustomerType;
             /* DebugOnlyCode - START */
@@ -951,7 +937,7 @@ var pluginFactory = function( thisV2Client ) {
             this.switchToLoadingScreen( "Loading Organization..." );
             makeAjaxCall(
                 this,
-                this.__requests.__getZendeskOrganizations( this.__zendesk_user.id, this.__zendesk_user.organization_id ), 
+                this.__requests.__getZendeskOrganizations( this.__zendesk_user.id, this.__zendesk_user.__organization_id ), 
                 this.__getZendeskOrganizations_Done,  
                 this.__switchToErrorMessage 
             );
@@ -983,7 +969,7 @@ var pluginFactory = function( thisV2Client ) {
         }
         /* DebugOnlyCode - END */
 
-        this.__zendesk_user.orgObject = this.createZendeskOrganizationFromAPIReturnData( organizationObjectFromDataAPI );
+        this.__zendesk_user.__orgObject = this.createZendeskOrganizationFromAPIReturnData( organizationObjectFromDataAPI );
 
         /* DebugOnlyCode - START */
         if( debug_mode ) { console.log( "Checking was this load as a result of agent pressing the 'organization' button?  \nthis.__zendesk_user.callChangeCustomerTypeAfterFullyLoaded_OldCustTypeIs = %o", this.__zendesk_user.callChangeCustomerTypeAfterFullyLoaded_OldCustTypeIs ); }
@@ -1028,13 +1014,19 @@ var pluginFactory = function( thisV2Client ) {
             /* DebugOnlyCode - START */
             if( debug_mode ) { console.log( "Check Passed, building base object and adding extra fields.    this.__field_maps.__cust_type.zendesk_field = %s", this.__field_maps.__cust_type.zendesk_field ); }
             /* DebugOnlyCode - END */
-            organizationObjectToReturn = new this.zendeskObjectsModule.ZendeskOrganization(
-                    this,
-                    organizationObjectFromDataAPI.organization.id,
-                    organizationObjectFromDataAPI.organization.name,
-                    organizationObjectFromDataAPI.organization.organization_fields[ this.__field_maps.__cust_type.zendesk_field ]
-            );
-            organizationObjectToReturn.populateExtraFieldsFromOrganizationAPIData( organizationObjectFromDataAPI.organization );
+            
+            try {
+                organizationObjectToReturn = new this.zendeskObjectsModule.ZendeskOrganization(
+                        this,
+                        organizationObjectFromDataAPI.organization.id,
+                        organizationObjectFromDataAPI.organization.name,
+                        organizationObjectFromDataAPI.organization.organization_fields[ this.__field_maps.__cust_type.zendesk_field ]
+                );
+                organizationObjectToReturn.populateExtraFieldsFromOrganizationAPIData( organizationObjectFromDataAPI.organization );
+            } catch( e ) {   
+                console.warn( e );
+                this.__switchToErrorMessage( e, e.message ); 
+            }
         }
         else console.warn( "createZendeskOrganizationFromAPIReturnData called but organizationObjectFromDataAPI = null or doesnt contain a organization property - this should never happen!");
 
@@ -1073,8 +1065,8 @@ var pluginFactory = function( thisV2Client ) {
             //popupate org object if one is set on user record
             if( usersOrgObject !== null )
             {
-                    this.__zendesk_user.orgObject = new this.zendeskObjectsModule.ZendeskOrganization( this, usersOrgObject.id(), usersOrgObject.name(), usersOrgObject.customField( this.__field_maps.__cust_type.zendesk_field ) );
-                    this.__zendesk_user.orgObject.populateExtraFieldsFromFrameworkOrgObject( usersOrgObject );
+                    this.__zendesk_user.__orgObject = new this.zendeskObjectsModule.ZendeskOrganization( this, usersOrgObject.id(), usersOrgObject.name(), usersOrgObject.customField( this.__field_maps.__cust_type.zendesk_field ) );
+                    this.__zendesk_user.__orgObject.populateExtraFieldsFromFrameworkOrgObject( usersOrgObject );
             }
 
             //console.log( "Finished getUserFromFrameworkInUserSidebarLocation, this.__zendesk_user = " );console.dir( this.__zendesk_user );
@@ -1201,39 +1193,37 @@ var pluginFactory = function( thisV2Client ) {
 
     //MAILCHIMP SYNCING WRAPPER FUNCTIONS
     //TO DO: PUT DEBUGGING INTO THIS SECTION AND MOVE TO mailchimp-connector.js
-    retrievedMailchimpSubscriber: function( returnedMailchimpUser ) 
+    retrievedMailchimpSubscriber: function( returnedMailchimpUserFromAPI ) 
     {
-            //console.log( "started retrievedMailchimpSubscriber, returnedMailchimpUser = returnedMailchimpUser" );console.dir( returnedMailchimpUser ); ////console.log( "" );
+       /* DebugOnlyCode - START */
+        if( debug_mode ) 
+        { 
+            console.group( "retrievedMailchimpSubscriber (returnedMailchimpUserFromAPI) called" );
+            console.log( "ARG1: returnedMailchimpUserFromAPI = %o", returnedMailchimpUserFromAPI );
+        }
+        /* DebugOnlyCode - END */
 
-            this.__mailshot_sync_user = 
-            {
-                email_address: returnedMailchimpUser.email_address,
-                status: "subscribed",
-                forename: returnedMailchimpUser.merge_fields[ this.__settings.__mailchimp_merge_field_forename ],
-                surname: returnedMailchimpUser.merge_fields[ this.__settings.__mailchimp_merge_field_surname  ],
-                customer_type: returnedMailchimpUser.merge_fields[ this.__field_maps.__cust_type.mailchimp_field ],
-                extra_merge_fields: []
-            };
+        try{
+            this.__mailshot_sync_user = connector.__getMailchimpSubscriberFromAPIResults( this, returnedMailchimpUserFromAPI );
+            
+            /* DebugOnlyCode - START */
+            if( debug_mode ) { console.log( "this.__mailshot_sync_user assigned: %o", this.__mailshot_sync_user ); }
+            /* DebugOnlyCode - END */
 
-            let arrayIndex = 0;
-            for (let i=0; i < this.__field_maps.__user.length; i++) 
-            {
-                this.__mailshot_sync_user.extra_merge_fields[ arrayIndex ] = { field_def: this.__field_maps.__user[ i ], value: returnedMailchimpUser.merge_fields[ this.__field_maps.__user[ i ].mailchimp_field ]};
-                arrayIndex++;
-            }
-            for(let i=0; i < this.__field_maps.__organisation.length; i++) 
-            {
-                this.__mailshot_sync_user.extra_merge_fields[ arrayIndex ] = { field_def: this.__field_maps.__organisation[ i ], value: returnedMailchimpUser.merge_fields[ this.__field_maps.__organisation[ i ].mailchimp_field ] };
-                arrayIndex++;
-            }
-            for (let i=0; i < this.__field_maps.__mc_only.length; i++) 
-            {
-                this.__mailshot_sync_user.extra_merge_fields[ arrayIndex ] = { field_def: this.__field_maps.__mc_only[ i ], value: returnedMailchimpUser.merge_fields[ this.__field_maps.__mc_only[ i ].mailchimp_field ] };
-                arrayIndex++;
-            }		
-
-            //console.log( "Finished retrievedMailchimpSubscriber, this.__mailshot_sync_user = " );console.dir( this.__mailshot_sync_user );
+            //if above caused an error it will have already been caught and redirected to this.__switchToErrorMessage(), if not we continue to main screen as normal
             this.switchToMainTemplate();
+        } catch( e ) {   
+            console.warn( e );
+            this.__switchToErrorMessage( e, e.message ); 
+        }
+        
+        /* DebugOnlyCode - START */
+        if( debug_mode ) 
+        { 
+            console.log( "Finished retrievedMailchimpSubscriber, this.__mailshot_sync_user = %o", this.__mailshot_sync_user);
+            console.groupEnd();
+        }
+        /* DebugOnlyCode - END */
     },	
 
     syncNewUserToMailchimp: function( zendeskUser ) 
@@ -1347,7 +1337,7 @@ var pluginFactory = function( thisV2Client ) {
             console.log( "ARG1: errorResponse = %o", errorResponse );
         }
         
-        __3rdParty_get_or_createOrUpadate3rdPartyMember_OnFail( this, errorResponse );
+        connector.__get_or_createOrUpadate3rdPartyMember_OnFail( this, errorResponse );
     
         /* DebugOnlyCode - START */
         if( debug_mode ) 
@@ -1400,9 +1390,9 @@ var pluginFactory = function( thisV2Client ) {
         return false;
     },
 
-    __createOrUpadateMailChimpListMember_Done: function( returnedMailchimpUser ) 
+    __createOrUpadateMailChimpListMember_Done: function( returnedMailchimpUserFromAPI ) 
     {
-            this.retrievedMailchimpSubscriber( returnedMailchimpUser );
+            this.retrievedMailchimpSubscriber( returnedMailchimpUserFromAPI );
     },
 
     createNewMailchimpSyncUserObject: function( zendeskSyncUserObject )
@@ -1423,9 +1413,9 @@ var pluginFactory = function( thisV2Client ) {
                 console.warn("createNewMailchimpSyncUserObject called with null zendeskSyncUserObject");
                 return null;
         }
-        if(!useDefaultOrgValues && zendeskSyncUserObject.orgObject === null )
+        if(!useDefaultOrgValues && zendeskSyncUserObject.__orgObject === null )
         {
-                console.warn("createNewMailchimpSyncUserObject called with customer type " + zendeskSyncUserObject.customer_type + " and  null zendeskSyncUserObject.orgObject");
+                console.warn("createNewMailchimpSyncUserObject called with customer type " + zendeskSyncUserObject.customer_type + " and  null zendeskSyncUserObject.__orgObject");
                 return null;
         }
 
@@ -1446,14 +1436,14 @@ var pluginFactory = function( thisV2Client ) {
 
         //extra merge fields for organisation fields
         let arrayIndex = 0;
-        for (let i=0; i < zendeskSyncUserObject.extra_user_fields.length; i++) 
+        for (let i=0; i < zendeskSyncUserObject.__extra_user_fields.length; i++) 
         {
-                mailchimpUserToReturn.extra_merge_fields[ arrayIndex ] = { field_def: zendeskSyncUserObject.extra_user_fields[ i ].field_def, value: ( zendeskSyncUserObject.extra_user_fields[ i ].value === null ) ? "" : zendeskSyncUserObject.extra_user_fields[ i ].value };
+                mailchimpUserToReturn.extra_merge_fields[ arrayIndex ] = { field_def: zendeskSyncUserObject.__extra_user_fields[ i ].field_def, value: ( zendeskSyncUserObject.__extra_user_fields[ i ].value === null ) ? "" : zendeskSyncUserObject.__extra_user_fields[ i ].value };
                 arrayIndex++;
         }
         for (let i=0; i < this.__field_maps.__organisation.length; i++) 
         {
-                mailchimpUserToReturn.extra_merge_fields[ arrayIndex ] = { field_def: this.__field_maps.__organisation[ i ], value: useDefaultOrgValues ? this.__field_maps.__organisation[ i ].default_value : zendeskSyncUserObject.orgObject.extra_org_fields[ i ].value };
+                mailchimpUserToReturn.extra_merge_fields[ arrayIndex ] = { field_def: this.__field_maps.__organisation[ i ], value: useDefaultOrgValues ? this.__field_maps.__organisation[ i ].default_value : zendeskSyncUserObject.__orgObject.__extra_org_fields[ i ].__value };
                 arrayIndex++;
         }
         for (let i=0; i < this.__field_maps.__mc_only.length; i++) 
@@ -1489,8 +1479,8 @@ var pluginFactory = function( thisV2Client ) {
         }
         /* DebugOnlyCode - END */
 
-        let syncFields = this.__zendesk_user.getFieldSyncInfo( this.__mailshot_sync_user );
-        let isInSync = this.__zendesk_user.isInSync( syncFields );
+        let syncFields = connector.__getFieldSyncInfo( this, this.__zendesk_user, this.__mailshot_sync_user );
+        let isInSync = connector.__isInSync( this, syncFields );
         let defaultButtonColourClassInsert = ' ' + ( isInSync || this.__zendesk_user.isExcluded() ? 'btn-primary' : 'btn-danger' );
 
         let formData = 
@@ -1634,7 +1624,7 @@ var pluginFactory = function( thisV2Client ) {
             errorObject = e;
             errorMessage = 'The JSON Settings text you entered for the '+settingsName+' setting was formatted incorrectly, it must be valid JSON.<br /><br />'+
                            'The failure reason was: '+parseErrorMessage+'<br /><br />'+
-                           'For help with these settings fields use our <a target="_blank" href="'+this.__resources.__SETTINGS_HELPER_SPREADSHEET_DOWNLOAD_URL+'">Zenchimp App Settings Generator</a> in Microsoft Excel';
+                           'For help with these settings fields use our <a target="_blank" href="'+this.__resources.__SETTINGS_HELPER_SPREADSHEET_DOWNLOAD_URL+'">Zenchimp App Settings Generator</a> spreadsheet';
         }
 
         if( fieldMappingsJSON !== null )
@@ -1653,8 +1643,17 @@ var pluginFactory = function( thisV2Client ) {
                 if( !fieldMap.type ) { errorArray.push( 'Missing Field/Value: type' ); }
                 else if ( !validTypeArray.includes(fieldMap.type)) { errorArray.push( "Invalid type: '"+fieldMap.type+"'. Valid types are: " + validTypeArray.toString() + " (all lower case)" ); }
                 //these settings have to exist but dont necessarily have to have a value
-                if( typeof fieldMap.default_value === 'undefined' || fieldMap.default_value === null ) { errorArray.push( 'Missing Field: default_value'); }
-                //this field depends on if its a mailchimp only field
+                //these fields also depend on if its a mailchimp only field
+                if( mailchimpOnlyFields )
+                {
+                    if( typeof fieldMap.value_if_ticked === 'undefined' || fieldMap.value_if_ticked === null ) { errorArray.push( 'Missing Field: value_if_ticked. This is required for fields of type \'checkbox\''); }
+                    if( typeof fieldMap.value_if_unticked === 'undefined' || fieldMap.value_if_unticked === null ) { errorArray.push( 'Missing Field: value_if_unticked. This is required for fields of type \'checkbox\''); }
+                }
+                else
+                {
+                    if( typeof fieldMap.default_value === 'undefined' || fieldMap.default_value === null ) { errorArray.push( 'Missing Field: default_value'); }                    
+                }
+                //this field also depends on if its a mailchimp only field
                 if( mailchimpOnlyFields && typeof fieldMap.zendesk_field !== 'undefined' ) { errorArray.push( 'Field: zendesk_field is not allowed on mailchimp-only field lists' ); }
                 if( !mailchimpOnlyFields && !fieldMap.zendesk_field ) { errorArray.push( 'Missing Field/Value: zendesk_field' ); }
                 
