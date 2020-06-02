@@ -135,6 +135,7 @@
             this.__organization_id = ( typeof( userObjectFromDataAPI.user.organization_id ) !== 'undefined' && userObjectFromDataAPI.user.organization_id !== null ) ? userObjectFromDataAPI.user.organization_id : null; //being careful as sometimes users can be set to link through to more than one org depending on admin settings
             this.__orgObject = null;  //this will only be instantiated when needed, not now, even if there is an organization id
             this.__extra_user_fields = [];
+            this.__validationError = null;  //this being set flags to the rest of the plugin code not to continue as normal as there is a redirect to SwitchToErroMessage in place (or the user has just clicked a button on error screen to try and resolve issue but it hasnt been resolved yet )
 
             for(var i = 0; i < app.__field_maps.__user.length; i++) 
             {
@@ -149,8 +150,17 @@
             this.populateExtraFieldsFromUserAPIData( userObjectFromDataAPI.user );
             
             /* DebugOnlyCode - START */ 
-            if( debug_mode ) {  console.log( "Completed part 2 of 2, after populateExtraFieldsFromUserAPIData(...)"); }
+            if( debug_mode ) {  
+                console.log( "Completed part 2 of 2, after populateExtraFieldsFromUserAPIData(...)");
+                console.log( "Now final sanity check. If it's customer type is Organisation and someone has removed the org from the user in zendesk then throw a special error that can be caught");
+            }
             /* DebugOnlyCode - END */
+            
+            //if creator fails to create object it throws an exception, and returns null object
+            //if it creates it but there's something a bit wrong that we need to altert the user
+            //to then it will return the object but with the __validationError flag set
+            //this functions checks for these validation errors
+            this.__refreshValidationErrorFlag();
         }
         
         /* DebugOnlyCode - START */ 
@@ -175,6 +185,20 @@
         }
     };
 
+    //if creator fails to create object it throws an exception, and returns null object
+    //if it creates it but there's something a bit wrong that we need to altert the user
+    //to then it will return the object but with the __validationError flag set
+    //this functions checks for these validation errors
+    ZendeskUser.prototype.__refreshValidationErrorFlag = function()
+    {
+        if( this.customer_type === this.__app.__resources.__CUSTOMER_TYPE_USE_ORGANIZATION && this.__organization_id === null )
+        {
+            /* DebugOnlyCode - START */ 
+            if( debug_mode ) {  console.warn( "FAILED SANITY CHECK - ORGANISATION NO LONGER LINKED TO USER"); }
+            /* DebugOnlyCode - END */
+            this.__validationError = { __code: 'ORG_MISSING', __exception: new ReferenceError( this.name + " is set to sync his/her organisation fields, however they no longer belong to an organisation, do you want to switch customer type so that only thier user fields are synced?" ) };
+        }
+    };
 
     //get name part functions that convert to title case
     ZendeskUser.prototype.getSalutation = function(){ this.populateNamePartsIfNecessary(); return ( this.__name_parts.salutation === null ) ? "" : this.__name_parts.salutation.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();}); }; //makes not null title case value
@@ -217,7 +241,7 @@
         /* DebugOnlyCode - START */ 
         if( debug_mode ) 
         { 
-            console.groupCollapsed( "new getMailchimpCustomerType() called" );
+            console.groupCollapsed( "getMailchimpCustomerType() called" );
             console.log( "this.customer_type = '%s'", this.customer_type );
             console.log( "this.__app.__resources.__CUSTOMER_TYPE_USE_ORGANIZATION = '%s'", this.__app.__resources.__CUSTOMER_TYPE_USE_ORGANIZATION );
             console.log( "this = %o", this );

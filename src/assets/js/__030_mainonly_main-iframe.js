@@ -2,7 +2,7 @@
 //thisV2Client = ZAFClient.init();
 var zenChimpPlugin = pluginFactory( thisV2Client );
 
-thisV2Client.invoke('resize', { width: '100%', height: (debug_mode)?'170px':'150px' });
+thisV2Client.invoke('resize', { width: '100%', height: (debug_mode)?'171px':'150px' });
 thisV2Client.on('app.registered', init);
 thisV2Client.on('modalClosedAfterSync', () => { zenChimpPlugin.resetAppIfPageFullyLoaded(); } );
 
