@@ -1,4 +1,160 @@
 const connector = {
+    
+    // <editor-fold defaultstate="collapsed" desc="AJAX API SETTINGS GENERATORS">
+    __requests:
+    {
+/*
+            //THIS IS FUNCTIONCAL CODE BUT IS NOT NEEDED IN THIS IMPLEMENTATION
+            __getMailChimpAllListMembers: function()
+            {
+                    let jsonCall =
+                    {
+                            url: helpers.fmt( "https://%@.api.mailchimp.com/2.0/lists/members.json", this.__settings.__mailchimp_datacentre_prefix ),
+                            type: 'POST',
+                            dataType: 'json',
+                            contentType: 'application/json; charset=UTF-8',
+                            data: JSON.stringify(
+                            {
+                                    "apikey": this.__settings.__mailchimp_api_key,
+                                    "id": this.__settings.__mailchimp_list_id,
+                                    "status": "subscribed",
+                                    "opts": 
+                                    {
+                                            "start": 0,
+                                            "limit": 100,
+                                            "sort_field": "email",
+                                            "sort_dir": "ASC"
+                                    }
+                            })
+                    };
+                    //console.log( "__getMailChimpAllListMembers: API CAll DETAILS:" );console.dir( jsonCall );
+                    return jsonCall;
+            },
+*/
+        __getMailChimpListMember: function( plugin, emailAddress )
+        {
+            if( typeof( emailAddress ) === "undefined" || emailAddress === null )
+            {
+                return console.error( "ERROR CONDITION: __getMailChimpListMember called with null email address" );
+            }
+
+            //requires md5.js utils js to create md5 hash of email address
+            let md5HashOfEmail = md5(emailAddress.toLowerCase());                
+
+            let jsonCall =
+            {
+                url: 'https://'+encodeURIComponent(plugin.__settings.__mailchimp_datacentre_prefix)+
+                     '.api.mailchimp.com/3.0/lists/'+encodeURIComponent(plugin.__settings.__mailchimp_list_id)+
+                     '/members/'+encodeURIComponent(md5HashOfEmail),
+                type: 'GET',
+                dataType: 'json',
+                contentType: 'application/json; charset=UTF-8',
+                headers: 
+                {
+                    "Authorization": "Basic " + btoa( "api:" + plugin.__settings.__mailchimp_api_key )
+                }
+            };
+
+            /* DebugOnlyCode - START */
+            if( debug_mode ) { console.log( "__requests.__getMailChimpListMember('%s'), jsonCall = %o", emailAddress, jsonCall ); }
+            /* DebugOnlyCode - END */ 
+            return jsonCall;
+        },
+
+        __createOrUpadateMailChimpListMember: function( plugin, mailchimpSyncUser, updateNotCreate )
+        {
+            if( mailchimpSyncUser === null || mailchimpSyncUser.email_address === null )
+            {
+                    return console.warn( "ERROR CONDITION: __createOrUpadateMailChimpListMember called with either null user or user with no email address" );
+            }
+
+            //require md5 library utils js to create md5 hash of email address
+            let md5HashOfEmail =md5(mailchimpSyncUser.email_address.toLowerCase());
+
+            let mergeFields = {};
+            mergeFields[ plugin.__settings.__mailchimp_merge_field_forename ] = mailchimpSyncUser.forename;
+            mergeFields[ plugin.__settings.__mailchimp_merge_field_surname ] = mailchimpSyncUser.surname;
+            mergeFields[ plugin.__settings.__mailchimp_list_field_customer_type_name ] = mailchimpSyncUser.customer_type;
+            let tempFieldDef = null;
+            let tempValue = null;
+            for (let i=0; i < mailchimpSyncUser.extra_merge_fields.length; i++) 
+            {
+                //zendesk returns null for any field that's blank so while we may store them as null behind the scenes we need to convert this to empty string as mailchimp treats null as 'ignore this value'
+                tempFieldDef = mailchimpSyncUser.extra_merge_fields[ i ].field_def;
+                tempValue = mailchimpSyncUser.extra_merge_fields[ i ].value;
+                tempValue = ( tempValue === null && tempFieldDef.type === plugin.__resources.__TYPE_TEXT ) ? "" : tempValue;
+                mergeFields[ tempFieldDef.mailchimp_field ] = tempValue;
+            }
+
+            let dataJSON = 				
+            {
+                "id": md5HashOfEmail,
+                "email_address": mailchimpSyncUser.email_address,
+                "email_type": "html",
+                "status": mailchimpSyncUser.__status,
+                "status_if_new": "subscribed",
+                "merge_fields": mergeFields,
+                "vip": ( mailchimpSyncUser.customer_type === plugin.__resources.__CUSTOMER_TYPE_USE_ORGANIZATION )
+            };
+
+            //2 x mailchimp mandatory merge fields + 1 mandatory customer_type field plus all extra ones from user object, org object and mc only fields
+
+
+            let jsonCall =
+            {
+                url: 'https://'+encodeURIComponent(plugin.__settings.__mailchimp_datacentre_prefix)+
+                     '.api.mailchimp.com/3.0/lists/'+encodeURIComponent(plugin.__settings.__mailchimp_list_id)+
+                     '/members/'+encodeURIComponent(updateNotCreate ? md5HashOfEmail : ""),
+                type: updateNotCreate ? 'PUT' : 'POST',
+                dataType: 'json',
+                contentType: 'application/json; charset=UTF-8',
+                headers: 
+                {
+                    "Authorization": "Basic " + btoa( "api:" + plugin.__settings.__mailchimp_api_key )
+                },
+                data: JSON.stringify( dataJSON )
+            };
+
+            /* DebugOnlyCode - START */
+            if( debug_mode ) { console.log( "__requests.__createOrUpadateMailChimpListMember( mailchimpSyncUser:'%o', updateNotCreate: '%o' ), dataJSON = %o, jsonCall = %o", mailchimpSyncUser, updateNotCreate, dataJSON, jsonCall ); }
+            /* DebugOnlyCode - END */ 
+            return jsonCall;
+        },
+
+        //NOT SURE THIS IS EVER CALLED OR NEEDED BUT IT'S FUNCTIONAL CODE
+        __deleteMailChimpListMember: function( plugin, mailchimpSyncUser )
+        {
+            if( mailchimpSyncUser === null || mailchimpSyncUser.email_address === null )
+            {
+                return console.error( "ERROR CONDITION: __deleteMailChimpListMember called with either null user or user with no email address" );
+            }
+
+            //requires md5.js utils js to create md5 hash of email address
+            let md5HashOfEmail = md5(mailchimpSyncUser.email_address.toLowerCase());
+
+            let jsonCall =
+            {
+                url: "https://"+encodeURIComponent( plugin.__settings.__mailchimp_datacentre_prefix)+
+                     ".api.mailchimp.com/3.0/lists/"+encodeURIComponent( plugin.__settings.__mailchimp_list_id)+
+                     "/members/"+encodeURIComponent(md5HashOfEmail),
+                type: 'DELETE',
+                dataType: 'json',
+                contentType: 'application/json; charset=UTF-8',
+                headers: 
+                {
+                    "Authorization": "Basic " + btoa( "api:" + plugin.__settings.__mailchimp_api_key )
+                }
+            };
+            
+            /* DebugOnlyCode - START */
+            if( debug_mode ) { console.log( "__requests.__deleteMailChimpListMember( mailchimpSyncUser:%o ), jsonCall = %o", jsonCall ); }
+            /* DebugOnlyCode - END */ 
+            return jsonCall;
+        }
+    },
+    // </editor-fold>    
+    
+    
     __get_or_createOrUpadate3rdPartyMember_OnFail: function ( plugin, errorResponse ) 
     {
         /* DebugOnlyCode - START */

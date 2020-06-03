@@ -96,154 +96,6 @@ var pluginFactory = function( thisV2Client ) {
             if( debug_mode ) { console.log( "__requests.__getZendeskOrganizations(%d, %d), userApiCallSettings = %o", userId, organizationId, userApiCallSettings );}
             /* DebugOnlyCode - END */ 
             return userApiCallSettings;
-        },
-/*
-            //THIS IS FUNCTIONCAL CODE BUT IS NOT NEEDED IN THIS IMPLEMENTATION
-            __getMailChimpAllListMembers: function()
-            {
-                    let jsonCall =
-                    {
-                            url: helpers.fmt( "https://%@.api.mailchimp.com/2.0/lists/members.json", this.__settings.__mailchimp_datacentre_prefix ),
-                            type: 'POST',
-                            dataType: 'json',
-                            contentType: 'application/json; charset=UTF-8',
-                            data: JSON.stringify(
-                            {
-                                    "apikey": this.__settings.__mailchimp_api_key,
-                                    "id": this.__settings.__mailchimp_list_id,
-                                    "status": "subscribed",
-                                    "opts": 
-                                    {
-                                            "start": 0,
-                                            "limit": 100,
-                                            "sort_field": "email",
-                                            "sort_dir": "ASC"
-                                    }
-                            })
-                    };
-                    //console.log( "__getMailChimpAllListMembers: API CAll DETAILS:" );console.dir( jsonCall );
-                    return jsonCall;
-            },
-*/
-        __getMailChimpListMember: function( emailAddress )
-        {
-            if( typeof( emailAddress ) === "undefined" || emailAddress === null )
-            {
-                return console.error( "ERROR CONDITION: __getMailChimpListMember called with null email address" );
-            }
-
-            //requires md5.js utils js to create md5 hash of email address
-            let md5HashOfEmail = md5(emailAddress.toLowerCase());                
-
-            let jsonCall =
-            {
-                url: 'https://'+encodeURIComponent(this.__parentPlugin.__settings.__mailchimp_datacentre_prefix)+
-                     '.api.mailchimp.com/3.0/lists/'+encodeURIComponent(this.__parentPlugin.__settings.__mailchimp_list_id)+
-                     '/members/'+encodeURIComponent(md5HashOfEmail),
-                type: 'GET',
-                dataType: 'json',
-                contentType: 'application/json; charset=UTF-8',
-                headers: 
-                {
-                    "Authorization": "Basic " + btoa( "api:" + this.__parentPlugin.__settings.__mailchimp_api_key )
-                }
-            };
-
-            /* DebugOnlyCode - START */
-            if( debug_mode ) { console.log( "__requests.__getMailChimpListMember('%s'), jsonCall = %o", emailAddress, jsonCall ); }
-            /* DebugOnlyCode - END */ 
-            return jsonCall;
-        },
-
-        __createOrUpadateMailChimpListMember: function( mailchimpSyncUser, updateNotCreate )
-        {
-            if( mailchimpSyncUser === null || mailchimpSyncUser.email_address === null )
-            {
-                    return console.warn( "ERROR CONDITION: __createOrUpadateMailChimpListMember called with either null user or user with no email address" );
-            }
-
-            //require md5 library utils js to create md5 hash of email address
-            let md5HashOfEmail =md5(mailchimpSyncUser.email_address.toLowerCase());
-
-            let mergeFields = {};
-            mergeFields[ this.__parentPlugin.__settings.__mailchimp_merge_field_forename ] = mailchimpSyncUser.forename;
-            mergeFields[ this.__parentPlugin.__settings.__mailchimp_merge_field_surname ] = mailchimpSyncUser.surname;
-            mergeFields[ this.__parentPlugin.__settings.__mailchimp_list_field_customer_type_name ] = mailchimpSyncUser.customer_type;
-            let tempFieldDef = null;
-            let tempValue = null;
-            for (let i=0; i < mailchimpSyncUser.extra_merge_fields.length; i++) 
-            {
-                //zendesk returns null for any field that's blank so while we may store them as null behind the scenes we need to convert this to empty string as mailchimp treats null as 'ignore this value'
-                tempFieldDef = mailchimpSyncUser.extra_merge_fields[ i ].field_def;
-                tempValue = mailchimpSyncUser.extra_merge_fields[ i ].value;
-                tempValue = ( tempValue === null && tempFieldDef.type === this.__parentPlugin.__resources.__TYPE_TEXT ) ? "" : tempValue;
-                mergeFields[ tempFieldDef.mailchimp_field ] = tempValue;
-            }
-
-            let dataJSON = 				
-            {
-                "id": md5HashOfEmail,
-                "email_address": mailchimpSyncUser.email_address,
-                "email_type": "html",
-                "status": mailchimpSyncUser.__status,
-                "status_if_new": "subscribed",
-                "merge_fields": mergeFields,
-                "vip": ( mailchimpSyncUser.customer_type === this.__parentPlugin.__resources.__CUSTOMER_TYPE_USE_ORGANIZATION )
-            };
-
-            //2 x mailchimp mandatory merge fields + 1 mandatory customer_type field plus all extra ones from user object, org object and mc only fields
-
-
-            let jsonCall =
-            {
-                url: 'https://'+encodeURIComponent(this.__parentPlugin.__settings.__mailchimp_datacentre_prefix)+
-                     '.api.mailchimp.com/3.0/lists/'+encodeURIComponent(this.__parentPlugin.__settings.__mailchimp_list_id)+
-                     '/members/'+encodeURIComponent(updateNotCreate ? md5HashOfEmail : ""),
-                type: updateNotCreate ? 'PUT' : 'POST',
-                dataType: 'json',
-                contentType: 'application/json; charset=UTF-8',
-                headers: 
-                {
-                    "Authorization": "Basic " + btoa( "api:" + this.__parentPlugin.__settings.__mailchimp_api_key )
-                },
-                data: JSON.stringify( dataJSON )
-            };
-
-            /* DebugOnlyCode - START */
-            if( debug_mode ) { console.log( "__requests.__createOrUpadateMailChimpListMember( mailchimpSyncUser:'%o', updateNotCreate: '%o' ), dataJSON = %o, jsonCall = %o", mailchimpSyncUser, updateNotCreate, dataJSON, jsonCall ); }
-            /* DebugOnlyCode - END */ 
-            return jsonCall;
-        },
-
-        //NOT SURE THIS IS EVER CALLED OR NEEDED BUT IT'S FUNCTIONAL CODE
-        __deleteMailChimpListMember: function( mailchimpSyncUser )
-        {
-            if( mailchimpSyncUser === null || mailchimpSyncUser.email_address === null )
-            {
-                return console.error( "ERROR CONDITION: __deleteMailChimpListMember called with either null user or user with no email address" );
-            }
-
-            //requires md5.js utils js to create md5 hash of email address
-            let md5HashOfEmail = md5(mailchimpSyncUser.email_address.toLowerCase());
-
-            let jsonCall =
-            {
-                url: "https://"+encodeURIComponent(this.__parentPlugin.__settings.__mailchimp_datacentre_prefix)+
-                     ".api.mailchimp.com/3.0/lists/"+encodeURIComponent(this.__parentPlugin.__settings.__mailchimp_list_id)+
-                     "/members/"+encodeURIComponent(md5HashOfEmail),
-                type: 'DELETE',
-                dataType: 'json',
-                contentType: 'application/json; charset=UTF-8',
-                headers: 
-                {
-                    "Authorization": "Basic " + btoa( "api:" + this.__parentPlugin.__settings.__mailchimp_api_key )
-                }
-            };
-            
-            /* DebugOnlyCode - START */
-            if( debug_mode ) { console.log( "__requests.__deleteMailChimpListMember( mailchimpSyncUser:%o ), jsonCall = %o", jsonCall ); }
-            /* DebugOnlyCode - END */ 
-            return jsonCall;
         }
     },
     // </editor-fold>
@@ -579,7 +431,7 @@ var pluginFactory = function( thisV2Client ) {
             this.switchToLoadingScreen( "Updating Mailchimp Member..." );
             makeAjaxCall(
                 this,
-                this.__requests.__createOrUpadateMailChimpListMember( this.__mailshot_sync_user, true ), 
+                connector.__requests.__createOrUpadateMailChimpListMember( this, this.__mailshot_sync_user, true ), 
                 this.__createOrUpadateMailChimpListMember_Done,  
                 this.__get_or_createOrUpadate3rdPartyMember_OnFail
             );
@@ -958,39 +810,8 @@ var pluginFactory = function( thisV2Client ) {
         /* DebugOnlyCode - END */
         return organizationObjectToReturn;
     },
-    // </editor-fold>
+    // </editor-fold>  
     
-    //DEPRECATED FUNCTION _ NO LONGER USED
-    __getUserFromFrameworkInUserSidebarLocation: function()
-    {
-            //console.log( 'Starting getUserFromFrameworkInUserSidebarLocation' );
-
-            //fetch first organization object if there is one, null if not
-            let usersOrgObject = ( typeof( this.user().organizations()[0] ) !== 'undefined' && this.user().organizations()[0] !== null ) ? this.user().organizations()[0] : null;
-
-            //initialize user object
-            this.__zendesk_user = new this.zendeskObjectsModule.ZendeskUser(
-                    this,
-                    this.user().id(),
-                    this.user().name(),
-                    this.user().email(),
-                    this.user().customField( this.__resources.__USER_FIELD_HANDLE_CUSTOMER_TYPE ),
-                    ( usersOrgObject === null ) ? null : usersOrgObject.id()
-            );
-
-            //now set the optional extra user fields from the framework object
-            this.__zendesk_user.populateExtraFieldsFromFrameworkUserObject( this.user() );
-
-            //popupate org object if one is set on user record
-            if( usersOrgObject !== null )
-            {
-                    this.__zendesk_user.__orgObject = new this.zendeskObjectsModule.ZendeskOrganization( this, usersOrgObject.id(), usersOrgObject.name(), usersOrgObject.customField( this.__field_maps.__cust_type.zendesk_field ) );
-                    this.__zendesk_user.__orgObject.populateExtraFieldsFromFrameworkOrgObject( usersOrgObject );
-            }
-
-            //console.log( "Finished getUserFromFrameworkInUserSidebarLocation, this.__zendesk_user = " );console.dir( this.__zendesk_user );
-            this.__fetchMailchimpObjectIfNecessary();
-    },    
     
     __fetchMailchimpObjectIfNecessary: function()
     {
@@ -1008,7 +829,7 @@ var pluginFactory = function( thisV2Client ) {
             this.switchToLoadingScreen( "Loading user from Mailchimp..." );
             makeAjaxCall(
                 this,
-                this.__requests.__getMailChimpListMember( this.__zendesk_user.email, this ), 
+                connector.__requests.__getMailChimpListMember( this, this.__zendesk_user.email ), 
                 this.retrievedMailchimpSubscriber,  
                 this.__get_or_createOrUpadate3rdPartyMember_OnFail 
             );
@@ -1160,7 +981,7 @@ var pluginFactory = function( thisV2Client ) {
         this.switchToLoadingScreen( "Adding Mailchimp Member..." );
         makeAjaxCall(
             this,
-            this.__requests.__createOrUpadateMailChimpListMember( newMailChimpUserToSave, false ), 
+            connector.__requests.__createOrUpadateMailChimpListMember( this, newMailChimpUserToSave, false ), 
             this.__createOrUpadateMailChimpListMember_Done,  
             this.__get_or_createOrUpadate3rdPartyMember_OnFail 
         );
@@ -1213,7 +1034,7 @@ var pluginFactory = function( thisV2Client ) {
         this.switchToLoadingScreen( "Updating Mailchimp Member..." );
         makeAjaxCall(
             this,
-            this.__requests.__createOrUpadateMailChimpListMember( newMailChimpUserToSave, true ), 
+            connector.__requests.__createOrUpadateMailChimpListMember( this, newMailChimpUserToSave, true ), 
             this.__createOrUpadateMailChimpListMember_Done,  
             this.__get_or_createOrUpadate3rdPartyMember_OnFail
         );
@@ -1240,7 +1061,7 @@ var pluginFactory = function( thisV2Client ) {
         this.switchToLoadingScreen( "Deleting Mailchimp Member..." );
         makeAjaxCall(
             this,
-            this.__requests.__deleteMailChimpListMember( mailchimpUser ), 
+            connector.__requests.__deleteMailChimpListMember( this, mailchimpUser ), 
             null,  
             null, //this shoudl call __get_or_createOrUpadate3rdPartyMember_OnFail ONLY 404 MESSAGE SHOUD BE DIFFERENT FOR DELETES!
             true

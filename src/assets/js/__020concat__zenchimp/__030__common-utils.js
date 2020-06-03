@@ -4,7 +4,9 @@ debug_mode = true;
 /* DebugOnlyCode - END */ 
 
 var thisV2Client = null;
+var thisV2ClientRegistered = false;
 thisV2Client= ZAFClient.init();
+thisV2Client.on('app.registered', () => { thisV2ClientRegistered = true; } );
 
 function switchToHdbsFileTemplate(templateUrl, viewData){
     /* DebugOnlyCode - START */

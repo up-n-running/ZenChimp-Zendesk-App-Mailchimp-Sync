@@ -1,9 +1,36 @@
 //NOTE: debug_mode, thisV2Client & modal_createChildFromParent() are declared in common-utils.js
-//thisV2Client = ZAFClient.init();
+if( typeof( thisV2ClientRegistered ) === 'undefined' )
+{
+    /* DebugOnlyCode - START */
+    if( debug_mode ) 
+    { 
+        console.error( "MODAL IFRAME.JS: ERROR CONDITION: thisV2ClientRegistered is undefined. " );
+    }
+    thisV2Client.on('app.registered', init);
+    /* DebugOnlyCode - END */ 
+}
+if( !thisV2ClientRegistered )
+{
+    /* DebugOnlyCode - START */
+    if( debug_mode ) 
+    { 
+        console.log( "MAIN IFRAME.JS: ADDING EVENT HANDLER: thisV2Client.on('app.registered', init);" );
+    }
+    thisV2Client.on('app.registered', init);
+}
+else
+{
+    /* DebugOnlyCode - START */
+    if( debug_mode ) 
+    { 
+        console.log( "MAIN IFRAME.JS: calling init() directly" );
+    }
+    init();
+}
+
 var zenChimpPlugin = pluginFactory( thisV2Client );
 
 thisV2Client.invoke('resize', { width: '100%', height: (debug_mode)?'171px':'150px' });
-thisV2Client.on('app.registered', init);
 thisV2Client.on('modalClosedAfterSync', () => { zenChimpPlugin.resetAppIfPageFullyLoaded(); } );
 
 function init() 

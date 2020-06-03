@@ -1,16 +1,42 @@
+//NOTE: debug_mode, thisV2Client & modal_createChildFromParent() are declared in common-utils.js
+if( typeof( thisV2ClientRegistered ) === 'undefined' )
+{
+    /* DebugOnlyCode - START */
+    if( debug_mode ) 
+    { 
+        console.error( "MODAL IFRAME.JS: ERROR CONDITION: thisV2ClientRegistered is undefined. " );
+    }
+    thisV2Client.on('app.registered', init);
+    /* DebugOnlyCode - END */ 
+}
+else if( !thisV2ClientRegistered )
+{
+    /* DebugOnlyCode - START */
+    if( debug_mode ) 
+    { 
+        console.log( "MODAL IFRAME.JS: ADDING EVENT HANDLER: thisV2Client.on('app.registered', init);" );
+    }
+    thisV2Client.on('app.registered', init);
+    /* DebugOnlyCode - END */ 
+}
+else
+{
+    /* DebugOnlyCode - START */
+    if( debug_mode ) 
+    { 
+        console.log( "MODAL IFRAME.JS: calling init() directly" );
+    }
+    init();
+    /* DebugOnlyCode - END */ 
+}
 
 var parentClient = null;
 var zenChimpPlugin = null;
 var urlParams = null;
 
-if( debug_mode ) 
-{ 
-    console.log( "MODAL IFRAME.JS: ADDING EVENT HANDLER: thisV2Client.on('app.registered', init);" );
-}
-
 //thisV2Client = ZAFClient.init();
 //thisV2Client.invoke('resize', { width: '100%', height: '400px' });
-thisV2Client.on('app.registered', init);
+//thisV2Client.on('app.registered', init);
 
 function init() 
 {
