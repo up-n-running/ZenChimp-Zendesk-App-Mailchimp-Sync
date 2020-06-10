@@ -1,5 +1,11 @@
 const connector = {
     
+    __resources: 
+    {
+        //Anything beginning __ will be mangled by the minifier and wont be accessible outside of zenchimp.min.js
+        __LOGIN_LINK_HTML: "<a target=\"_blank\" href=\"https://login.mailchimp.com/\">Login to Mailchimp?</a>",
+    },    
+    
     // <editor-fold defaultstate="collapsed" desc="AJAX API SETTINGS GENERATORS">
     __requests:
     {
@@ -183,9 +189,20 @@ const connector = {
                 plugin.__switchToErrorMessage( errorResponse, plugin.__zendesk_user.email + " already exists in mailchimp.<br /><br/>Do you want to override his/her details?", "Override", "error_override_mailchimp", "__createOrUpadateMailChimpListMember_Override_OnClick()" );
                 redirectedToBespokeErrorPage = true;
             }
-            if( errorResponse.status === 400 && responseTextJSON.title === "Invalid Resource" )
+            if( errorResponse.status === 400 && (
+                    responseTextJSON.title === "Invalid Resource" ||
+                    responseTextJSON.title === "Member In Compliance State"
+              ) )
             {
-                let friendlyErrorMessage = "<p><b>On no, Mailchimp rejected one of your values</b></p><p>This is often a broken link or URL, an incorrect data type, or no value for a required field in Mailchimp. Here's what Mailchimp is saying...</p>";
+                let friendlyErrorMessage = null;
+                if(responseTextJSON.title === "Invalid Resource" )
+                {
+                   friendlyErrorMessage =  "<p><b>On no, Mailchimp rejected one of your values</b></p><p>This is often a broken link or URL, an incorrect data type, or no value for a required field in Mailchimp. Here's what Mailchimp is saying...</p>";
+                }
+                else if(responseTextJSON.title === "Member In Compliance State" )
+                {
+                   friendlyErrorMessage =  "<p><b>I'm sorry, Mailchimp wont include this user</b></p><p>This is normally because the user has manually unsubscribed from one of your emails. Here's what Mailchimp is saying...</p>";
+                }
                 if( typeof( responseTextJSON.title ) !== 'undefined' )
                 {
                     friendlyErrorMessage += "<p><b>"+responseTextJSON.title+"</b>"
@@ -260,7 +277,7 @@ const connector = {
 
         if( !redirectedToBespokeErrorPage )
         {
-                plugin.__switchToErrorMessage( errorResponse );
+            plugin.__switchToErrorMessage( errorResponse );
         }
 
         /* DebugOnlyCode - START */
@@ -292,7 +309,7 @@ const connector = {
             customer_type: this.__getMergeFieldValueFromAPIResultsObject( plugin, returnedMailchimpUserFromAPI, plugin.__field_maps.__cust_type.mailchimp_field ),
             extra_merge_fields: [],
             isSubscribed: function() { return this.status === 'subscribed' || this.status === 'pending'; },
-            isUnSubscribed: function() { return this.status === 'unsubscribed' },
+            hasUnSubscribed: function() { return this.status === 'unsubscribed' },
             isDeleted: function() { return this.status !== 'cleaned'; }
         };
 
@@ -341,7 +358,48 @@ const connector = {
         }
         return theValue;
     },
-     
+    
+    
+    __enforceValidityOfZendeskAndMailshotStatuses: function( plugin, zendeskUser, mailchimpUser )
+    {
+        /* DebugOnlyCode - START */
+        if( debug_mode ) 
+        { 
+            console.group( "CONNECTOR: __enforceValidityOfZendeskAndMailshotStatuses ( plugin, zendeskUser, mailchimpUser ) called" );
+            console.log( "ARG1: plugin = %o", plugin );
+            console.log( "ARG1: zendeskUser = %o", zendeskUser );
+            console.log( "ARG1: mailchimpUser = %o", mailchimpUser );
+        }
+        /* DebugOnlyCode - END */
+
+        let passedValidityCheck = true;
+
+        if( mailchimpUser.status === "archived" && zendeskUser.isIncluded() )
+        {
+            plugin.__switchToErrorMessage( 
+                {}, 
+                "Sorry but the mailchimp member is archived, which means they have been deactivated in Mailchimp. Would you like to try to Reactivate or would you like to mark this user as excluded?", 
+                "Attempt Reactivation", 
+                "btn-warning", 
+                zendeskUser.isOrganization() ? "organizationButtonOnClick()"  : "standardButtonOnClick()",
+                "Exclude",
+                "excludeButtonOnClick()"
+            ); 
+            passedValidityCheck = false;
+            zendeskUser.customer_type = plugin.resources.CUSTOMER_TYPE_EXCLUDE;
+        }
+        
+        
+        /* DebugOnlyCode - START */
+        if( debug_mode ) 
+        { 
+            console.log( "Finished, returning %o;" , passedValidityCheck );
+            console.groupEnd();
+        }
+        /* DebugOnlyCode - END */
+        return passedValidityCheck;
+    },
+    
     __getFieldSyncInfo: function( plugin, zendeskUser, mailChimpUser )
     {
         /* DebugOnlyCode - START */
@@ -449,7 +507,6 @@ const connector = {
         }
         //console.log( "done org fields JSON:" );
         //console.dir( sync_fields ); //console.log( "" );
-        
         for( i = 0; i < zendeskUser.__app.__field_maps.__mc_only.length; i++ )
         {
             tempMcValue = mailChimpUser.extra_merge_fields[ arrayIndex-3 ].value;

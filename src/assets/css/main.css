@@ -8,10 +8,6 @@ html, body
     min-height: 100%;
     padding-bottom: 8px;
 }
-.sidebar_page
-{
-    /* padding-bottom: 16px; */ /* getting footer at right height on sidebar page */
-}
 footer
 {
     height: 15px;
@@ -41,6 +37,13 @@ footer.user_sync_footer
 {
     color: gray;
     font-weight: 500;
+}
+.sidebar_page #page_content .information-text .inactive a,
+.sidebar_page #page_content .information-text .inactive a:hover
+{
+    cursor: pointer;
+    text-decoration: underline;
+    color: gray;
 }
 
 #page_content .success
@@ -98,6 +101,7 @@ footer.user_sync_footer
     text-decoration: underline;
 }
 
+
 /* Modal Popup Styling */
 .user_sync_page #page_content .fixed table 
 {
@@ -114,9 +118,9 @@ footer.user_sync_footer
     line-height: 1;
     overflow: hidden;
     text-overflow: ellipsis;
-    display: inline-block;
     white-space: nowrap;
 }
+
 .user_sync_page #page_content .fixed td.blank
 {
     border-top-color: white;
@@ -149,7 +153,6 @@ footer.user_sync_footer
     border-right: none;
     color: #484848;
     background-color: #06A684;
-    /* background-color: #03363D; */
     font-weight: bold;
     max-width: 274px;
     width: 40%;

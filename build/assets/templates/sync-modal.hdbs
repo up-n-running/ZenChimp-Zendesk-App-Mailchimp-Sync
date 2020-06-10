@@ -18,7 +18,7 @@
         {{/each}}
        <tr class="button-row">
             <td style="height: 100%" class="close-button-cell"><button class="btn btn-secondary" onclick="return closeButtonOnClick();">Close</button></td>
-            <td style="height: 100%" class="sync-button-cell">{{#unless display_params.user_in_sync}}<button class="btn sync zendesk" onclick="return zenChimpPlugin.syncButtonFromModalOnClick();">Sync Zendesk > Mailchimp</button>{{/unless}}</td>
+            <td style="height: 100%" class="sync-button-cell">{{#unless display_params.user_in_sync}}<button class="btn sync zendesk" onclick="parentClient.trigger('modalSyncPerformed'); return zenChimpPlugin.syncButtonFromModalOnClick();">Sync Zendesk > Mailchimp</button>{{/unless}}</td>
             <td style="height: 100%" class="sync-button-cell"></td>
         </tr>
         </table>

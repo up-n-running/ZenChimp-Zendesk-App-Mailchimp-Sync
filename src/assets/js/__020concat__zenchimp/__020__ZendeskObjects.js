@@ -87,9 +87,10 @@
         /* DebugOnlyCode - START */ 
         if( debug_mode ) 
         { 
-            console.group( "new ZendeskUser (app, userObjectToClone) constructor called" );
+            console.group( "new ZendeskUser (app, userObjectFromDataAPI, userObjectToClone) constructor called" );
             console.log( "ARG1: app = %o", app );
-            console.log( "ARG2: userObjectToClone (of type '%s') = %o", typeof( userObjectToClone ), userObjectToClone );
+            console.log( "ARG2: userObjectFromDataAPI = %o", userObjectFromDataAPI );
+            console.log( "ARG3: userObjectToClone (of type '%s') = %o", typeof( userObjectToClone ), userObjectToClone );
         }
         /* DebugOnlyCode - END */ 
         

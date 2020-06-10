@@ -6,8 +6,9 @@ if( typeof( thisV2ClientRegistered ) === 'undefined' )
     { 
         console.error( "MODAL IFRAME.JS: ERROR CONDITION: thisV2ClientRegistered is undefined. " );
     }
-    thisV2Client.on('app.registered', init);
     /* DebugOnlyCode - END */ 
+    
+    thisV2Client.on('app.registered', init);
 }
 if( !thisV2ClientRegistered )
 {
@@ -16,6 +17,8 @@ if( !thisV2ClientRegistered )
     { 
         console.log( "MAIN IFRAME.JS: ADDING EVENT HANDLER: thisV2Client.on('app.registered', init);" );
     }
+    /* DebugOnlyCode - END */ 
+    
     thisV2Client.on('app.registered', init);
 }
 else
@@ -25,13 +28,24 @@ else
     { 
         console.log( "MAIN IFRAME.JS: calling init() directly" );
     }
+    /* DebugOnlyCode - END */ 
+    
     init();
 }
 
 var zenChimpPlugin = pluginFactory( thisV2Client );
 
 thisV2Client.invoke('resize', { width: '100%', height: (debug_mode)?'171px':'150px' });
-thisV2Client.on('modalClosedAfterSync', () => { zenChimpPlugin.resetAppIfPageFullyLoaded(); } );
+
+thisV2Client.on('modalSyncPerformed', () => { 
+    /* DebugOnlyCode - START */
+    if( debug_mode ) 
+    { 
+        console.log('EVENT TRIGGERED: modalSyncPerformed'); 
+    }
+    /* DebugOnlyCode - END */ 
+    zenChimpPlugin.resetAppIfPageFullyLoaded(); 
+} );
 
 function init() 
 {

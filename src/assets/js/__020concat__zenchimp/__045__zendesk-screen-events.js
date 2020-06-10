@@ -33,7 +33,7 @@ const __screen_events = {
                     /* DebugOnlyCode - START */
                     if( debug_mode ) {  console.log( "HIDING USER FIELD: Calling client.invoke( 'userFields:" + plugin.__resources.__USER_FIELD_HANDLE_CUSTOMER_TYPE + ".hide' );" ); }
                     /* DebugOnlyCode - END */
-                    plugin.__v2Client.invoke( 'userFields:' + plugin.__resources.__USER_FIELD_HANDLE_CUSTOMER_TYPE + '.hide' );
+                    //plugin.__v2Client.invoke( 'userFields:' + plugin.__resources.__USER_FIELD_HANDLE_CUSTOMER_TYPE + '.hide' );
                 }
                 
                 /* DebugOnlyCode - START */
@@ -167,7 +167,7 @@ const __screen_events = {
             plugin.__zendesk_user.__organization_id = null;
             plugin.__zendesk_user.__orgObject = null;
             plugin.__zendesk_user.__refreshValidationErrorFlag();
-            if( plugin.__enforceUserIsValidAndShowErrorIfNot() )
+            if( plugin.__enforceZendeskUserIsValidAndShowErrorIfNot() )
             {
                 /* DebugOnlyCode - START */
                 if( debug_mode ) { console.log( "mailchimp user hasnt changed, we've taken care of updates to zendesk user, so nothing left to do but switch to main template.  plugin.__zendesk_user = %o", plugin.__zendesk_user ); }

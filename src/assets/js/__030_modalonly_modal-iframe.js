@@ -6,8 +6,8 @@ if( typeof( thisV2ClientRegistered ) === 'undefined' )
     { 
         console.error( "MODAL IFRAME.JS: ERROR CONDITION: thisV2ClientRegistered is undefined. " );
     }
-    thisV2Client.on('app.registered', init);
     /* DebugOnlyCode - END */ 
+    thisV2Client.on('app.registered', init);
 }
 else if( !thisV2ClientRegistered )
 {
@@ -16,8 +16,8 @@ else if( !thisV2ClientRegistered )
     { 
         console.log( "MODAL IFRAME.JS: ADDING EVENT HANDLER: thisV2Client.on('app.registered', init);" );
     }
-    thisV2Client.on('app.registered', init);
     /* DebugOnlyCode - END */ 
+    thisV2Client.on('app.registered', init);
 }
 else
 {
@@ -26,17 +26,15 @@ else
     { 
         console.log( "MODAL IFRAME.JS: calling init() directly" );
     }
-    init();
     /* DebugOnlyCode - END */ 
+    init();
 }
 
 var parentClient = null;
 var zenChimpPlugin = null;
 var urlParams = null;
 
-//thisV2Client = ZAFClient.init();
-//thisV2Client.invoke('resize', { width: '100%', height: '400px' });
-//thisV2Client.on('app.registered', init);
+thisV2Client.invoke('resize', { width: '800px, height: 400px' });
 
 function init() 
 {
@@ -56,7 +54,7 @@ function init()
     parentClient = getClientInstanceFromGuid(urlParams.parent_guid); //Hopefully this includes the parent_guid we want to send when creating modals
 
     /* DebugOnlyCode - START */
-    if( debug_mode ) { console.log( "Creating plugin instance from PARENT CLIENT: zenChimpPlugin = pluginFactory( parentClient );" ); } 
+    if( debug_mode ) { console.log( "Fetched parent plugin: parentClient = %o", parentClient ); console.log( "Creating plugin instance from PARENT CLIENT: zenChimpPlugin = pluginFactory( parentClient );" ); } 
     /* DebugOnlyCode - END */
     zenChimpPlugin = pluginFactory( parentClient );
 
@@ -77,7 +75,7 @@ function init()
     /* DebugOnlyCode - END */ 
 }
 
-thisV2Client.on('modal.close', () => { closeButtonOnClick(); });
+//thisV2Client.on('modal.close', () => { closeButtonOnClick(); });
 
 function closeButtonOnClick() 
 {
@@ -85,16 +83,11 @@ function closeButtonOnClick()
     if( debug_mode ) 
     { 
         console.group( "POPUP:: closeButtonOnClick() called" );
-        console.log( "zenChimpPlugin.syncButtonPressed = %o", thisV2Client.syncButtonPressed );
         console.log( "parentClient = %o", parentClient );
     }
     /* DebugOnlyCode - END */ 
     
     thisV2Client.invoke('destroy');
-    if( typeof( zenChimpPlugin.syncButtonPressed ) !== 'undefined' && zenChimpPlugin.syncButtonPressed )
-    {
-        parentClient.trigger('modalClosedAfterSync');
-    }
 
     /* DebugOnlyCode - START */  
     if( debug_mode ) 

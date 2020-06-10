@@ -24,6 +24,12 @@
             <p class="inactive">{{zendesk_user.name}} is excluded from Mailchimp</p>
         </div>
     {{/if}}
+    {{#if display_params.customer_unsubscribed}}
+        <div class="information-text">
+            <p class="inactive">{{zendesk_user.name}} has unsubscribed from your mailing list</p>
+            <p class="inactive">{{{display_params.login_link_HTML}}}</p>
+        </div>
+    {{/if}}
     {{#if display_params.customer_type_included}}
         {{#if display_params.user_in_sync}}
             <div class="information-text">

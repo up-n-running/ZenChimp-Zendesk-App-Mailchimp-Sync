@@ -382,13 +382,12 @@ var pluginFactory = function( thisV2Client ) {
         }
         /* DebugOnlyCode - END */
         
-        this.syncButtonPressed = true; //We use this when we close modal window so we know to remind parent instance to refresh
         this.__syncExistingUserToMailchimp( this.__zendesk_user, true );
            
         /* DebugOnlyCode - START */
         if( debug_mode ) 
         { 
-            console.log( "Finished, this.syncButtonPressed = %o, returning false;", this.syncButtonPressed );
+            console.log( "Finished,  returning false;" );
             console.groupEnd();
         }
         /* DebugOnlyCode - END */
@@ -560,7 +559,7 @@ var pluginFactory = function( thisV2Client ) {
         this.__zendesk_user = this.__createZendeskUserFromAPIReturnData( userObjectFromDataAPI );
 
         //if __createZendeskUserFromAPIReturnData faled then __switchToErrorMessage will have already been called so do not continue on as this would cause another switchTo... to be called 
-        if( this.__enforceUserIsValidAndShowErrorIfNot() )
+        if( this.__enforceZendeskUserIsValidAndShowErrorIfNot() )
         {
             /* DebugOnlyCode - START */
             if( debug_mode ) 
@@ -626,7 +625,7 @@ var pluginFactory = function( thisV2Client ) {
         return zendeskUserObjectToReturn;
     },
     
-    __enforceUserIsValidAndShowErrorIfNot: function()
+    __enforceZendeskUserIsValidAndShowErrorIfNot: function()
     {
        /* DebugOnlyCode - START */
         if( debug_mode )
@@ -737,6 +736,7 @@ var pluginFactory = function( thisV2Client ) {
         { 
             console.group( "__getZendeskOrganizations_Done (organizationObjectFromDataAPI) called" );
             console.log( "ARG1: organizationObjectFromDataAPI = %o", organizationObjectFromDataAPI );
+            console.log( "Function COntext: this = %o", this );
         }
         /* DebugOnlyCode - END */
 
@@ -951,7 +951,14 @@ var pluginFactory = function( thisV2Client ) {
             /* DebugOnlyCode - END */
 
             //if above caused an error it will have already been caught and redirected to this.__switchToErrorMessage(), if not we continue to main screen as normal
-            this.switchToMainTemplate();
+            //before we finish, lets check the Zendesk User and the Mailchimp user for validity as the mailchimp member
+            //may have been changed (unsubscribed or archived or unarchived) at the mailchimp end and so be out of sync status wise with the zendesk user
+            //also if a Zenchimp update failed at the mailchimp end but succeeded at the Zendesk end then this can happen
+            if( connector.__enforceValidityOfZendeskAndMailshotStatuses( this, this.__zendesk_user, this.__mailshot_sync_user ) )
+            {
+                this.switchToMainTemplate();
+            }
+            
         } catch( e ) {   
             console.warn( e );
             this.__switchToErrorMessage( e, e.message ); 
@@ -1084,6 +1091,7 @@ var pluginFactory = function( thisV2Client ) {
             console.group( "__get_or_createOrUpadate3rdPartyMember_OnFail(errorResponse) called" );
             console.log( "ARG1: errorResponse = %o", errorResponse );
         }
+        /* DebugOnlyCode - END */
         
         connector.__get_or_createOrUpadate3rdPartyMember_OnFail( this, errorResponse );
     
@@ -1229,6 +1237,7 @@ var pluginFactory = function( thisV2Client ) {
 
         let syncFields = connector.__getFieldSyncInfo( this, this.__zendesk_user, this.__mailshot_sync_user );
         let isInSync = connector.__isInSync( this, syncFields );
+        let isSubscribed = this.__mailshot_sync_user !== null && this.__mailshot_sync_user.isSubscribed();
         let defaultButtonColourClassInsert = ' ' + ( isInSync || this.__zendesk_user.isExcluded() ? 'btn-primary' : 'btn-danger' );
 
         let formData = 
@@ -1236,7 +1245,7 @@ var pluginFactory = function( thisV2Client ) {
             'zendesk_user'      : this.__zendesk_user,
             'mailchimp_user'    : this.__mailshot_sync_user,
             'sync_fields'       : syncFields,
-            'monkey_URL'        : this.__zendesk_user.isExcluded() ? "./img/exclude_monkey.png" : ( isInSync ? "./img/insync_monkey.png" :  "./img/outofsync_monkey.png" ),
+            'monkey_URL'        : ( !isSubscribed || this.__zendesk_user.isExcluded() ) ? "./img/exclude_monkey.png" : ( isInSync ? "./img/insync_monkey.png" :  "./img/outofsync_monkey.png" ),
             'buttons': 
             {
                 'exclude'       : { 
@@ -1261,12 +1270,14 @@ var pluginFactory = function( thisV2Client ) {
             'display_params':
             {
                 'customer_type_not_set'     : this.__zendesk_user.isNotset(),
+                'customer_unsubscribed'     : this.__mailshot_sync_user !== null && this.__mailshot_sync_user.hasUnSubscribed(),
                 'customer_type_exclude'     : this.__zendesk_user.isExcluded(),
-                'customer_type_included'    : this.__zendesk_user.isIncluded(),
-                'customer_type_organization': this.__zendesk_user.isOrganization(),
-                'customer_type_standard'    : this.__zendesk_user.isDefault(),
+                'customer_type_included'    : isSubscribed && this.__zendesk_user.isIncluded(),
+                'customer_type_organization': isSubscribed && this.__zendesk_user.isOrganization(),
+                'customer_type_standard'    : isSubscribed && this.__zendesk_user.isDefault(),
                 'user_in_sync'              : isInSync,
-                'DEBUG'                     : debug_mode
+                'DEBUG'                     : debug_mode,
+                'login_link_HTML'           : connector.__resources.__LOGIN_LINK_HTML
             }
         };
 
@@ -1286,7 +1297,7 @@ var pluginFactory = function( thisV2Client ) {
         /* DebugOnlyCode - END */
     },
 
-    __switchToErrorMessage: function( errorResponse, overrideMessage, additionalButtonText, additionalButtonClass, additionalButtonOnclick ) 
+    __switchToErrorMessage: function( errorResponse, overrideMessage, additionalButtonText, additionalButtonClass, additionalButtonOnclick, optionalMainButtonTextOverride, optionalMainButtonOnClickOverride ) 
     {
        /* DebugOnlyCode - START */
         if( debug_mode ) 
@@ -1297,6 +1308,9 @@ var pluginFactory = function( thisV2Client ) {
             console.log( "ARG3: additionalButtonText = %o", additionalButtonText );
             console.log( "ARG4: additionalButtonClass = %o", additionalButtonClass );
             console.log( "ARG5: additionalButtonOnclick = %o", additionalButtonOnclick );
+            console.log( "ARG6: optionalMainButtonTextOverride = %o", optionalMainButtonTextOverride );
+            console.log( "ARG7: optionalMainButtonOnClickOverride = %o", optionalMainButtonOnClickOverride );
+
         }
         /* DebugOnlyCode - END */
 
@@ -1314,7 +1328,9 @@ var pluginFactory = function( thisV2Client ) {
         {
           'errorResponse'		: errorResponse,
           'overrideMessage' 		: ( typeof( overrideMessage ) === "undefined" || overrideMessage === "error") ? null:  overrideMessage, /* sometimes just the string error is passed as the 2nd param!) */
+          'mainButtonText'       : ( typeof( optionalMainButtonTextOverride ) === 'undefined' ) ? "Go Back" : optionalMainButtonTextOverride,
           'mainButtonClass'      : ( typeof( overrideMessage ) === "undefined" || overrideMessage === "error") ? 'btn-danger' : 'btn-warning',
+          'mainButtonOnClick'    : ( typeof( optionalMainButtonOnClickOverride ) === 'undefined' ) ? "resetAppIfPageFullyLoaded()" : optionalMainButtonOnClickOverride,
           'additionalButtonText' 	: ( typeof( additionalButtonText ) === "undefined" ) ? null : additionalButtonText,
           'additionalButtonClass' 	: ( typeof( additionalButtonClass ) === "undefined" ) ? null : additionalButtonClass,
           'additionalButtonOnclick' 	: ( typeof( additionalButtonOnclick ) === "undefined" ) ? null : additionalButtonOnclick
