@@ -33,7 +33,7 @@ const __screen_events = {
                     /* DebugOnlyCode - START */
                     if( debug_mode ) {  console.log( "HIDING USER FIELD: Calling client.invoke( 'userFields:" + plugin.__resources.__USER_FIELD_HANDLE_CUSTOMER_TYPE + ".hide' );" ); }
                     /* DebugOnlyCode - END */
-                    //plugin.__v2Client.invoke( 'userFields:' + plugin.__resources.__USER_FIELD_HANDLE_CUSTOMER_TYPE + '.hide' );
+                    plugin.__v2Client.invoke( 'userFields:' + plugin.__resources.__USER_FIELD_HANDLE_CUSTOMER_TYPE + '.hide' );
                 }
                 
                 /* DebugOnlyCode - START */
