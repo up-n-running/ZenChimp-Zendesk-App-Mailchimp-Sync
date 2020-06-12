@@ -465,8 +465,8 @@ const connector = {
         {
             tempZdValue = zendeskUser.__extra_user_fields[ i ].value;
             tempMcValue = mailChimpUser.extra_merge_fields[ arrayIndex-3 ].value;
-            tempZdValue = ( tempZdValue === null ) ? "" : tempZdValue; 
-            tempMcValue = ( tempMcValue === null ) ? "" : tempMcValue;
+            tempZdValue = ( tempZdValue === null ) ? "" : tempZdValue.toString(); 
+            tempMcValue = ( tempMcValue === null ) ? "" : tempMcValue.toString(); 
             sync_fields[ arrayIndex ] = 
             {
                 label: zendeskUser.__extra_user_fields[ i ].field_def.field_label,
@@ -487,8 +487,8 @@ const connector = {
         {
             tempZdValue = zendeskUser.isDefault() ? zendeskUser.__app.__field_maps.__organisation[ i ].default_value : ( zendeskUser.isOrganization() ? zendeskUser.__orgObject.__extra_org_fields[ i ].__value : null );
             tempMcValue = mailChimpUser.extra_merge_fields[ arrayIndex-3 ].value;
-            tempZdValue = ( tempZdValue === null ) ? "" : tempZdValue; 
-            tempMcValue = ( tempMcValue === null ) ? "" : tempMcValue;
+            tempZdValue = ( tempZdValue === null ) ? "" : tempZdValue.toString();
+            tempMcValue = ( tempMcValue === null ) ? "" : tempMcValue.toString();
             tempFieldMapping = zendeskUser.__app.__field_maps.__organisation[ i ];
             //add extra conversion here to cast tempMcValue to a string if necessary
             sync_fields[ arrayIndex ] = 
@@ -510,7 +510,7 @@ const connector = {
         for( i = 0; i < zendeskUser.__app.__field_maps.__mc_only.length; i++ )
         {
             tempMcValue = mailChimpUser.extra_merge_fields[ arrayIndex-3 ].value;
-            tempMcValue = ( tempMcValue === null ) ? "" : tempMcValue;
+            tempMcValue = ( tempMcValue === null ) ? "" : tempMcValue.toString();
             tempFieldMapping = zendeskUser.__app.__field_maps.__mc_only[ i ];
             //add extra conversion here to cast tempMcValue to a string if necessary
             sync_fields[ arrayIndex ] = 
