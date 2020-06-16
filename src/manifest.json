@@ -10,7 +10,11 @@
    "location": {
     "support": {
       "ticket_sidebar": "assets/iframe.html",
-      "user_sidebar": "assets/iframe.html"
+      "user_sidebar": "assets/iframe.html",
+      "organization_sidebar": { 
+        "autoHide": true,
+        "url" : "assets/org-sidebar-iframe.html"
+      }
     }
   },
   "version": "2.0.1",
@@ -98,7 +102,10 @@
       "type": "multiline",
       "required": true,
       "secure": false,
-      "default": "[\r\n  {\r\n    \"field_label\" : \"Maintenance Emails\",\r\n    \"mailchimp_field\" : \"SEND_MAINT\",\r\n    \"type\" : \"checkbox\",\r\n    \"value_if_ticked\" : \"Yes\",\r\n    \"value_if_unticked\" : \"\"\r\n  },\r\n  {\r\n    \"field_label\" : \"VIP Promotion Emails\",\r\n    \"mailchimp_field\" : \"SEND_PROMO\",\r\n    \"type\" : \"checkbox\",\r\n    \"value_if_ticked\" : \"1\",\r\n    \"value_if_unticked\" : \"0\"\r\n  },\r\n  {\r\n    \"field_label\" : \"Monthly Scorecard Emails\",\r\n    \"mailchimp_field\" : \"SEND_SC\",\r\n    \"type\" : \"checkbox\",\r\n    \"value_if_ticked\" : \"0\",\r\n    \"value_if_unticked\" : \"\"\r\n  }\r\n]"
+      "default": "[  {    \"field_label\" : \"Maintenance Emails\",    \"mailchimp_field\" : \"SEND_MAINT\",    \"type\" : \"checkbox\",    \"value_if_ticked\" : \"Yes\",    \"value_if_unticked\" : \"No\"  },  {    \"field_label\" : \"VIP Promotion Emails\",    \"mailchimp_field\" : \"SEND_PROMO\",    \"type\" : \"checkbox\",    \"value_if_ticked\" : \"1\",    \"value_if_unticked\" : \"0\"  },  {    \"field_label\" : \"Monthly Scorecard Emails\",    \"mailchimp_field\" : \"SEND_SC\",    \"type\" : \"checkbox\",    \"value_if_ticked\" : \"Send\",    \"value_if_unticked\" : \"Don't Send\"  }]"
     }
   ]
 }
+
+
+

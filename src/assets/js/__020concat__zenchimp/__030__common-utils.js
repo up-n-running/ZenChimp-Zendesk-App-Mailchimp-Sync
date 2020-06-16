@@ -75,7 +75,7 @@ function switchToInlineTemplate(templateId, viewData){
     /* DebugOnlyCode - END */ 
 };
 
-function modal_createChildFromParent(context)
+function modal_createChildFromParent(context, zendeskUser)
 {
     /* DebugOnlyCode - START */
     if( debug_mode ) 
@@ -88,14 +88,23 @@ function modal_createChildFromParent(context)
     let options = {
         location: 'modal',
         size: {
-            width: '700px',
+            width: '800px',
             height: '450px'
         },
         url: 'assets/modal-iframe.html#parent_guid=' + encodeURIComponent( context.instanceGuid ) +
-             '&parent_location=' + encodeURIComponent( context.location )
+             '&parent_location=' + encodeURIComponent( context.location ) +
+             '&user_id=' + encodeURIComponent( zendeskUser.id ) + 
+             '&user_email=' + encodeURIComponent( zendeskUser.email )
     };
     thisV2Client.invoke('instances.create', options).then( 
-        (success)=>{ console.log("SUCCESS CREATING MODAL, success = %o", success ); },
+        (success)=>{ 
+            /* DebugOnlyCode - START */
+            if( debug_mode ) 
+            { 
+                console.log("SUCCESS CREATING MODAL, success = %o", success ); 
+            }
+            /* DebugOnlyCode - END */     
+        },
         (error)=>{ console.error("FAILURE CREATING MODAL, success = %o", error ); }
     );
     
@@ -166,7 +175,12 @@ function makeAjaxCall( promiseFunctionContext, ajaxSettings, successFunction, fa
             
             if( typeof successFunction === 'undefined' || successFunction === null )
             {
-                console.warn( "AJAX SUCCESS: and no successFunction was defined so no futher action can be taken to handle the response. returned data = %o", data );
+                /* DebugOnlyCode - START */
+                if( debug_mode ) 
+                { 
+                    console.warn( "AJAX SUCCESS: and no successFunction was defined so no futher action can be taken to handle the response. returned data = %o", data );
+                }
+                /* DebugOnlyCode - END */     
             }
             else
             {
@@ -180,7 +194,7 @@ function makeAjaxCall( promiseFunctionContext, ajaxSettings, successFunction, fa
             
             if( typeof failFunction === 'undefined' || failFunction === null )
             {
-                console.warn( "AJAX FAIL: NOT CALLING '%s(data)' AND NO failFunction WAS DEFINED so no futher action can be taken to handle the error. error response = %o",  (successFunction)?successFunction.name:successFunction, response );
+                console.error( "AJAX FAIL: NOT SO CALLING SUCCESS FUNCTION '%s(data)' AND NO failFunction WAS DEFINED so no futher action can be taken to handle the error. error response = %o",  (successFunction)?successFunction.name:successFunction, response );
             }
             else
             {

@@ -21,12 +21,12 @@
             this.__extra_org_fields[ i ] = { __field_def: app.__field_maps.__organisation[ i ], __value: null };
         }        
     }
-    ZendeskOrganization.prototype.populateExtraFieldsFromOrganizationAPIData = function( APIOrgData )
+    ZendeskOrganization.prototype.__populateExtraFieldsFromOrganizationAPIData = function( APIOrgData )
     {
         /* DebugOnlyCode - START */ 
         if( debug_mode ) 
         { 
-            console.group( "new populateExtraFieldsFromOrganizationAPIData(APIOrgData) called" );
+            console.group( "__populateExtraFieldsFromOrganizationAPIData(APIOrgData) called" );
             console.log( "ARG1: APIOrgData = %o", APIOrgData );
         }
         /* DebugOnlyCode - END */
@@ -49,7 +49,7 @@
         }
         /* DebugOnlyCode - END */
     };
-    ZendeskOrganization.prototype.populateExtraFieldsFromFrameworkOrgObject = function( frameworkOrgObject )
+    ZendeskOrganization.prototype.__populateExtraFieldsFromFrameworkOrgObject = function( frameworkOrgObject )
     {
         for(var i = 0; i < this.__extra_org_fields.length; i++) 
         {
@@ -57,10 +57,10 @@
         }
     };
     /**
-     * inline clone function for user object - deep clones by calling organization.clone too
-     * @returns {nm$_ZendeskObjects.ZendeskUser|ZendeskOrganization.prototype.clone.clonedOrganization|nm$_ZendeskObjects.ZendeskOrganization.prototype.clone.clonedOrganization}
+     * inline clone function for user object - deep clones by calling organization.__clone too
+     * @returns {nm$_ZendeskObjects.ZendeskUser|ZendeskOrganization.prototype.__clone.clonedOrganization|nm$_ZendeskObjects.ZendeskOrganization.prototype.__clone.clonedOrganization}
      */
-    ZendeskOrganization.prototype.clone = function()
+    ZendeskOrganization.prototype.__clone = function()
     {
         var clonedOrganization = new ZendeskOrganization( this.__app, this.id, this.name, this.__customer_type );
         //console.log( "cloning Org, this.name = '" + this.name + "', new ZendeskOrganization = ");
@@ -73,7 +73,17 @@
         //console.dir( clonedOrganization );
         return clonedOrganization;
     };
-
+    ZendeskOrganization.prototype.__findExtraFieldByName = function( fieldName, zdNotMcField )
+    {
+        for(var i = 0; i < this.__extra_org_fields.length; i++) 
+        {
+            if( ( zdNotMcField && this.__extra_org_fields[i].__field_def.zendesk_field  === fieldName ) || ( !zdNotMcField && this.__extra_org_fields[i].__field_def.mailchimp_field === fieldName ) )
+            {
+                return this.__extra_org_fields[i];
+            }
+        }
+        return null;
+    };
 
     /**
      * Constructor to either create from scratch or clone a new ZendeskUser from: EITHER a Zendesk User API return data object OR an existing ZendeskUser object to clone
@@ -105,14 +115,14 @@
             this.name = userObjectToClone.name;   //cant be minified without we use it in main hdbs template
             this.__name_parts = null;
             this.email = userObjectToClone.email; //TO DO: Can be minified
-            this.customer_type = userObjectToClone.customer_type;  //cant be minified we use it in main hdbs template
+            this.__customer_type = userObjectToClone.__customer_type;  //cant be minified we use it in main hdbs template
             this.__organization_id = userObjectToClone.__organization_id;
-            this.__orgObject = ( userObjectToClone.__orgObject === null) ? null : userObjectToClone.__orgObject.clone();
+            this.__orgObject = ( userObjectToClone.__orgObject === null) ? null : userObjectToClone.__orgObject.__clone();
             this.__extra_user_fields = [];
             
             for(var i = 0; i < userObjectToClone.__extra_user_fields.length; i++) 
             {
-                this.__extra_user_fields[ i ] = { field_def: userObjectToClone.__extra_user_fields[ i ].field_def, value: userObjectToClone.__extra_user_fields[ i ].value };
+                this.__extra_user_fields[ i ] = { __field_def: userObjectToClone.__extra_user_fields[ i ].__field_def, __value: userObjectToClone.__extra_user_fields[ i ].__value };
             }
         }
         else
@@ -132,7 +142,7 @@
             this.name = userObjectFromDataAPI.user.name;
             this.__name_parts = null;
             this.email = userObjectFromDataAPI.user.email;
-            this.customer_type = userObjectFromDataAPI.user.user_fields.mailshot_customer_type;
+            this.__customer_type = userObjectFromDataAPI.user.user_fields.mailshot_customer_type;
             this.__organization_id = ( typeof( userObjectFromDataAPI.user.organization_id ) !== 'undefined' && userObjectFromDataAPI.user.organization_id !== null ) ? userObjectFromDataAPI.user.organization_id : null; //being careful as sometimes users can be set to link through to more than one org depending on admin settings
             this.__orgObject = null;  //this will only be instantiated when needed, not now, even if there is an organization id
             this.__extra_user_fields = [];
@@ -140,7 +150,7 @@
 
             for(var i = 0; i < app.__field_maps.__user.length; i++) 
             {
-                this.__extra_user_fields[ i ] = { field_def: app.__field_maps.__user[ i ], value: null };
+                this.__extra_user_fields[ i ] = { __field_def: app.__field_maps.__user[ i ], __value: null };
             }
 
             /* DebugOnlyCode - START */ 
@@ -148,11 +158,11 @@
             /* DebugOnlyCode - END */ 
 
             //now set the optional extra user fields from returned API data
-            this.populateExtraFieldsFromUserAPIData( userObjectFromDataAPI.user );
+            this.__populateExtraFieldsFromUserAPIData( userObjectFromDataAPI.user );
             
             /* DebugOnlyCode - START */ 
             if( debug_mode ) {  
-                console.log( "Completed part 2 of 2, after populateExtraFieldsFromUserAPIData(...)");
+                console.log( "Completed part 2 of 2, after __populateExtraFieldsFromUserAPIData(...)");
                 console.log( "Now final sanity check. If it's customer type is Organisation and someone has removed the org from the user in zendesk then throw a special error that can be caught");
             }
             /* DebugOnlyCode - END */
@@ -173,16 +183,16 @@
         /* DebugOnlyCode - END */
     }
     
-    ZendeskUser.prototype.populateExtraFieldsFromUserAPIData = function( APIUserData )
+    ZendeskUser.prototype.__populateExtraFieldsFromUserAPIData = function( APIUserData )
     {
         for(var i = 0; i < this.__extra_user_fields.length; i++) 
         {
-            let valueFromAPI = APIUserData.user_fields[ this.__extra_user_fields[ i ].field_def.zendesk_field ];
+            let valueFromAPI = APIUserData.user_fields[ this.__extra_user_fields[ i ].__field_def.zendesk_field ];
             if( typeof( valueFromAPI ) === 'undefined' )
             {
-                throw new ReferenceError( "The Zendesk 'User Field' with key '" + this.__extra_user_fields[ i ].field_def.zendesk_field + '\' which you specified in your Field Mapping settings doesnt seem to exist in Zendesk yet.<br /><br />For help with your field mappings use our <a target="_blank" href="'+this.__app.__resources.__SETTINGS_HELPER_SPREADSHEET_DOWNLOAD_URL+'">Zenchimp App Settings Generator</a> spreadsheet.' );
+                throw new ReferenceError( "The Zendesk 'User Field' with key '" + this.__extra_user_fields[ i ].__field_def.zendesk_field + '\' which you specified in your Field Mapping settings doesnt seem to exist in Zendesk yet.<br /><br />For help with your field mappings use our <a target="_blank" href="'+this.__app.__resources.__SETTINGS_HELPER_SPREADSHEET_DOWNLOAD_URL+'">Zenchimp App Settings Generator</a> spreadsheet.' );
             }
-            this.__extra_user_fields[ i ].value = APIUserData.user_fields[ this.__extra_user_fields[ i ].field_def.zendesk_field ];
+            this.__extra_user_fields[ i ].__value = APIUserData.user_fields[ this.__extra_user_fields[ i ].__field_def.zendesk_field ];
         }
     };
 
@@ -192,7 +202,7 @@
     //this functions checks for these validation errors
     ZendeskUser.prototype.__refreshValidationErrorFlag = function()
     {
-        if( this.customer_type === this.__app.__resources.__CUSTOMER_TYPE_USE_ORGANIZATION && this.__organization_id === null )
+        if( this.__customer_type === this.__app.__resources.__CUSTOMER_TYPE_USE_ORGANIZATION && this.__organization_id === null )
         {
             /* DebugOnlyCode - START */ 
             if( debug_mode ) {  console.warn( "FAILED SANITY CHECK - ORGANISATION NO LONGER LINKED TO USER"); }
@@ -202,60 +212,60 @@
     };
 
     //get name part functions that convert to title case
-    ZendeskUser.prototype.getSalutation = function(){ this.populateNamePartsIfNecessary(); return ( this.__name_parts.salutation === null ) ? "" : this.__name_parts.salutation.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();}); }; //makes not null title case value
-    ZendeskUser.prototype.getForeName   = function(){ this.populateNamePartsIfNecessary(); return ( this.__name_parts.firstName === null ) ? "" : this.__name_parts.firstName.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();}); }; //makes not null title case value
-    ZendeskUser.prototype.getSurname    = function(){ this.populateNamePartsIfNecessary(); return  ( this.__name_parts.lastName === null ) ? "" : this.__name_parts.lastName.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();}); }; //makes not null title case value
-    ZendeskUser.prototype.populateNamePartsIfNecessary = function() 
+    ZendeskUser.prototype.__getSalutation = function(){ this.__populateNamePartsIfNecessary(); return ( this.__name_parts.salutation === null ) ? "" : this.__name_parts.salutation.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();}); }; //makes not null title case value
+    ZendeskUser.prototype.__getForeName   = function(){ this.__populateNamePartsIfNecessary(); return ( this.__name_parts.firstName === null ) ? "" : this.__name_parts.firstName.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();}); }; //makes not null title case value
+    ZendeskUser.prototype.__getSurname    = function(){ this.__populateNamePartsIfNecessary(); return  ( this.__name_parts.lastName === null ) ? "" : this.__name_parts.lastName.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();}); }; //makes not null title case value
+    ZendeskUser.prototype.__populateNamePartsIfNecessary = function() 
     { 
         if( this.__name_parts === null && this.name !== null  )
         {
-            this.__name_parts = this.__app.parseNamesModule.parse( this.name.replace( "/", " " ).replace( ".", " " ).split(",").reverse().map(Function.prototype.call, String.prototype.trim).join(" ") );
+            this.__name_parts = NameParse.parse( this.name.replace( "/", " " ).replace( ".", " " ).split(",").reverse().map(Function.prototype.call, String.prototype.trim).join(" ") );
         }
     };
-    ZendeskUser.prototype.populateExtraFieldsFromFrameworkUserObject = function( frameworkUserObject )
+    ZendeskUser.prototype.__populateExtraFieldsFromFrameworkUserObject = function( frameworkUserObject )
     {
         for(var i = 0; i < this.__extra_user_fields.length; i++) 
         {
-            this.__extra_user_fields[ i ].value = frameworkUserObject.customField( this.__extra_user_fields[ i ].field_def.zendesk_field );
+            this.__extra_user_fields[ i ].__value = frameworkUserObject.customField( this.__extra_user_fields[ i ].__field_def.zendesk_field );
         }
     };
     
     /**
-     * inline clone function for user object - deep clones by calling organization.clone too
-     * @returns {nm$_ZendeskUser.ZendeskUser.prototype.clone.clonedUser|ZendeskUser.prototype.clone.clonedUser|nm$_ZendeskUser.ZendeskUser}
+     * inline clone function for user object - deep clones by calling organization.__clone too
+     * @returns {nm$_ZendeskUser.ZendeskUser.prototype.__clone.clonedUser|ZendeskUser.prototype.__clone.clonedUser|nm$_ZendeskUser.ZendeskUser}
      */  
-    ZendeskUser.prototype.clone = function()
+    ZendeskUser.prototype.__clone = function()
     {
         return new ZendeskUser( this.__app, null, this );
     };
 
-    ZendeskUser.prototype.isNotset = function() { return this.customer_type === this.__app.resources.CUSTOMER_TYPE_NOT_SET; };
-    ZendeskUser.prototype.isExcluded = function() { return this.customer_type === this.__app.resources.CUSTOMER_TYPE_EXCLUDE; };
-    ZendeskUser.prototype.isIncluded = function() { return this.customer_type === this.__app.resources.CUSTOMER_TYPE_USE_ORGANIZATION || this.customer_type === this.__app.resources.CUSTOMER_TYPE_USE_DEFAULT; };
-    ZendeskUser.prototype.isOrganization = function() { return this.customer_type === this.__app.resources.CUSTOMER_TYPE_USE_ORGANIZATION; };
-    ZendeskUser.prototype.isDefault = function() { return this.customer_type === this.__app.resources.CUSTOMER_TYPE_USE_DEFAULT; };
+    ZendeskUser.prototype.__isNotset = function() { return this.__customer_type === this.__app.__resources.__CUSTOMER_TYPE_NOT_SET; };
+    ZendeskUser.prototype.__isExcluded = function() { return this.__customer_type === this.__app.__resources.__CUSTOMER_TYPE_EXCLUDE; };
+    ZendeskUser.prototype.__isIncluded = function() { return this.__customer_type === this.__app.__resources.__CUSTOMER_TYPE_USE_ORGANIZATION || this.__customer_type === this.__app.__resources.__CUSTOMER_TYPE_USE_DEFAULT; };
+    ZendeskUser.prototype.__isOrganization = function() { return this.__customer_type === this.__app.__resources.__CUSTOMER_TYPE_USE_ORGANIZATION; };
+    ZendeskUser.prototype.__isDefault = function() { return this.__customer_type === this.__app.__resources.__CUSTOMER_TYPE_USE_DEFAULT; };
 
-    ZendeskUser.prototype.belongsToOrganization = function() { return this.__organization_id !== null; };
+    ZendeskUser.prototype.__belongsToOrganization = function() { return this.__organization_id !== null; };
     ZendeskUser.prototype.__orgObjectIsPopulated = function() { return this.__orgObject !== null; };
-    ZendeskUser.prototype.getMailchimpCustomerType = function() 
+    ZendeskUser.prototype.__getMailshotCustomerType = function() 
     { 
         /* DebugOnlyCode - START */ 
         if( debug_mode ) 
         { 
-            console.groupCollapsed( "getMailchimpCustomerType() called" );
-            console.log( "this.customer_type = '%s'", this.customer_type );
+            console.groupCollapsed( "__getMailshotCustomerType() called" );
+            console.log( "this.__customer_type = '%s'", this.__customer_type );
             console.log( "this.__app.__resources.__CUSTOMER_TYPE_USE_ORGANIZATION = '%s'", this.__app.__resources.__CUSTOMER_TYPE_USE_ORGANIZATION );
             console.log( "this = %o", this );
         }
         /* DebugOnlyCode - END */
 
-        if( typeof( this.customer_type ) === "undefined" || this.customer_type === null )
+        if( typeof( this.__customer_type ) === "undefined" || this.__customer_type === null )
         {
-            console.warn( "ZendeskUser.getMailchimpCustomerType() called with invalid customer_type, this = " );console.dir( this );
+            console.warn( "ZendeskUser.__getMailshotCustomerType() called with invalid __customer_type, this = " );console.dir( this );
             return null;
         }
         
-        let custTypeToReturn = this.customer_type === this.__app.__resources.__CUSTOMER_TYPE_USE_ORGANIZATION ? this.__orgObject.__customer_type : this.__app.__field_maps.__cust_type.default_value; 
+        let custTypeToReturn = this.__customer_type === this.__app.__resources.__CUSTOMER_TYPE_USE_ORGANIZATION ? this.__orgObject.__customer_type : this.__app.__field_maps.__cust_type.default_value; 
         
         /* DebugOnlyCode - START */ 
         if( debug_mode ) 
@@ -267,13 +277,14 @@
         return custTypeToReturn
     };
 
-    ZendeskUser.prototype.findExtraFieldByName = function( fieldName, zdNotMcField )
+    ZendeskUser.prototype.__findExtraFieldByName = function( fieldName, zdNotMcField )
     {
         for(var i = 0; i < this.__extra_user_fields.length; i++) 
         {
-            if( ( zdNotMcField && this.__extra_user_fields[i].field_def.zendesk_field  === fieldName ) || ( !zdNotMcField && this.__extra_user_fields[i].field_def.mailchimp_field === fieldName ) )
+            if( ( zdNotMcField && this.__extra_user_fields[i].__field_def.zendesk_field  === fieldName ) || ( !zdNotMcField && this.__extra_user_fields[i].__field_def.mailchimp_field === fieldName ) )
             {
                 return this.__extra_user_fields[i];
             }
         }
+        return null;
     };

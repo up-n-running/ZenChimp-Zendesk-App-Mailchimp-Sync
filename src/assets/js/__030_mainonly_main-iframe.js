@@ -1,3 +1,7 @@
+var zenChimpPlugin = pluginFactory( thisV2Client );
+
+thisV2Client.invoke('resize', { width: '100%', height: (debug_mode)?'171px':'150px' });
+
 //NOTE: debug_mode, thisV2Client & modal_createChildFromParent() are declared in common-utils.js
 if( typeof( thisV2ClientRegistered ) === 'undefined' )
 {
@@ -33,19 +37,6 @@ else
     init();
 }
 
-var zenChimpPlugin = pluginFactory( thisV2Client );
-
-thisV2Client.invoke('resize', { width: '100%', height: (debug_mode)?'171px':'150px' });
-
-thisV2Client.on('modalSyncPerformed', () => { 
-    /* DebugOnlyCode - START */
-    if( debug_mode ) 
-    { 
-        console.log('EVENT TRIGGERED: modalSyncPerformed'); 
-    }
-    /* DebugOnlyCode - END */ 
-    zenChimpPlugin.resetAppIfPageFullyLoaded(); 
-} );
 
 function init() 
 {
@@ -72,27 +63,5 @@ function init()
         console.groupEnd();
     }
     /* DebugOnlyCode - END */ 
-}
-
-function syncButtonOnclick()
-{
-    /* DebugOnlyCode - START */
-    if( debug_mode ) 
-    { 
-        console.group( "MAIN.JS: syncButtonOnclick() called" );
-        console.log( "Triggering Modal:    thisV2Client.context().then(create_modal);" );
-    }
-    /* DebugOnlyCode - END */
-    
-    thisV2Client.context().then(modal_createChildFromParent, (err) => { console.error( err ); });
-    
-    /* DebugOnlyCode - START */
-    if( debug_mode ) 
-    { 
-        console.log( "Finished syncButtonOnclick, returning false;" );
-        console.groupEnd();
-    }
-    /* DebugOnlyCode - END */ 
-    return false;
 }
 

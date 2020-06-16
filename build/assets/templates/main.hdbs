@@ -33,11 +33,11 @@
     {{#if display_params.customer_type_included}}
         {{#if display_params.user_in_sync}}
             <div class="information-text">
-                <p class="success" style="padding-bottom: 3px">{{zendesk_user.name}} is <a class="sync-popup-link" onclick="return syncButtonOnclick();">in sync</a></p>
+                <p class="success" style="padding-bottom: 3px">{{zendesk_user.name}} is <a class="sync-popup-link" onclick="return zenChimpPlugin.syncButtonFromMainOnclick();">in sync</a></p>
                 {{#each sync_fields}}
                 {{#if this.is_checkbox}}
                     <div class="mc-only-field">
-                        <input class="mc_only_field" id="{{this.checkbox_html_id}}" name="{{this.checkbox_html_id}}" onclick="return zenChimpPlugin.mailchimpOnlyField_OnClick(event);" value="1" type="checkbox" {{#if this.is_checkbox_ticked}}checked="checked" {{/if}}/>
+                        <input class="mc_only_field" id="{{this.checkbox_html_id}}" name="{{this.checkbox_html_id}}" onclick="return zenChimpPlugin.mailchimpOnlyFieldOnClick(event);" value="1" type="checkbox" {{#if this.is_checkbox_ticked}}checked="checked" {{/if}}/>
                         <label for="{{this.checkbox_html_id}}">{{this.label}}</label>
                     </div>
                 {{/if}}
@@ -46,8 +46,8 @@
         {{/if}}
         {{#unless display_params.user_in_sync}}
             <div class="information-text">
-                <p class="warning">{{zendesk_user.name}} is <a class="sync-popup-link" onclick="return syncButtonOnclick();">out of sync</a></p>
-                <button class="btn btn-danger btn-sm sync-popup" onclick="return syncButtonOnclick();">Synchronize</button>
+                <p class="warning">{{zendesk_user.name}} is <a class="sync-popup-link" onclick="return zenChimpPlugin.syncButtonFromMainOnclick();">out of sync</a></p>
+                <button class="btn btn-danger btn-sm sync-popup" onclick="return zenChimpPlugin.syncButtonFromMainOnclick();">Synchronize</button>
             </div>
         {{/unless}}
     {{/if}}

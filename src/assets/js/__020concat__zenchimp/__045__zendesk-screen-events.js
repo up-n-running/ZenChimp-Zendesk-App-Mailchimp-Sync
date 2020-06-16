@@ -55,14 +55,16 @@ const __screen_events = {
         /* DebugOnlyCode - END */
     },
     
-    __formFieldChanged: function( plugin, event )
+    __userFormFieldChanged: function( plugin, event, triggeredFromAnotherInstance )
     {
         /* DebugOnlyCode - START */
         if( debug_mode ) 
         { 
-            console.group( "SCREEN-EVENTS.JS: __formFieldChanged( plugin, event ) called" );
+            console.group( "SCREEN-EVENTS.JS: __userFormFieldChanged( plugin, event, triggeredFromAnotherInstance ) called" );
             console.log( "ARG1: plugin = %o", plugin );
             console.log( "ARG2: event = %o", event );
+            console.log( "ARG3: triggeredFromAnotherInstance = %o", triggeredFromAnotherInstance );
+            console.log( "plugin.currentScreen = %o ", plugin.currentScreen );
             console.log( "Checking if in user location: %o", plugin.__context.location === plugin.__resources.__APP_LOCATION_USER )
         }
         /* DebugOnlyCode - END */
@@ -78,7 +80,7 @@ const __screen_events = {
                 /* DebugOnlyCode - START */
                 if( debug_mode ) { console.log( "SPECIAL FIELD FOUND: CUSTOMER TYPE. Calling __userScreenCustomerTypeFieldChanged( '%s' );", event.newValue ); }
                 /* DebugOnlyCode - END */
-                this.__userScreenCustomerTypeFieldChanged( plugin, event.newValue );
+                this.__userScreenCustomerTypeFieldChanged( plugin, event.newValue, triggeredFromAnotherInstance );
             }
             //first check if its the second 'biggest' field: user.organizations
             else if( fieldName === "user.organizations" )
@@ -86,7 +88,7 @@ const __screen_events = {
                 /* DebugOnlyCode - START */
                 if( debug_mode ) { console.log( "SPECIAL FIELD FOUND: ORGANIZATIONS. Calling __userScreenOrganizationFieldChanged( '%s' );", event.newValue ); }
                 /* DebugOnlyCode - END */
-                this.__userScreenOrganizationFieldChanged( plugin, event.newValue );
+                this.__userScreenOrganizationFieldChanged( plugin, event.newValue, triggeredFromAnotherInstance );
             }
             //check for user's email address changing
             else if( fieldName === "user.name" )
@@ -100,7 +102,11 @@ const __screen_events = {
                     plugin.__zendesk_user.name = event.newValue;
                     plugin.__zendesk_user.__name_parts = null;
                 }
-                plugin.switchToMainTemplate();
+                
+                if( !triggeredFromAnotherInstance && plugin.currentScreen === 'main' )
+                {
+                    plugin.__switchToMainTemplate();
+                }
             }
             //check for user's email address changing
             else if( fieldName === "user.email" )
@@ -112,7 +118,11 @@ const __screen_events = {
                 {
                     plugin.__zendesk_user.email = event.newValue;
                 }
-                plugin.switchToMainTemplate();
+
+                if( !triggeredFromAnotherInstance && plugin.currentScreen === 'main' )
+                {
+                    plugin.__switchToMainTemplate();
+                }
             }
             //finally check for any of the mapped user fields changing
             else
@@ -134,11 +144,16 @@ const __screen_events = {
         //if it's a dependant 'extra' field
         if( matchedZDFieldName!==null && plugin.__zendesk_user )
         {
-                plugin.__zendesk_user.findExtraFieldByName( matchedZDFieldName, true ).value = event.newValue;
-                /* DebugOnlyCode - START */
-                if( debug_mode ) { console.log( "Updated correcponding value in plugin.__zendesk_user = %o", plugin.__zendesk_user ); }
-                /* DebugOnlyCode - END */
-                plugin.switchToMainTemplate();
+            plugin.__zendesk_user.__findExtraFieldByName( matchedZDFieldName, true ).__value = event.newValue;
+
+            /* DebugOnlyCode - START */
+            if( debug_mode ) { console.log( "Updated correcponding value in plugin.__zendesk_user = %o", plugin.__zendesk_user ); }
+            /* DebugOnlyCode - END */
+
+            if( !triggeredFromAnotherInstance && plugin.currentScreen === 'main' )
+            {
+                plugin.__switchToMainTemplate();
+            }
         }
         
         /* DebugOnlyCode - START */
@@ -150,14 +165,15 @@ const __screen_events = {
         /* DebugOnlyCode - END */
     },	
     
-    __userScreenOrganizationFieldChanged: function( plugin, newValue )
+    __userScreenOrganizationFieldChanged: function( plugin, newValue, triggeredFromAnotherInstance )
     {
         /* DebugOnlyCode - START */
         if( debug_mode ) 
         { 
-            console.group( "SCREEN-EVENTS.JS: __userScreenOrganizationFieldChanged( plugin, newValue ) called" );
+            console.group( "SCREEN-EVENTS.JS: __userScreenOrganizationFieldChanged( plugin, newValue, triggeredFromAnotherInstance ) called" );
             console.log( "ARG1: plugin = %o", plugin );
             console.log( "ARG2: newValue = %o", newValue );
+            console.log( "ARG3: triggeredFromAnotherInstance = %o", triggeredFromAnotherInstance );
         }
         /* DebugOnlyCode - END */
         
@@ -172,7 +188,11 @@ const __screen_events = {
                 /* DebugOnlyCode - START */
                 if( debug_mode ) { console.log( "mailchimp user hasnt changed, we've taken care of updates to zendesk user, so nothing left to do but switch to main template.  plugin.__zendesk_user = %o", plugin.__zendesk_user ); }
                 /* DebugOnlyCode - END */
-                plugin.switchToMainTemplate();
+                
+                if( !triggeredFromAnotherInstance && plugin.currentScreen === 'main' )
+                {
+                    plugin.__switchToMainTemplate();
+                }
             }
             /* DebugOnlyCode - START */
             else
@@ -186,25 +206,33 @@ const __screen_events = {
             plugin.__zendesk_user.__organization_id = newValue[0].id;
             plugin.__zendesk_user.__orgObject = null;
             
-            if( plugin.__zendesk_user.isOrganization() )
+            if( plugin.__zendesk_user.__isOrganization() )
             {
                 /* DebugOnlyCode - START */
                 if( debug_mode ) { console.log( "Re Added an org id to user butthat is synced in org mode loading new org all over again from APIs.  plugin.__zendesk_user = %o", plugin.__zendesk_user ); }
                 /* DebugOnlyCode - END */
-                plugin.switchToLoadingScreen( "Loading Organization..." );
-                makeAjaxCall(
-                    this,
-                    plugin.__requests.__getZendeskOrganizations( plugin.__zendesk_user.id, plugin.__zendesk_user.__organization_id ), 
-                    plugin.__getZendeskOrganizations_Done,
-                    plugin.__switchToErrorMessage 
-                );
+                
+                if( !triggeredFromAnotherInstance )
+                {
+                    plugin.switchToLoadingScreen( "Loading Organization..." );  //dont need to check if plugin.currentScreen === 'main' as sometimes the error is caused by onvalid org and changing ord should refresh app to see if error has gone away
+                    makeAjaxCall(
+                        plugin,
+                        plugin.__requests.__getZendeskOrganizations( plugin.__zendesk_user.id, plugin.__zendesk_user.__organization_id ), 
+                        plugin.__getZendeskOrganizations_Done,
+                        plugin.__switchToErrorMessage 
+                    );
+                }
             }
             else
             {
                 /* DebugOnlyCode - START */
                 if( debug_mode ) { console.log( "Added org id to user but as we're not synced in org mode we dont need to load full org object yet, so nothing left to do but switch to main template.  plugin.__zendesk_user = %o", plugin.__zendesk_user ); }
                 /* DebugOnlyCode - END */
-                plugin.switchToMainTemplate();
+                
+                if( !triggeredFromAnotherInstance && plugin.currentScreen === 'main' )
+                {
+                    plugin.__switchToMainTemplate();
+                }
             }
         }
         
@@ -217,19 +245,20 @@ const __screen_events = {
         /* DebugOnlyCode - END */
     },
 
-    __userScreenCustomerTypeFieldChanged: function( plugin, newValue )
+    __userScreenCustomerTypeFieldChanged: function( plugin, newValue, triggeredFromAnotherInstance )
     {
         /* DebugOnlyCode - START */
         if( debug_mode ) 
         { 
-            console.group( "SCREEN-EVENTS.JS: __userScreenCustomerTypeFieldChanged( plugin, newValue ) called" );
+            console.group( "SCREEN-EVENTS.JS: __userScreenCustomerTypeFieldChanged( plugin, newValue, triggeredFromAnotherInstance ) called" );
             console.log( "ARG1: plugin = %o", plugin );
             console.log( "ARG2: newValue = %o", newValue );
+            console.log( "ARG3: triggeredFromAnotherInstance = %o", triggeredFromAnotherInstance );
         }
         /* DebugOnlyCode - END */
         
-        let oldCustomerType = plugin.__zendesk_user.customer_type;
-        plugin.__zendesk_user.customer_type = newValue;
+        let oldCustomerType = plugin.__zendesk_user.__customer_type;
+        plugin.__zendesk_user.__customer_type = newValue;
         plugin.__changeCustomerType( oldCustomerType, newValue );
         
         /* DebugOnlyCode - START */
@@ -240,4 +269,62 @@ const __screen_events = {
         }
         /* DebugOnlyCode - END */
     },
+    
+    __triggers: 
+    {
+        __zendeskOrganizationUpdated: function( plugin, comms )
+        {
+            /* DebugOnlyCode - START */
+            if( debug_mode ) 
+            { 
+                console.group( "SCREEN-EVENTS.JS: TRIGGER __zendeskOrganisationUpdated( plugin, newValue ) called" );
+                console.log( "ARG1: plugin = %o", plugin );
+                console.log( "ARG2: comms = %o", comms );
+                console.log( "Time Called: %o", new Date() );
+            }
+            /* DebugOnlyCode - END */
+
+            let organizationId = comms.organizationId;
+            if( !plugin.__modalMode && plugin.__zendesk_user && plugin.__zendesk_user.__orgObject && plugin.__zendesk_user.__orgObject.id === organizationId )
+            {
+                /* DebugOnlyCode - START */
+                if( debug_mode ) { console.log( "FOUND CLIENT with user with organisation '%s', plugin.__zendesk_user = ", organizationId , plugin.__zendesk_user ); }
+                /* DebugOnlyCode - END */
+                
+                if( comms.fieldName === plugin.__resources.__ORG_FIELD_HANDLE_CUSTOMER_TYPE )
+                {
+                    plugin.__zendesk_user.__orgObject.__customer_type = comms.newValue;
+                }
+                else
+                {
+                    plugin.__zendesk_user.__orgObject.__findExtraFieldByName( comms.fieldName, true ).__value = comms.newValue;
+                }
+                
+                /* DebugOnlyCode - START */
+                if( debug_mode ) { console.log( "Updated correcponding value in plugin.__zendesk_user.__orgObject = %o", plugin.__zendesk_user.__orgObject ); }
+                /* DebugOnlyCode - END */
+                
+                if( plugin.__isActiveOnScreenNow )
+                {
+                    if( this.currentScreen === 'main' )
+                    {
+                        //refresh screen having updated user unless something is loaded or an error message is showing
+                        plugin.__switchToMainTemplate();
+                    }
+                }
+                else if( plugin.__actionRequiredOnInstanceActivation !== 'reset' ) //reset beats refresh
+                {
+                    plugin.__actionRequiredOnInstanceActivation = 'refresh';
+                }
+            }
+            
+            /* DebugOnlyCode - START */
+            if( debug_mode ) 
+            { 
+                console.log( "Finished" );
+                console.groupEnd();
+            }
+            /* DebugOnlyCode - END */
+        }
+    }
 };
