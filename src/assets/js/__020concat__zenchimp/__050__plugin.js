@@ -114,12 +114,15 @@ var pluginFactory = function( thisV2Client ) {
         /* DebugOnlyCode - END */
         
         //wire up event listeners
-        thisV2Client.on( 'ticket.requester.id.changed'   , () => { this.resetAppIfPageFullyLoaded(); } );
+        thisV2Client.on( 'ticket.requester.id.changed', ()     => { this.resetAppIfPageFullyLoaded(); } );
         thisV2Client.on( '*.changed'                  , (data) => { this.__userFormFieldChanged(data); } );
         //triggers from other instances of app
         thisV2Client.on( 'zendeskOrganizationUpdated' , (data) => { this.__comms_zendeskOrganizationUpdated(data); } );
-        thisV2Client.on( 'syncOccured' ,                (data) => { this.__comms_syncOccured(data); } );
-        thisV2Client.on( 'modalSyncPerformed' ,         (data) => { this.__comms_modalSyncPerformed(data); } );
+        thisV2Client.on( 'zendeskUserUpdated'         , (data) => { this.__comms_zendeskUserUpdated(data); } );
+        thisV2Client.on( 'triggerReloadByUserId'      , (data) => { this.__comms_triggerReloadByUserId(data); } );
+        thisV2Client.on( 'mailshotMemberSavedTo3rdParty',(data)=> { this.__comms_mailshotMemberSavedTo3rdParty(data); } );
+        thisV2Client.on( 'syncOccured'                , (data) => { this.__comms_syncOccured(data); } );
+
         //when the app is activated switch on the form field changed trigger event
         thisV2Client.on( 'app.activated'              , (data) => { this.__comms_appActivated(data); } );
         thisV2Client.on( 'app.deactivated'            , (data) => { this.__comms_appDeactivated(data); } );
@@ -313,6 +316,106 @@ var pluginFactory = function( thisV2Client ) {
         }
         /* DebugOnlyCode - END */
     },
+    
+    __validateFieldMappingsJSON: function( fieldMappingsJSONText, settingsName, mailchimpOnlyFields ) 
+    {
+       /* DebugOnlyCode - START */
+        if( debug_mode ) 
+        { 
+            console.groupCollapsed( "__validateFieldMappingsJSON( fieldMappingsJSONText, settingsName ) called" );
+            console.log( "ARG1: fieldMappingsJSONText = %o", fieldMappingsJSONText );
+            console.log( "ARG2: settingsName = %o", settingsName );
+            console.log( "Attempting to parse..." );
+        }
+        /* DebugOnlyCode - END */
+
+        //parse JSON but catch all error conditions
+        let fieldMappingsJSON = null;
+        let errorObject = null;
+        let errorMessage = null;
+        try
+        {
+            fieldMappingsJSON = JSON.parse( fieldMappingsJSONText );
+        }
+        catch(e)
+        {
+            let parseErrorMessage = 'unknown';       
+            if (e instanceof SyntaxError) {
+                parseErrorMessage = e.name + ' ' + e.message;
+            } else {
+                parseErrorMessage = e.message;
+            }            
+            
+            console.error( "JSON Validation for settings '%s' Falied with exception e = %o ",settingsName, e );
+            console.error( "JSON TEXT WAS: %o ", fieldMappingsJSONText );
+            errorObject = e;
+            errorMessage = 'The JSON Settings text you entered for the '+settingsName+' setting was formatted incorrectly, it must be valid JSON.<br /><br />'+
+                           'The failure reason was: '+parseErrorMessage+'<br /><br />'+
+                           'For help with these settings fields use our <a target="_blank" href="'+this.__resources.__SETTINGS_HELPER_SPREADSHEET_DOWNLOAD_URL+'">Zenchimp App Settings Generator</a> spreadsheet';
+        }
+
+        if( fieldMappingsJSON !== null )
+        {
+            
+            //More Validation, checking hte JSON for each field defintiion in turn
+            let fieldMap = null;
+            let validTypeArray = mailchimpOnlyFields ? ['checkbox'] : ['image', 'text', 'checkbox'];
+            let errorArray = [];
+            for( let i = 0; i < fieldMappingsJSON.length; i++ )
+            {
+                fieldMap = fieldMappingsJSON[i];
+                //these values have to exist and be not empty
+                if( !fieldMap.field_label ) { errorArray.push( 'Missing Field/Value: field_label' ); }
+                if( !fieldMap.mailchimp_field ) { errorArray.push( 'Missing Field/Value: mailchimp_field' ); }
+                if( !fieldMap.type ) { errorArray.push( 'Missing Field/Value: type' ); }
+                else if ( !validTypeArray.includes(fieldMap.type)) { errorArray.push( "Invalid type: '"+fieldMap.type+"'. Valid types are: " + validTypeArray.toString() + " (all lower case)" ); }
+                //these settings have to exist but dont necessarily have to have a value
+                //these fields also depend on if its a mailchimp only field
+                if( mailchimpOnlyFields )
+                {
+                    if( typeof fieldMap.value_if_ticked === 'undefined' || fieldMap.value_if_ticked === null ) { errorArray.push( 'Missing Field: value_if_ticked. This is required for fields of type \'checkbox\''); }
+                    if( typeof fieldMap.value_if_unticked === 'undefined' || fieldMap.value_if_unticked === null ) { errorArray.push( 'Missing Field: value_if_unticked. This is required for fields of type \'checkbox\''); }
+                }
+                else
+                {
+                    if( typeof fieldMap.default_value === 'undefined' || fieldMap.default_value === null ) { errorArray.push( 'Missing Field: default_value'); }                    
+                }
+                //this field also depends on if its a mailchimp only field
+                if( mailchimpOnlyFields && typeof fieldMap.zendesk_field !== 'undefined' ) { errorArray.push( 'Field: zendesk_field is not allowed on mailchimp-only field lists' ); }
+                if( !mailchimpOnlyFields && !fieldMap.zendesk_field ) { errorArray.push( 'Missing Field/Value: zendesk_field' ); }
+                
+                if( errorArray.length > 0 )
+                {
+                    errorMessage = "Field Definition " + (i+1) + " for the '" + settingsName + 
+                                   "' setting has errors:<br /><br />" + errorArray.join('<br />');
+                    break;
+                }
+            }
+            
+            if( errorMessage === null )
+            {
+                /* DebugOnlyCode - START */
+                if( debug_mode ) 
+                { 
+                    console.log( "Success, returning: %o", fieldMappingsJSON );
+                    console.groupEnd();
+                }
+                /* DebugOnlyCode - END */
+                return fieldMappingsJSON;
+            }
+        }
+       
+        this.__switchToErrorMessage( errorObject, errorMessage );
+       
+        /* DebugOnlyCode - START */
+        if( debug_mode ) 
+        { 
+            console.log( "Failed, returning null" );
+            console.groupEnd();
+        }
+        return null;
+        /* DebugOnlyCode - END */
+    },
     // </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="User Screen Event Handlers">
@@ -336,7 +439,6 @@ var pluginFactory = function( thisV2Client ) {
         if( debug_mode ) { console.group( "__formFieldChanged( event ) called" ); }
         /* DebugOnlyCode - END */
         __screen_events.__userFormFieldChanged( this, event, false );
-        this.__comms_triggerOtherInstances( this.__v2Client, "zendeskUserUpdated", { userId: this.__zendesk_user.id , event: event } );
         /* DebugOnlyCode - START */
         if( debug_mode ) {   console.log( "Finished" ); console.groupEnd(); }
         /* DebugOnlyCode - END */
@@ -344,6 +446,19 @@ var pluginFactory = function( thisV2Client ) {
     // </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="Inter-Instance Event Handlers">
+
+    /* DebugOnlyCode - START */
+    toStringDebug: function()
+    {
+        return "Location: " + ( ( this.__context ) ? this.__context.location : "unknown context" ) + "\n" +
+            "GUID: " + ( ( this.__context ) ? this.__context.instanceGuid : "unknown context" ) + "\n" +
+            "Ticket Id: " + ( ( this.__context && this.__context.ticketId ) ? this.__context.ticketId : "N/A" ) + "\n" +
+            "User: " + ( ( this.__zendesk_user ) ? this.__zendesk_user.name : "N/A" ) + "\n" +
+            "IS/WAS ACTIVE: " + ( ( typeof this.__isActiveOnScreenNow !== 'undefined' ) ? this.__isActiveOnScreenNow : "not set" ) + "\n" +
+            "ACTIVATION ACTION: " + ( ( this.__actionRequiredOnInstanceActivation ) ? this.__actionRequiredOnInstanceActivation : "none" );
+    },
+    /* DebugOnlyCode - END */ 
+    
     __comms_appActivated: function( data )
     {
         /* DebugOnlyCode - START */
@@ -351,7 +466,7 @@ var pluginFactory = function( thisV2Client ) {
         { 
             console.group( "TRIGGER: __comms_appActivated called" );
             console.log( "ARG1: data = %o", data );
-            console.log( "this.__actionRequiredOnInstanceActivation = %o", this.__actionRequiredOnInstanceActivation );
+            console.log( this.toStringDebug() );
         }
         /* DebugOnlyCode - END */ 
 
@@ -360,7 +475,7 @@ var pluginFactory = function( thisV2Client ) {
         {
             this.resetAppIfPageFullyLoaded();
         }
-        else if( this.__actionRequiredOnInstanceActivation === 'refresh' && this.currentScreen === 'main' ) //dont refresh if its showing an error message or loading screen
+        else if( this.__actionRequiredOnInstanceActivation === 'refresh' && this.__currentScreen === 'main' ) //dont refresh if its showing an error message or loading screen
         {
             this.__switchToMainTemplate();
         }
@@ -382,7 +497,7 @@ var pluginFactory = function( thisV2Client ) {
         { 
             console.group( "TRIGGER: __comms_appDeactivated called" );
             console.log( "ARG1: data = %o", data );
-            console.log( "this.__isActiveOnScreenNow = %o", this.__isActiveOnScreenNow );
+            console.log( this.toStringDebug() );
         }
         /* DebugOnlyCode - END */ 
 
@@ -396,27 +511,37 @@ var pluginFactory = function( thisV2Client ) {
         }
         /* DebugOnlyCode - END */
     },
+
+    __comms_zendeskOrganizationUpdated: function( comms )
+    {
+        __screen_events.__triggers.__zendeskOrganizationUpdated( this, comms );
+    },
     
-    __comms_modalSyncPerformed: function( data )
+    __comms_zendeskUserUpdated: function( comms )
+    {
+        __screen_events.__triggers.__zendeskUserUpdated( this, comms );
+    },
+
+    __comms_mailshotMemberSavedTo3rdParty: function( comms )
     {
         /* DebugOnlyCode - START */
         if( debug_mode ) 
         { 
-            console.group( "TRIGGER: __comms_modalSyncPerformed called" );
-            console.log( "ARG1: data = %o", data );
-            console.log( "this.__isActiveOnScreenNow = %o", this.__isActiveOnScreenNow );
-            console.log( "this.__actionRequiredOnInstanceActivation = %o", this.__actionRequiredOnInstanceActivation );
-            console.log( "this.__v2Client._instanceGuid = %o", this.__v2Client._instanceGuid );
+            console.group( "TRIGGER: __comms_mailshotMemberSavedTo3rdParty( comms ) called" );
+            console.log( "ARG1: comms = %o", comms );
+            console.log( this.toStringDebug() );
         }
         /* DebugOnlyCode - END */ 
-
-        if( this.__isActiveOnScreenNow )
+        
+        let userId = comms.userId;
+        if( !this.__modalMode && this.__zendesk_user && this.__zendesk_user.id === userId )
         {
-            this.resetAppIfPageFullyLoaded();
-        }
-        else
-        {
-            this.__actionRequiredOnInstanceActivation = 'reset';
+            this.__mailshot_sync_user = comms.mailshotUser; //this comes through as values only, no functions, so we need to readd them
+            connector.__addConvenienceFunctionsToMailshotUser( this.__mailshot_sync_user );
+            /* DebugOnlyCode - START */
+            if( debug_mode ) { console.log( "Updated this.__mailshot_sync_user to %o", this.__mailshot_sync_user ); }
+            /* DebugOnlyCode - END */
+            this.__refreshMainTemplateOrEnqueueRefresh( false );
         }
         
         /* DebugOnlyCode - START */  
@@ -427,10 +552,15 @@ var pluginFactory = function( thisV2Client ) {
         }
         /* DebugOnlyCode - END */
     },
-
-    __comms_zendeskOrganizationUpdated: function( comms )
+    
+    __comms_triggerReloadByUserId: function( comms )
     {
-        __screen_events.__triggers.__zendeskOrganizationUpdated( this, comms );
+        let userId = comms.userId;
+        if( !this.__modalMode && this.__zendesk_user && this.__zendesk_user.id === userId )
+        {
+            let destroyZendeskUserFirst = ( comms.destroyZendeskUserToo ) ? true : false;
+            this.__reloadAppOrEnqueueReload( destroyZendeskUserFirst );
+        }
     },
     
     __comms_triggerOtherInstances: function( client,  eventName, comms )
@@ -442,6 +572,7 @@ var pluginFactory = function( thisV2Client ) {
             console.log( "ARG1: client = %o", client );
             console.log( "ARG2: eventName = %o", eventName );
             console.log( "ARG3: comms = %o", comms );
+            console.log( this.toStringDebug() );
         }
         /* DebugOnlyCode - END */
         
@@ -457,7 +588,7 @@ var pluginFactory = function( thisV2Client ) {
                 if ( instanceGuid !== callerInstanceGuid && instances[instanceGuid].location !== 'organization_sidebar' && instances[instanceGuid].location !== 'modal' ) {
 
                     /* DebugOnlyCode - START */
-                    if( debug_mode ) { console.log( "CALLING TRIGGER '%s' Instance, instanceGuid = %o, comms = %o, client.instance(instanceGuid) = %o", eventName ,instanceGuid, comms, client.instance(instanceGuid) ); }
+                    if( debug_mode ) { console.log( "CALLING TRIGGER '%s' Instance, instanceGuid = %o, comms = %o", eventName ,instanceGuid, comms ); }
                     /* DebugOnlyCode - END */
                     client.instance(instanceGuid).trigger( eventName, comms );
 
@@ -475,7 +606,7 @@ var pluginFactory = function( thisV2Client ) {
         /* DebugOnlyCode - START */
         if( debug_mode ) 
         { 
-            console.log( "Finished __triggerInstances" );
+            console.log( "Finished __comms_triggerOtherInstances" );
             console.groupEnd();
         }
         /* DebugOnlyCode - END */
@@ -521,7 +652,9 @@ var pluginFactory = function( thisV2Client ) {
         /* DebugOnlyCode - END */
         
         this.__syncExistingUserToMailchimp( this.__zendesk_user, true );
-        this.__comms_triggerOtherInstances( modalClient, "modalSyncPerformed", {} );
+        
+        //no longer needed as refresh is now triggered whevener mailshop object is updated on 3rd party system
+        //this.__comms_triggerOtherInstances( modalClient, "modalSyncPerformed", { userId: this.__zendesk_user.id } );
         
         /* DebugOnlyCode - START */
         if( debug_mode ) 
@@ -569,8 +702,8 @@ var pluginFactory = function( thisV2Client ) {
             this.switchToLoadingScreen( "Updating Mailchimp Member..." );
             makeAjaxCall(
                 this,
-                connector.__requests.__createOrUpadateMailChimpListMember( this, this.__mailshot_sync_user, true ), 
-                this.__createOrUpadateMailChimpListMember_Done,  
+                connector.__requests.__createOrUpadate3rdPartyMember( this, this.__mailshot_sync_user, true ), 
+                this.__createOrUpadate3rdPartyMember_Done,  
                 this.__get_or_createOrUpadate3rdPartyMember_OnFail
             );
         }
@@ -609,6 +742,8 @@ var pluginFactory = function( thisV2Client ) {
             this.__updateZendeskUser_Done,
             this.__switchToErrorMessage 
         );
+    
+        this.__comms_triggerOtherInstances( this.__v2Client, "triggerReloadByUserId", { userId: this.__zendesk_user.id, destroyZendeskUserToo: true } );
 
         /* DebugOnlyCode - START */
         if( debug_mode ) 
@@ -640,6 +775,8 @@ var pluginFactory = function( thisV2Client ) {
             this.__updateZendeskUser_Done,  
             this.__switchToErrorMessage 
         );
+    
+        this.__comms_triggerOtherInstances( this.__v2Client, "triggerReloadByUserId", { userId: this.__zendesk_user.id, destroyZendeskUserToo: true } );
 
         /* DebugOnlyCode - START */
         if( debug_mode ) 
@@ -672,6 +809,8 @@ var pluginFactory = function( thisV2Client ) {
             this.__switchToErrorMessage 
         );
         
+        this.__comms_triggerOtherInstances( this.__v2Client, "triggerReloadByUserId", { userId: this.__zendesk_user.id, destroyZendeskUserToo: true } );
+        
         /* DebugOnlyCode - START */
         if( debug_mode ) 
         { 
@@ -681,9 +820,58 @@ var pluginFactory = function( thisV2Client ) {
         /* DebugOnlyCode - END */
         return false;
     },	
-    // </editor-fold>
+    
+    //these two onlicks are for on the fly generated extra buttons that appaear on the error message screen for when you try to create a new mailchimp user with an email that already exists in mailchimp 
+    createOrUpadateMailChimpListMember_Override_OnClick: function() 
+    {
+       /* DebugOnlyCode - START */
+        if( debug_mode ) 
+        { 
+            console.group( "createOrUpadateMailChimpListMember_Override_OnClick() called" );
+        }
+        /* DebugOnlyCode - END */
 
-    //ZENDESK API AJAX CALLBACK FUNCTIONS
+        this.__syncExistingUserToMailchimp( this.__zendesk_user );
+
+        /* DebugOnlyCode - START */
+        if( debug_mode ) 
+        { 
+            console.log( "Finished, returning false;", this.__zendesk_user );
+            console.groupEnd();
+        }
+        /* DebugOnlyCode - END */
+        return false;
+    },
+
+    createOrUpadateMailChimpListMember_Add_New_OnClick: function() 
+    {
+       /* DebugOnlyCode - START */
+        if( debug_mode ) 
+        { 
+            console.group( "createOrUpadateMailChimpListMember_Add_New_OnClick() called" );
+        }
+        /* DebugOnlyCode - END */
+
+        this.__syncNewMailshotUserTo3rdParty( this.__zendesk_user );
+
+        /* DebugOnlyCode - START */
+        if( debug_mode ) 
+        { 
+            console.log( "Finished, returning false;", this.__zendesk_user );
+            console.groupEnd();
+        }
+        /* DebugOnlyCode - END */
+        return false;
+    },
+    
+    debugButtonOnClick: function()
+    {
+        console.log( 'Starting debugButtonOnClick' );
+        console.dir( this );
+        return false;
+    },
+    // </editor-fold>
+    
     // <editor-fold defaultstate="collapsed" desc="Zendesk API Callback Functions">
     __getZendeskUser_Done: function( userObjectFromDataAPI )
     {
@@ -959,7 +1147,7 @@ var pluginFactory = function( thisV2Client ) {
     },
     // </editor-fold>  
     
-    
+    // <editor-fold defaultstate="collapsed" desc="3rd Party (Connector) Member Functions">
     __fetchMailchimpObjectIfNecessary: function()
     {
         /* DebugOnlyCode - START */
@@ -994,7 +1182,195 @@ var pluginFactory = function( thisV2Client ) {
         }
         /* DebugOnlyCode - END */
     },
+    
+    __retrieved3rdPartyMailshotSubscriber: function( returnedMailchimpUserFromAPI, wasAnUpdate ) 
+    {
+        wasAnUpdate = ( wasAnUpdate ) ? true : false;
+        
+       /* DebugOnlyCode - START */
+        if( debug_mode ) 
+        { 
+            console.group( "__retrieved3rdPartyMailshotSubscriber (returnedMailchimpUserFromAPI) called" );
+            console.log( "ARG1: returnedMailchimpUserFromAPI = %o", returnedMailchimpUserFromAPI );
+            console.log( "ARG2: wasAnUpdate = %o", wasAnUpdate );
+        }
+        /* DebugOnlyCode - END */
 
+        try{
+            this.__mailshot_sync_user = connector.__getMailchimpSubscriberFromAPIResults( this, returnedMailchimpUserFromAPI );
+            
+            /* DebugOnlyCode - START */
+            if( debug_mode ) { console.log( "this.__mailshot_sync_user assigned: %o", this.__mailshot_sync_user ); }
+            /* DebugOnlyCode - END */
+
+            //if above caused an error it will have already been caught and redirected to this.__switchToErrorMessage(), if not we continue to main screen as normal
+            //before we finish, lets check the Zendesk User and the Mailchimp user for validity as the mailchimp member
+            //may have been changed (unsubscribed or archived or unarchived) at the mailchimp end and so be out of sync status wise with the zendesk user
+            //also if a Zenchimp update failed at the mailchimp end but succeeded at the Zendesk end then this can happen
+            if( connector.__enforceValidityOfZendeskAndMailshotStatuses( this, this.__zendesk_user, this.__mailshot_sync_user ) )
+            {
+                this.__switchToMainTemplate();
+                if( wasAnUpdate )
+                {
+                    this.__comms_triggerOtherInstances( this.__v2Client, "mailshotMemberSavedTo3rdParty", { userId: this.__zendesk_user.id, mailshotUser: this.__mailshot_sync_user } );
+                }
+            }
+        } catch( e ) {   
+            console.warn( e );
+            this.__switchToErrorMessage( e, e.message );
+            if( wasAnUpdate )
+            {
+                this.__comms_triggerOtherInstances( this.__v2Client, "triggerReloadByUserId", { userId: this.__zendesk_user.id } );
+            }
+        }
+        
+        /* DebugOnlyCode - START */
+        if( debug_mode ) 
+        { 
+            console.log( "Finished __retrieved3rdPartyMailshotSubscriber, this.__mailshot_sync_user = %o", this.__mailshot_sync_user);
+            console.groupEnd();
+        }
+        /* DebugOnlyCode - END */
+    },	
+
+    __syncNewMailshotUserTo3rdParty: function( zendeskUser ) 
+    {
+       /* DebugOnlyCode - START */
+        if( debug_mode ) 
+        { 
+            console.group( "__syncNewMailshotUserTo3rdParty (zendeskUser) called" );
+            console.log( "ARG1: zendeskUser = %o", zendeskUser );
+        }
+        /* DebugOnlyCode - END */
+
+        let newMailChimpUserToSave = connector.__createNewMailshotSyncUserObject( this, zendeskUser );
+
+        this.switchToLoadingScreen( "Adding Mailchimp Member..." );
+        makeAjaxCall(
+            this,
+            connector.__requests.__createOrUpadate3rdPartyMember( this, newMailChimpUserToSave, false ), 
+            this.__createOrUpadate3rdPartyMember_Done,  
+            this.__get_or_createOrUpadate3rdPartyMember_OnFail 
+        );
+
+        /* DebugOnlyCode - START */
+        if( debug_mode ) 
+        { 
+            console.log( "Finished" );
+            console.groupEnd();
+        }
+        /* DebugOnlyCode - END */
+    },
+
+    __syncExistingUserToMailchimp: function( zendeskUser, tryToPreserveMCOnlyFields ) 
+    {
+       /* DebugOnlyCode - START */
+        if( debug_mode ) 
+        { 
+            console.group( "__syncExistingUserToMailchimp (zendeskUser, tryToPreserveMCOnlyFields) called" );
+            console.log( "ARG1: zendeskUser = %o", zendeskUser );
+            console.log( "ARG2 (optional): tryToPreserveMCOnlyFields = %o", tryToPreserveMCOnlyFields );
+        }
+        /* DebugOnlyCode - END */
+
+        let newMailChimpUserToSave = connector.__createNewMailshotSyncUserObject( this, zendeskUser );
+
+        /* DebugOnlyCode - START */
+        if( debug_mode ) { 
+            console.log( "Checking if we need to copy across extra merge fields to mailchimp object too? (answer = %o)  \n tryToPreserveMCOnlyFields = %o, this.__mailshot_sync_user = %o, zendeskUser.email = %o, this.__mailshot_sync_user.__email_address = %o", 
+                ( typeof( tryToPreserveMCOnlyFields ) !== "undefined" && tryToPreserveMCOnlyFields === true && this.__mailshot_sync_user !== null && zendeskUser.email === this.__mailshot_sync_user.__email_address ), 
+                tryToPreserveMCOnlyFields, 
+                this.__mailshot_sync_user, 
+                zendeskUser.email, 
+                this.__mailshot_sync_user === null ? 'undefined' : this.__mailshot_sync_user.__email_address ); 
+        }
+        /* DebugOnlyCode - END */
+        
+        //if switching between Standard and Org mode try to preserve the value of the Mailchimp only checkbox fields
+        if( typeof( tryToPreserveMCOnlyFields ) !== "undefined" && tryToPreserveMCOnlyFields === true && this.__mailshot_sync_user !== null && zendeskUser.email === this.__mailshot_sync_user.__email_address )
+        {
+            for( let i=0; i < this.__mailshot_sync_user.__extra_merge_fields.length; i++)
+            {
+                if( typeof( this.__mailshot_sync_user.__extra_merge_fields[ i ].__field_def.zendesk_field ) === "undefined" ) 
+                {
+                        newMailChimpUserToSave.__extra_merge_fields[ i ].__value = this.__mailshot_sync_user.__extra_merge_fields[ i ].__value;
+                }
+            }
+        }
+
+        this.switchToLoadingScreen( "Updating Mailchimp Member..." );
+        makeAjaxCall(
+            this,
+            connector.__requests.__createOrUpadate3rdPartyMember( this, newMailChimpUserToSave, true ), 
+            this.__createOrUpadate3rdPartyMember_Done,  
+            this.__get_or_createOrUpadate3rdPartyMember_OnFail
+        );
+
+        /* DebugOnlyCode - START */
+        if( debug_mode ) 
+        { 
+            console.log( "Finished, newMailChimpUserToSave = %o", newMailChimpUserToSave );
+            console.groupEnd();
+        }
+        /* DebugOnlyCode - END */
+    },
+
+    __deleteExistingMailshotUserFrom3rdParty: function( mailchimpUser ) 
+    {
+       /* DebugOnlyCode - START */
+        if( debug_mode ) 
+        { 
+            console.group( "__deleteExistingMailshotUserFrom3rdParty(mailchimpUser) called" );
+            console.log( "ARG1: mailchimpUser = %o", mailchimpUser );
+        }
+        /* DebugOnlyCode - END */
+            
+        this.switchToLoadingScreen( "Deleting Mailchimp Member..." );
+        makeAjaxCall(
+            this,
+            connector.__requests.__deleteMailChimpListMember( this, mailchimpUser ), 
+            null,  
+            null, //this shoudl call __get_or_createOrUpadate3rdPartyMember_OnFail ONLY 404 MESSAGE SHOUD BE DIFFERENT FOR DELETES!
+            true
+        );
+
+        /* DebugOnlyCode - START */
+        if( debug_mode ) 
+        { 
+            console.log( "Finished" );
+            console.groupEnd();
+        }
+        /* DebugOnlyCode - END */
+    },
+
+    __get_or_createOrUpadate3rdPartyMember_OnFail: function( errorResponse ) 
+    {
+        /* DebugOnlyCode - START */
+        if( debug_mode ) 
+        { 
+            console.group( "__get_or_createOrUpadate3rdPartyMember_OnFail(errorResponse) called" );
+            console.log( "ARG1: errorResponse = %o", errorResponse );
+        }
+        /* DebugOnlyCode - END */
+        
+        connector.__get_or_createOrUpadate3rdPartyMember_OnFail( this, errorResponse );
+    
+        /* DebugOnlyCode - START */
+        if( debug_mode ) 
+        { 
+            console.log( "Finished" );
+            console.groupEnd();
+        }
+        /* DebugOnlyCode - END */
+    },
+
+    __createOrUpadate3rdPartyMember_Done: function( returnedMailchimpUserFromAPI ) 
+    {
+            this.__retrieved3rdPartyMailshotSubscriber( returnedMailchimpUserFromAPI, true );
+    },   
+    // </editor-fold>
+    
+    // <editor-fold defaultstate="collapsed" desc="Zendesk User Functions">
     __changeCustomerType: function( oldType, newType ) 
     {
         /* DebugOnlyCode - START */
@@ -1076,233 +1452,109 @@ var pluginFactory = function( thisV2Client ) {
         }
         /* DebugOnlyCode - END */
     },
+    // </editor-fold>
 
-
-    //MAILCHIMP SYNCING WRAPPER FUNCTIONS
-    //TO DO: PUT DEBUGGING INTO THIS SECTION AND MOVE TO mailchimp-connector.js
-    __retrieved3rdPartyMailshotSubscriber: function( returnedMailchimpUserFromAPI ) 
+    // <editor-fold defaultstate="collapsed" desc="Switch to templates and reset app functions">
+    __refreshMainTemplateOrEnqueueRefresh: function()
     {
-       /* DebugOnlyCode - START */
+        /* DebugOnlyCode - START */
         if( debug_mode ) 
         { 
-            console.group( "__retrieved3rdPartyMailshotSubscriber (returnedMailchimpUserFromAPI) called" );
-            console.log( "ARG1: returnedMailchimpUserFromAPI = %o", returnedMailchimpUserFromAPI );
+            console.group( "refreshMainTemplateOrEnqueueRefresh() called" );
+            console.log( "this = %o", this );
         }
         /* DebugOnlyCode - END */
 
-        try{
-            this.__mailshot_sync_user = connector.__getMailchimpSubscriberFromAPIResults( this, returnedMailchimpUserFromAPI );
-            
-            /* DebugOnlyCode - START */
-            if( debug_mode ) { console.log( "this.__mailshot_sync_user assigned: %o", this.__mailshot_sync_user ); }
-            /* DebugOnlyCode - END */
-
-            //if above caused an error it will have already been caught and redirected to this.__switchToErrorMessage(), if not we continue to main screen as normal
-            //before we finish, lets check the Zendesk User and the Mailchimp user for validity as the mailchimp member
-            //may have been changed (unsubscribed or archived or unarchived) at the mailchimp end and so be out of sync status wise with the zendesk user
-            //also if a Zenchimp update failed at the mailchimp end but succeeded at the Zendesk end then this can happen
-            if( connector.__enforceValidityOfZendeskAndMailshotStatuses( this, this.__zendesk_user, this.__mailshot_sync_user ) )
+        if( this.__isActiveOnScreenNow )
+        {
+            if( this.__currentScreen === 'main' )
             {
+                /* DebugOnlyCode - START */
+                if( debug_mode ) { console.log( "Refreshing NOW " ); }
+                /* DebugOnlyCode - END */
+
+                //refresh screen having updated user unless something is loaded or an error message is showing
                 this.__switchToMainTemplate();
             }
-            
-        } catch( e ) {   
-            console.warn( e );
-            this.__switchToErrorMessage( e, e.message ); 
-        }
-        
-        /* DebugOnlyCode - START */
-        if( debug_mode ) 
-        { 
-            console.log( "Finished __retrieved3rdPartyMailshotSubscriber, this.__mailshot_sync_user = %o", this.__mailshot_sync_user);
-            console.groupEnd();
-        }
-        /* DebugOnlyCode - END */
-    },	
-
-    __syncNewMailshotUserTo3rdParty: function( zendeskUser ) 
-    {
-       /* DebugOnlyCode - START */
-        if( debug_mode ) 
-        { 
-            console.group( "__syncNewMailshotUserTo3rdParty (zendeskUser) called" );
-            console.log( "ARG1: zendeskUser = %o", zendeskUser );
-        }
-        /* DebugOnlyCode - END */
-
-        let newMailChimpUserToSave = connector.__createNewMailshotSyncUserObject( this, zendeskUser );
-
-        this.switchToLoadingScreen( "Adding Mailchimp Member..." );
-        makeAjaxCall(
-            this,
-            connector.__requests.__createOrUpadateMailChimpListMember( this, newMailChimpUserToSave, false ), 
-            this.__createOrUpadateMailChimpListMember_Done,  
-            this.__get_or_createOrUpadate3rdPartyMember_OnFail 
-        );
-
-        /* DebugOnlyCode - START */
-        if( debug_mode ) 
-        { 
-            console.log( "Finished" );
-            console.groupEnd();
-        }
-        /* DebugOnlyCode - END */
-    },
-
-    __syncExistingUserToMailchimp: function( zendeskUser, tryToPreserveMCOnlyFields ) 
-    {
-       /* DebugOnlyCode - START */
-        if( debug_mode ) 
-        { 
-            console.group( "__syncExistingUserToMailchimp (zendeskUser, tryToPreserveMCOnlyFields) called" );
-            console.log( "ARG1: zendeskUser = %o", zendeskUser );
-            console.log( "ARG2 (optional): tryToPreserveMCOnlyFields = %o", tryToPreserveMCOnlyFields );
-        }
-        /* DebugOnlyCode - END */
-
-        let newMailChimpUserToSave = connector.__createNewMailshotSyncUserObject( this, zendeskUser );
-
-        /* DebugOnlyCode - START */
-        if( debug_mode ) { 
-            console.log( "Checking if we need to copy across extra merge fields to mailchimp object too? (answer = %o)  \n tryToPreserveMCOnlyFields = %o, this.__mailshot_sync_user = %o, zendeskUser.email = %o, this.__mailshot_sync_user.__email_address = %o", 
-                ( typeof( tryToPreserveMCOnlyFields ) !== "undefined" && tryToPreserveMCOnlyFields === true && this.__mailshot_sync_user !== null && zendeskUser.email === this.__mailshot_sync_user.__email_address ), 
-                tryToPreserveMCOnlyFields, 
-                this.__mailshot_sync_user, 
-                zendeskUser.email, 
-                this.__mailshot_sync_user === null ? 'undefined' : this.__mailshot_sync_user.__email_address ); 
-        }
-        /* DebugOnlyCode - END */
-        
-        //if switching between Standard and Org mode try to preserve the value of the Mailchimp only checkbox fields
-        if( typeof( tryToPreserveMCOnlyFields ) !== "undefined" && tryToPreserveMCOnlyFields === true && this.__mailshot_sync_user !== null && zendeskUser.email === this.__mailshot_sync_user.__email_address )
-        {
-            for( let i=0; i < this.__mailshot_sync_user.__extra_merge_fields.length; i++)
+            else
             {
-                if( typeof( this.__mailshot_sync_user.__extra_merge_fields[ i ].__field_def.zendesk_field ) === "undefined" ) 
-                {
-                        newMailChimpUserToSave.__extra_merge_fields[ i ].__value = this.__mailshot_sync_user.__extra_merge_fields[ i ].__value;
-                }
+                /* DebugOnlyCode - START */
+                if( debug_mode ) { console.log( "Taking no action as this.__currentScreen = %o", this.__currentScreen ); }
+                /* DebugOnlyCode - END */
             }
         }
-
-        this.switchToLoadingScreen( "Updating Mailchimp Member..." );
-        makeAjaxCall(
-            this,
-            connector.__requests.__createOrUpadateMailChimpListMember( this, newMailChimpUserToSave, true ), 
-            this.__createOrUpadateMailChimpListMember_Done,  
-            this.__get_or_createOrUpadate3rdPartyMember_OnFail
-        );
-
+        else if( this.__actionRequiredOnInstanceActivation !== 'reset' ) //reset beats refresh
+        {
+            /* DebugOnlyCode - START */
+            if( debug_mode ) { console.log( "Enqueing as app not activated and existing queue state = %o", this.__actionRequiredOnInstanceActivation ); }
+            /* DebugOnlyCode - END */
+            this.__actionRequiredOnInstanceActivation = 'refresh';
+        }
+        else
+        {
+            /* DebugOnlyCode - START */
+            if( debug_mode ) { console.log( "Taking no action as this.__actionRequiredOnInstanceActivation = %o", this.__actionRequiredOnInstanceActivation ); }
+            /* DebugOnlyCode - END */
+        }
+        
         /* DebugOnlyCode - START */
         if( debug_mode ) 
         { 
-            console.log( "Finished, newMailChimpUserToSave = %o", newMailChimpUserToSave );
+            console.log( "Finished __refreshMainTemplateOrEnqueueRefresh");
             console.groupEnd();
         }
         /* DebugOnlyCode - END */
     },
-
-    __deleteExistingMailshotUserFrom3rdParty: function( mailchimpUser ) 
-    {
-       /* DebugOnlyCode - START */
-        if( debug_mode ) 
-        { 
-            console.group( "__deleteExistingMailshotUserFrom3rdParty(mailchimpUser) called" );
-            console.log( "ARG1: mailchimpUser = %o", mailchimpUser );
-        }
-        /* DebugOnlyCode - END */
-            
-        this.switchToLoadingScreen( "Deleting Mailchimp Member..." );
-        makeAjaxCall(
-            this,
-            connector.__requests.__deleteMailChimpListMember( this, mailchimpUser ), 
-            null,  
-            null, //this shoudl call __get_or_createOrUpadate3rdPartyMember_OnFail ONLY 404 MESSAGE SHOUD BE DIFFERENT FOR DELETES!
-            true
-        );
-
-        /* DebugOnlyCode - START */
-        if( debug_mode ) 
-        { 
-            console.log( "Finished" );
-            console.groupEnd();
-        }
-        /* DebugOnlyCode - END */
-    },
-
-    __get_or_createOrUpadate3rdPartyMember_OnFail: function( errorResponse ) 
+    
+    __reloadAppOrEnqueueReload: function( destroyZendeskUserToo )
     {
         /* DebugOnlyCode - START */
         if( debug_mode ) 
         { 
-            console.group( "__get_or_createOrUpadate3rdPartyMember_OnFail(errorResponse) called" );
-            console.log( "ARG1: errorResponse = %o", errorResponse );
+            console.group( "SCREEN-EVENTS.JS: reloadAppeOrEnqueueReload( destroyZendeskUserToo ) called" );
+            console.log( "ARG1: destroyZendeskUserToo = %o", destroyZendeskUserToo );
+            console.log( "this = %o", this );
         }
         /* DebugOnlyCode - END */
         
-        connector.__get_or_createOrUpadate3rdPartyMember_OnFail( this, errorResponse );
+        if( destroyZendeskUserToo )
+        {
+            this.__zendesk_user = null;
+            /* DebugOnlyCode - START */
+            if( debug_mode ) { console.log( "Forced refresh of zendesk user: this.__zendesk_user = %o", this.__zendesk_user ); }
+            /* DebugOnlyCode - END */
+        }
+
+        if( this.__isActiveOnScreenNow )
+        {
+            /* DebugOnlyCode - START */
+            if( debug_mode ) { console.log( "Reloading NOW " ); }
+            /* DebugOnlyCode - END */
+
+            //refresh screen having updated user unless something is loaded or an error message is showing
+            this.resetAppIfPageFullyLoaded();
+        }
+        else
+        {
+            this.__actionRequiredOnInstanceActivation = 'reset';
+            /* DebugOnlyCode - START */
+            if( debug_mode ) { console.log( "Enqueing as app not activated, setting this.__actionRequiredOnInstanceActivation = %o", this.__actionRequiredOnInstanceActivation ); }
+            /* DebugOnlyCode - END */
+        }
+        
+        /* DebugOnlyCode - START */
+        if( debug_mode ) 
+        { 
+            console.log( "Finished __reloadAppOrEnqueueReload");
+            console.groupEnd();
+        }
+        /* DebugOnlyCode - END */
+    },   
     
-        /* DebugOnlyCode - START */
-        if( debug_mode ) 
-        { 
-            console.log( "Finished" );
-            console.groupEnd();
-        }
-        /* DebugOnlyCode - END */
-    },
-
-    __createOrUpadateMailChimpListMember_Override_OnClick: function() 
-    {
-       /* DebugOnlyCode - START */
-        if( debug_mode ) 
-        { 
-            console.group( "__createOrUpadateMailChimpListMember_Override_OnClick() called" );
-        }
-        /* DebugOnlyCode - END */
-
-        this.__syncExistingUserToMailchimp( this.__zendesk_user );
-
-        /* DebugOnlyCode - START */
-        if( debug_mode ) 
-        { 
-            console.log( "Finished, returning false;", this.__zendesk_user );
-            console.groupEnd();
-        }
-        /* DebugOnlyCode - END */
-        return false;
-    },
-
-    __createOrUpadateMailChimpListMember_Add_New_OnClick: function() 
-    {
-       /* DebugOnlyCode - START */
-        if( debug_mode ) 
-        { 
-            console.group( "__createOrUpadateMailChimpListMember_Add_New_OnClick() called" );
-        }
-        /* DebugOnlyCode - END */
-
-        this.__syncNewMailshotUserTo3rdParty( this.__zendesk_user );
-
-        /* DebugOnlyCode - START */
-        if( debug_mode ) 
-        { 
-            console.log( "Finished, returning false;", this.__zendesk_user );
-            console.groupEnd();
-        }
-        /* DebugOnlyCode - END */
-        return false;
-    },
-
-    __createOrUpadateMailChimpListMember_Done: function( returnedMailchimpUserFromAPI ) 
-    {
-            this.__retrieved3rdPartyMailshotSubscriber( returnedMailchimpUserFromAPI );
-    },
-
-    //SWITCH TO HTML TEMPLATE FUNCTIONS
     switchToLoadingScreen: function( optionalMessage ) 
     {
         switchToInlineTemplate( this.__resources.__TEMPLATE_ID_LOADING, { optional_message: optionalMessage } );
-        this.currentScreen = 'loading';
+        this.__currentScreen = 'loading';
     },
 
     __switchToMainTemplate: function() 
@@ -1366,7 +1618,7 @@ var pluginFactory = function( thisV2Client ) {
         if( debug_mode ) { console.log( "Switching to template '%s' with form data: %o ", ( this.__modalMode ? this.__resources.__TEMPLATE_NAME_MAIN_MODAL_MODE : this.__resources.__TEMPLATE_NAME_MAIN ), formData); }
         /* DebugOnlyCode - END */
         switchToHdbsFileTemplate( ( this.__modalMode ? this.__resources.__TEMPLATE_NAME_MAIN_MODAL_MODE : this.__resources.__TEMPLATE_NAME_MAIN ), formData );
-        this.currentScreen = 'main';
+        this.__currentScreen = 'main';
 
         /* DebugOnlyCode - START */
         if( debug_mode ) 
@@ -1417,7 +1669,7 @@ var pluginFactory = function( thisV2Client ) {
         };
 
         switchToHdbsFileTemplate( this.__resources.__TEMPLATE_NAME_SHOWERROR, formData );
-        this.currentScreen = 'error';
+        this.__currentScreen = 'error';
 
         /* DebugOnlyCode - START */
         if( debug_mode ) 
@@ -1426,114 +1678,8 @@ var pluginFactory = function( thisV2Client ) {
             console.groupEnd();
         }
         /* DebugOnlyCode - END */
-    },
-
-    debugButtonOnClick: function()
-    {
-        console.log( 'Starting debugButtonOnClick' );
-        console.dir( this );
-        return false;
-    },
-
-    __validateFieldMappingsJSON: function( fieldMappingsJSONText, settingsName, mailchimpOnlyFields ) 
-    {
-       /* DebugOnlyCode - START */
-        if( debug_mode ) 
-        { 
-            console.groupCollapsed( "__validateFieldMappingsJSON( fieldMappingsJSONText, settingsName ) called" );
-            console.log( "ARG1: fieldMappingsJSONText = %o", fieldMappingsJSONText );
-            console.log( "ARG2: settingsName = %o", settingsName );
-            console.log( "Attempting to parse..." );
-        }
-        /* DebugOnlyCode - END */
-
-        //parse JSON but catch all error conditions
-        let fieldMappingsJSON = null;
-        let errorObject = null;
-        let errorMessage = null;
-        try
-        {
-            fieldMappingsJSON = JSON.parse( fieldMappingsJSONText );
-        }
-        catch(e)
-        {
-            let parseErrorMessage = 'unknown';       
-            if (e instanceof SyntaxError) {
-                parseErrorMessage = e.name + ' ' + e.message;
-            } else {
-                parseErrorMessage = e.message;
-            }            
-            
-            console.error( "JSON Validation for settings '%s' Falied with exception e = %o ",settingsName, e );
-            console.error( "JSON TEXT WAS: %o ", fieldMappingsJSONText );
-            errorObject = e;
-            errorMessage = 'The JSON Settings text you entered for the '+settingsName+' setting was formatted incorrectly, it must be valid JSON.<br /><br />'+
-                           'The failure reason was: '+parseErrorMessage+'<br /><br />'+
-                           'For help with these settings fields use our <a target="_blank" href="'+this.__resources.__SETTINGS_HELPER_SPREADSHEET_DOWNLOAD_URL+'">Zenchimp App Settings Generator</a> spreadsheet';
-        }
-
-        if( fieldMappingsJSON !== null )
-        {
-            
-            //More Validation, checking hte JSON for each field defintiion in turn
-            let fieldMap = null;
-            let validTypeArray = mailchimpOnlyFields ? ['checkbox'] : ['image', 'text', 'checkbox'];
-            let errorArray = [];
-            for( let i = 0; i < fieldMappingsJSON.length; i++ )
-            {
-                fieldMap = fieldMappingsJSON[i];
-                //these values have to exist and be not empty
-                if( !fieldMap.field_label ) { errorArray.push( 'Missing Field/Value: field_label' ); }
-                if( !fieldMap.mailchimp_field ) { errorArray.push( 'Missing Field/Value: mailchimp_field' ); }
-                if( !fieldMap.type ) { errorArray.push( 'Missing Field/Value: type' ); }
-                else if ( !validTypeArray.includes(fieldMap.type)) { errorArray.push( "Invalid type: '"+fieldMap.type+"'. Valid types are: " + validTypeArray.toString() + " (all lower case)" ); }
-                //these settings have to exist but dont necessarily have to have a value
-                //these fields also depend on if its a mailchimp only field
-                if( mailchimpOnlyFields )
-                {
-                    if( typeof fieldMap.value_if_ticked === 'undefined' || fieldMap.value_if_ticked === null ) { errorArray.push( 'Missing Field: value_if_ticked. This is required for fields of type \'checkbox\''); }
-                    if( typeof fieldMap.value_if_unticked === 'undefined' || fieldMap.value_if_unticked === null ) { errorArray.push( 'Missing Field: value_if_unticked. This is required for fields of type \'checkbox\''); }
-                }
-                else
-                {
-                    if( typeof fieldMap.default_value === 'undefined' || fieldMap.default_value === null ) { errorArray.push( 'Missing Field: default_value'); }                    
-                }
-                //this field also depends on if its a mailchimp only field
-                if( mailchimpOnlyFields && typeof fieldMap.zendesk_field !== 'undefined' ) { errorArray.push( 'Field: zendesk_field is not allowed on mailchimp-only field lists' ); }
-                if( !mailchimpOnlyFields && !fieldMap.zendesk_field ) { errorArray.push( 'Missing Field/Value: zendesk_field' ); }
-                
-                if( errorArray.length > 0 )
-                {
-                    errorMessage = "Field Definition " + (i+1) + " for the '" + settingsName + 
-                                   "' setting has errors:<br /><br />" + errorArray.join('<br />');
-                    break;
-                }
-            }
-            
-            if( errorMessage === null )
-            {
-                /* DebugOnlyCode - START */
-                if( debug_mode ) 
-                { 
-                    console.log( "Success, returning: %o", fieldMappingsJSON );
-                    console.groupEnd();
-                }
-                /* DebugOnlyCode - END */
-                return fieldMappingsJSON;
-            }
-        }
-       
-        this.__switchToErrorMessage( errorObject, errorMessage );
-       
-        /* DebugOnlyCode - START */
-        if( debug_mode ) 
-        { 
-            console.log( "Failed, returning null" );
-            console.groupEnd();
-        }
-        return null;
-        /* DebugOnlyCode - END */
-    },
+    }
+    // </editor-fold>
 
   };
 

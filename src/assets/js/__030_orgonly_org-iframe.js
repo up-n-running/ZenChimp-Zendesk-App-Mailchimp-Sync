@@ -195,7 +195,7 @@ function __triggerInstances( client, eventName, comms )
             if ( instanceGuid !== callerInstanceGuid && instances[instanceGuid].location !== 'organization_sidebar') {
 
                 /* DebugOnlyCode - START */
-                if( debug_mode ) { console.log( "CALLING TRIGGER Instance, instanceGuid = %o, comms = %o, client.instance(instanceGuid) = %o", instanceGuid, comms, client.instance(instanceGuid) ); }
+                if( debug_mode ) { console.log( "CALLING TRIGGER Instance, instanceGuid = %o, comms = %o", instanceGuid, comms ); }
                 /* DebugOnlyCode - END */
                 client.instance(instanceGuid).trigger(eventName, comms );
 

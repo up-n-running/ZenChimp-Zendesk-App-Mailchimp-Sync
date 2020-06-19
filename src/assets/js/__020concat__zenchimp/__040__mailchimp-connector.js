@@ -67,11 +67,11 @@ const connector = {
             return jsonCall;
         },
 
-        __createOrUpadateMailChimpListMember: function( plugin, mailchimpSyncUser, updateNotCreate )
+        __createOrUpadate3rdPartyMember: function( plugin, mailchimpSyncUser, updateNotCreate )
         {
             if( mailchimpSyncUser === null || mailchimpSyncUser.__email_address === null )
             {
-                    return console.warn( "ERROR CONDITION: __createOrUpadateMailChimpListMember called with either null user or user with no email address" );
+                    return console.warn( "ERROR CONDITION: __createOrUpadate3rdPartyMember called with either null user or user with no email address" );
             }
 
             //require md5 library utils js to create md5 hash of email address
@@ -122,7 +122,7 @@ const connector = {
             };
 
             /* DebugOnlyCode - START */
-            if( debug_mode ) { console.log( "__requests.__createOrUpadateMailChimpListMember( mailchimpSyncUser:'%o', updateNotCreate: '%o' ), dataJSON = %o, jsonCall = %o", mailchimpSyncUser, updateNotCreate, dataJSON, jsonCall ); }
+            if( debug_mode ) { console.log( "__requests.__createOrUpadate3rdPartyMember( mailchimpSyncUser:'%o', updateNotCreate: '%o' ), dataJSON = %o, jsonCall = %o", mailchimpSyncUser, updateNotCreate, dataJSON, jsonCall ); }
             /* DebugOnlyCode - END */ 
             return jsonCall;
         },
@@ -186,7 +186,7 @@ const connector = {
 
             if( errorResponse.status === 400 && responseTextJSON.title === "Member Exists" )
             {
-                plugin.__switchToErrorMessage( errorResponse, plugin.__zendesk_user.email + " already exists in mailchimp.<br /><br/>Do you want to override his/her details?", "Override", "error_override_mailchimp", "__createOrUpadateMailChimpListMember_Override_OnClick()" );
+                plugin.__switchToErrorMessage( errorResponse, plugin.__zendesk_user.email + " already exists in mailchimp.<br /><br/>Do you want to override his/her details?", "Override", "error_override_mailchimp", "createOrUpadateMailChimpListMember_Override_OnClick()" );
                 redirectedToBespokeErrorPage = true;
             }
             if( errorResponse.status === 400 && (
@@ -243,7 +243,7 @@ const connector = {
                     plugin.__zendesk_user.email + " doesn't exist in mailchimp.<br /><br/>Do you want to create a new record for him/her?", 
                     "Create New", 
                     "error_create_new_mailchimp", 
-                    "__createOrUpadateMailChimpListMember_Add_New_OnClick()" 
+                    "createOrUpadateMailChimpListMember_Add_New_OnClick()" 
                 );
                 redirectedToBespokeErrorPage = true;
             }
@@ -272,7 +272,7 @@ const connector = {
         }
         catch(e)
         {
-            console.warn( "Could not JSON Parse errorResponse.responseText from get_or___createOrUpadateMailChimpListMember. errorResponse = %o\n\nparse exception: %o", errorResponse, e );
+            console.warn( "Could not JSON Parse errorResponse.responseText from get_or___createOrUpadate3rdPartyMember. errorResponse = %o\n\nparse exception: %o", errorResponse, e );
         }
 
         if( !redirectedToBespokeErrorPage )
@@ -324,6 +324,7 @@ const connector = {
             __customer_type: zendeskSyncUserObject.__getMailshotCustomerType(),
             __extra_merge_fields: []
         };
+        this.__addConvenienceFunctionsToMailshotUser( mailchimpUserToReturn );
         
         /* DebugOnlyCode - START */
         if( debug_mode ) { console.log( "Copied base user object (without 'additional fields') over to mailchimpUserToReturn. mailchimpUserToReturn = %o", mailchimpUserToReturn ); }
@@ -378,10 +379,8 @@ const connector = {
             __surname: this.__getMergeFieldValueFromAPIResultsObject( plugin, returnedMailchimpUserFromAPI, plugin.__settings.__mailchimp_merge_field_surname ), 
             __customer_type: this.__getMergeFieldValueFromAPIResultsObject( plugin, returnedMailchimpUserFromAPI, plugin.__field_maps.__cust_type.mailchimp_field ),
             __extra_merge_fields: [],
-            __isSubscribed: function() { return this.__status === 'subscribed' || this.__status === 'pending'; },
-            __hasUnSubscribed: function() { return this.__status === 'unsubscribed'; },
-            __isDeleted: function() { return this.__status !== 'cleaned'; }
         };
+        this.__addConvenienceFunctionsToMailshotUser( mailchimpUserToReturn );
 
         let arrayIndex = 0;
         for (let i=0; i < plugin.__field_maps.__user.length; i++) 
@@ -419,6 +418,12 @@ const connector = {
         return mailchimpUserToReturn;
     },
     
+    __addConvenienceFunctionsToMailshotUser: function( mailshotUser )
+    {
+        mailshotUser.__isSubscribed = function() { return this.__status === 'subscribed' || this.__status === 'pending'; };
+        mailshotUser.__hasUnSubscribed = function() { return this.__status === 'unsubscribed'; };
+        mailshotUser.__isDeleted = function() { return this.__status !== 'cleaned'; };
+    },
     __getMergeFieldValueFromAPIResultsObject: function( plugin, returnedMailchimpUserFromAPI, mergeFieldName )
     {
         let theValue  = returnedMailchimpUserFromAPI.merge_fields[ mergeFieldName ];
