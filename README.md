@@ -6,8 +6,8 @@ V2 Released June 2020 - now fully complies with the latest Zendesk App Framework
 
 # Videos
 **Ful Walkthrough - Is Zenchimp for you?**\
-[<img src="https://raw.githubusercontent.com/up-n-running/ZenChimp-Zendesk-App-Mailchimp-Sync/master/extras/screenshots/video-walktrhroigh-pic.png">](https://www.youtube.com/watch?v=2XERD268cZI)\
-\
+[<img src="https://raw.githubusercontent.com/up-n-running/ZenChimp-Zendesk-App-Mailchimp-Sync/master/extras/screenshots/Video-walktrhroigh-pic.png">](https://www.youtube.com/watch?v=2XERD268cZI)\
+
 # Screenshots
 **Fullscreen Screenshots**\
 <img src="https://raw.githubusercontent.com/up-n-running/ZenChimp-Zendesk-App-Mailchimp-Sync/master/extras/screenshots/fullscreen_nomodal.png">\
