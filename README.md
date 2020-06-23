@@ -1,9 +1,13 @@
-# Bespoke Zendesk Plugin to Sync Users with Mailchimp without having to upgrade to 'Customer Lists' in Zendesk :)
+# Bespoke Zendesk Plugin to Sync Users to Mailchimp - without having to upgrade to 'Customer Lists' add-on in Zendesk :)
 
 Just install and configure to map the zendesk fields to the mailchimp fields and you will have a fully incorporated fuly functional additional section on your zendesk ticket screen and contact screen to seamlessly allow you to push contact data from Zendesk to Mailchimp.
 
-It used to work really well and I used it commercially over a year. - A fully working V2 will be released soon.
+V2 Released June 2020 - now fully complies with the latest Zendesk App Framework v2
 
+# Videos
+**Ful Walkthrough - Is Zenchimp for you?**\
+[<img src="https://raw.githubusercontent.com/up-n-running/ZenChimp-Zendesk-App-Mailchimp-Sync/master/extras/screenshots/video-walktrhroigh-pic.png">](https://www.youtube.com/watch?v=2XERD268cZI)\
+\
 # Screenshots
 **Fullscreen Screenshots**\
 <img src="https://raw.githubusercontent.com/up-n-running/ZenChimp-Zendesk-App-Mailchimp-Sync/master/extras/screenshots/fullscreen_nomodal.png">\
