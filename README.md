@@ -2,7 +2,7 @@
 
 Just install and configure to map the zendesk fields to the mailchimp fields and you will have a fully incorporated fuly functional additional section on your zendesk ticket screen and contact screen to seamlessly allow you to push contact data from Zendesk to Mailchimp.
 
-V2 Released June 2020 - now fully complies with the latest Zendesk App Framework v2
+[V2.0.1 Released June 2020](https://github.com/up-n-running/ZenChimp-Zendesk-App-Mailchimp-Sync/releases/tag/V2.0.1) - now fully working and fully compliant complies with the latest Zendesk App Framework v2
 
 # Videos
 **Full Walkthrough - Is Zenchimp for me?**\
@@ -26,11 +26,7 @@ V2 Released June 2020 - now fully complies with the latest Zendesk App Framework
 **There's a spreadsheet included which helps you to generate the Zendesk<-->Mailchimp field mapping settings**\
 <img src="https://raw.githubusercontent.com/up-n-running/ZenChimp-Zendesk-App-Mailchimp-Sync/master/extras/screenshots/settings_helper_spreadsheet.png" height="550">\
 \
-**PLEASE NOTE: It's no longer compliant since framework v1 was discontinued. I'm in the process of updating it to use latest version of framework - Watch this space it shouldnt be long (17/May/2020)**
-
-**PLEASE NOTE 2: Porting to v2 complete. App is functional and useable. Conducting final testing before release (31/May/2020)**
-
 Please submit bug reports Here: https://github.com/up-n-running/ZenChimp-Zendesk-App-Mailchimp-Sync/issues
 \
 \
-Pull requests are welcome. Team work makes the dream work.\
+Pull requests are welcome. Team work makes the dream work.
