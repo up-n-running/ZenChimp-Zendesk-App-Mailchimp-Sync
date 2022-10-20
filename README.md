@@ -4,7 +4,7 @@ Just install and configure to map the zendesk fields to the mailchimp fields and
 
 [V2.0.1 Released June 2020](https://github.com/up-n-running/ZenChimp-Zendesk-App-Mailchimp-Sync/releases/tag/V2.0.1) - now fully working and fully compliant with both the latest Zendesk App Framework v2 and latest Mailchimp API definitions.
 
-# Videos
+# Not sure where to start? Watch he video...
 **Full Walkthrough - Is Zenchimp for me?**\
 [<img src="https://raw.githubusercontent.com/up-n-running/ZenChimp-Zendesk-App-Mailchimp-Sync/master/extras/screenshots/Video-walkthrough-pic.png" height="400">](https://www.youtube.com/watch?v=2XERD268cZI)\
 
